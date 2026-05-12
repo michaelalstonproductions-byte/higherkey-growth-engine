@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.DS_Store
+logs/
+out/
+clips/
+captions/
+queue/
+analytics/
+content_inbox/
