@@ -41,6 +41,22 @@ python3 scripts/run_pipeline.py --watch --interval 5
 
 Stop the watcher with `Ctrl-C`.
 
+## Review Dashboard
+
+Open the local dashboard after clips have been generated:
+
+```bash
+python3 -m http.server 8000
+```
+
+Then visit:
+
+```text
+http://localhost:8000/dashboard/review.html
+```
+
+The dashboard reads `queue/review_queue.json`, previews generated clips, displays caption drafts, and stores pending, approved, or rejected review status in your browser's local storage. It does not call social platforms or external APIs.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

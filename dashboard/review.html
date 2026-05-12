@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>HigherKey Review Queue</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f7f9;
+        --panel: #ffffff;
+        --ink: #1d2430;
+        --muted: #667085;
+        --line: #d9dee8;
+        --accent: #2563eb;
+        --approved: #15803d;
+        --rejected: #b42318;
+        --pending: #92400e;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      header {
+        border-bottom: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .header-inner,
+      main {
+        width: min(1180px, calc(100vw - 32px));
+        margin: 0 auto;
+      }
+
+      .header-inner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px 0;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        line-height: 1.2;
+      }
+
+      .summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: flex-end;
+      }
+
+      .pill {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--muted);
+        font-size: 13px;
+        padding: 6px 10px;
+        white-space: nowrap;
+      }
+
+      main {
+        padding: 22px 0 36px;
+      }
+
+      .notice {
+        display: none;
+        border: 1px solid #f3cf72;
+        background: #fff7df;
+        color: #6f4f00;
+        padding: 12px 14px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .notice.visible {
+        display: block;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .filter {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      label {
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      select,
+      button {
+        min-height: 36px;
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        background: #fff;
+        color: var(--ink);
+        font: inherit;
+        font-size: 14px;
+        padding: 0 10px;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      button:hover,
+      select:hover {
+        border-color: #b8c0cf;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+        gap: 16px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .preview {
+        background: #111827;
+        display: grid;
+        place-items: center;
+        aspect-ratio: 9 / 16;
+        max-height: 540px;
+      }
+
+      video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+      }
+
+      .body {
+        padding: 14px;
+      }
+
+      .row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .clip-id {
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+      }
+
+      .status {
+        flex: 0 0 auto;
+      }
+
+      .status[data-state="pending"] {
+        color: var(--pending);
+      }
+
+      .status[data-state="approved"] {
+        color: var(--approved);
+      }
+
+      .status[data-state="rejected"] {
+        color: var(--rejected);
+      }
+
+      .hook {
+        font-size: 18px;
+        line-height: 1.25;
+        font-weight: 750;
+        margin: 0 0 8px;
+      }
+
+      .caption {
+        color: #344054;
+        font-size: 14px;
+        line-height: 1.45;
+        margin: 0 0 10px;
+      }
+
+      .hashtags,
+      .meta {
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.45;
+        overflow-wrap: anywhere;
+      }
+
+      .meta {
+        display: grid;
+        gap: 3px;
+        border-top: 1px solid var(--line);
+        padding-top: 10px;
+        margin-top: 10px;
+      }
+
+      .empty {
+        display: none;
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        padding: 26px;
+        text-align: center;
+        color: var(--muted);
+        background: #fff;
+      }
+
+      .empty.visible {
+        display: block;
+      }
+
+      @media (max-width: 720px) {
+        .header-inner,
+        .toolbar {
+          align-items: stretch;
+          flex-direction: column;
+        }
+
+        .summary {
+          justify-content: flex-start;
+        }
+
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="header-inner">
+        <h1>HigherKey Review Queue</h1>
+        <div class="summary" id="summary">
+          <span class="pill">Loading queue</span>
+        </div>
+      </div>
+    </header>
+    <main>
+      <div class="notice" id="notice"></div>
+      <div class="toolbar">
+        <div class="filter">
+          <label for="statusFilter">Status</label>
+          <select id="statusFilter">
+            <option value="all">All</option>
+            <option value="pending">Pending</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+        <button id="resetReviews" type="button">Reset Local Reviews</button>
+      </div>
+      <section class="grid" id="queueGrid" aria-live="polite"></section>
+      <section class="empty" id="emptyState">No clips match the current filter.</section>
+    </main>
+
+    <script>
+      const QUEUE_PATH = "../queue/review_queue.json";
+      const REVIEW_KEY = "higherkey.review_status.v1";
+      const grid = document.querySelector("#queueGrid");
+      const summary = document.querySelector("#summary");
+      const notice = document.querySelector("#notice");
+      const statusFilter = document.querySelector("#statusFilter");
+      const resetReviews = document.querySelector("#resetReviews");
+      const emptyState = document.querySelector("#emptyState");
+      let entries = [];
+      let reviewState = loadReviewState();
+
+      function loadReviewState() {
+        try {
+          return JSON.parse(localStorage.getItem(REVIEW_KEY) || "{}");
+        } catch (error) {
+          return {};
+        }
+      }
+
+      function saveReviewState() {
+        localStorage.setItem(REVIEW_KEY, JSON.stringify(reviewState));
+      }
+
+      async function readJson(path) {
+        const response = await fetch(path, { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`${path} returned ${response.status}`);
+        }
+        return response.json();
+      }
+
+      function normalizeStatus(entry) {
+        const stored = reviewState[entry.id];
+        if (stored === "approved" || stored === "rejected" || stored === "pending") {
+          return stored;
+        }
+        return "pending";
+      }
+
+      function setNotice(message) {
+        notice.textContent = message;
+        notice.classList.toggle("visible", Boolean(message));
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        })[char]);
+      }
+
+      function renderSummary(filtered) {
+        const counts = entries.reduce((acc, entry) => {
+          acc[normalizeStatus(entry)] += 1;
+          return acc;
+        }, { pending: 0, approved: 0, rejected: 0 });
+        summary.innerHTML = [
+          `<span class="pill">${entries.length} total</span>`,
+          `<span class="pill">${filtered.length} shown</span>`,
+          `<span class="pill">${counts.pending} pending</span>`,
+          `<span class="pill">${counts.approved} approved</span>`,
+          `<span class="pill">${counts.rejected} rejected</span>`
+        ].join("");
+      }
+
+      function render() {
+        const filter = statusFilter.value;
+        const filtered = entries.filter((entry) => filter === "all" || normalizeStatus(entry) === filter);
+        renderSummary(filtered);
+        emptyState.classList.toggle("visible", filtered.length === 0);
+        grid.innerHTML = filtered.map(renderCard).join("");
+
+        grid.querySelectorAll("[data-status-select]").forEach((select) => {
+          select.addEventListener("change", (event) => {
+            const id = event.currentTarget.dataset.entryId;
+            reviewState[id] = event.currentTarget.value;
+            saveReviewState();
+            render();
+          });
+        });
+      }
+
+      function renderCard(entry) {
+        const caption = entry.caption || {};
+        const status = normalizeStatus(entry);
+        const hashtags = Array.isArray(caption.hashtags) ? caption.hashtags.join(" ") : "";
+        return `
+          <article class="card">
+            <div class="preview">
+              <video src="../${escapeHtml(entry.clip_path)}" controls preload="metadata" playsinline></video>
+            </div>
+            <div class="body">
+              <div class="row">
+                <div class="clip-id">${escapeHtml(entry.clip_id)}</div>
+                <select class="status" data-state="${status}" data-status-select data-entry-id="${escapeHtml(entry.id)}" aria-label="Review status for ${escapeHtml(entry.clip_id)}">
+                  <option value="pending"${status === "pending" ? " selected" : ""}>Pending</option>
+                  <option value="approved"${status === "approved" ? " selected" : ""}>Approved</option>
+                  <option value="rejected"${status === "rejected" ? " selected" : ""}>Rejected</option>
+                </select>
+              </div>
+              <p class="hook">${escapeHtml(caption.hook || "Caption hook unavailable")}</p>
+              <p class="caption">${escapeHtml(caption.caption || "Caption draft unavailable.")}</p>
+              <div class="hashtags">${escapeHtml(hashtags)}</div>
+              <div class="meta">
+                <div>Source: ${escapeHtml(entry.source_path)}</div>
+                <div>Clip: ${escapeHtml(entry.clip_path)}</div>
+                <div>Caption: ${escapeHtml(entry.caption_path || "none")}</div>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      async function loadDashboard() {
+        try {
+          const queue = await readJson(QUEUE_PATH);
+          const queueEntries = Array.isArray(queue.entries) ? queue.entries : [];
+          entries = await Promise.all(queueEntries.map(async (entry) => {
+            if (!entry.caption_path) {
+              return { ...entry, caption: null };
+            }
+            try {
+              return { ...entry, caption: await readJson(`../${entry.caption_path}`) };
+            } catch (error) {
+              return { ...entry, caption: { hook: "Caption failed to load", caption: error.message } };
+            }
+          }));
+          setNotice("");
+          render();
+        } catch (error) {
+          summary.innerHTML = '<span class="pill">Queue unavailable</span>';
+          setNotice(`Could not load ${QUEUE_PATH}. Open through a local server from the project root: python3 -m http.server 8000, then visit http://localhost:8000/dashboard/review.html`);
+        }
+      }
+
+      statusFilter.addEventListener("change", render);
+      resetReviews.addEventListener("click", () => {
+        reviewState = {};
+        saveReviewState();
+        render();
+      });
+
+      loadDashboard();
+    </script>
+  </body>
+</html>
