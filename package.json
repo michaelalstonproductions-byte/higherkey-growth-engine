@@ -1,15 +1,93 @@
 {
   "name": "higherkey-growth-engine",
   "version": "2.0.0",
+  "productName": "HigherKey Operator OS",
   "description": "HigherKey local-first autonomous growth engine desktop shell",
   "main": "electron/main.js",
   "private": true,
   "scripts": {
     "start": "electron .",
     "electron": "electron .",
-    "electron:verify": "HK_ELECTRON_SMOKE=1 electron ."
+    "electron:verify": "HK_ELECTRON_SMOKE=1 electron .",
+    "dist:dir": "electron-builder --mac dir",
+    "dist:unsigned": "electron-builder --mac dmg -c.mac.identity=null",
+    "clean:dist": "rm -rf dist"
+  },
+  "build": {
+    "appId": "com.higherkey.operatoros",
+    "productName": "HigherKey Operator OS",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "dashboard",
+        "to": "app-assets/dashboard",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "growth_engine",
+        "to": "app-assets/growth_engine",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
+      },
+      {
+        "from": "scripts",
+        "to": "app-assets/scripts",
+        "filter": [
+          "**/*",
+          "!**/__pycache__/**",
+          "!**/*.pyc"
+        ]
+      },
+      {
+        "from": "config",
+        "to": "app-assets/config",
+        "filter": [
+          "**/*",
+          "!desktop_runtime.json"
+        ]
+      },
+      {
+        "from": "README.md",
+        "to": "app-assets/README.md"
+      },
+      {
+        "from": "build/icon-placeholder.svg",
+        "to": "app-assets/build/icon-placeholder.svg"
+      },
+      {
+        "from": "build/icon.png",
+        "to": "app-assets/build/icon.png"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.video",
+      "icon": "build/icon.png",
+      "target": [
+        "dir",
+        "dmg"
+      ],
+      "identity": null,
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "sign": false
+    }
   },
   "devDependencies": {
-    "electron": "^31.7.7"
+    "electron": "^31.7.7",
+    "electron-builder": "^26.8.1"
   }
 }

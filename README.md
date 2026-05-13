@@ -236,6 +236,64 @@ The review monitor now includes local recommendation signals, hook-intensity hea
 
 Polling remains the default live mechanism. `config/live_events_contract.json` documents a local-only placeholder for future WebSocket or server-sent event wrappers.
 
+## Local Multi-Agent Orchestration
+
+V2.3 adds a deterministic local orchestration layer with specialized workers for ingest, clip generation, content intelligence, metadata indexing, analytics learning, recommendations, and export:
+
+```bash
+python3 scripts/run_orchestrator.py --once
+```
+
+The orchestrator writes dashboard-readable local JSON files:
+
+- `analytics/agents.json`
+- `analytics/agent_activity.json`
+- `analytics/orchestration_graph.json`
+- `analytics/recommendations.json`
+
+Agent states are `idle`, `assigned`, `running`, `completed`, `failed`, and `disabled`. V2.3 executes sequentially; the orchestration graph includes a placeholder for future parallel execution. No cloud APIs or social APIs are used.
+
+## Packaged Desktop Distribution
+
+V2.4 prepares the Electron shell for local macOS packaging as `HigherKey Operator OS` with app id `com.higherkey.operatoros`.
+
+Install dependencies:
+
+```bash
+npm install
+```
+
+Build an unpacked macOS app:
+
+```bash
+npm run dist:dir
+```
+
+Build an unsigned DMG:
+
+```bash
+npm run dist:unsigned
+```
+
+Clean package output:
+
+```bash
+npm run clean:dist
+```
+
+The packaged app bundles read-only application assets under Electron resources:
+
+- `dashboard/`
+- `growth_engine/`
+- `scripts/`
+- `config/`
+
+Runtime files are not written into the app bundle or `app.asar`. On first packaged launch, HigherKey Operator OS creates a writable local project folder under Electron `userData` named `HigherKey Operator OS Project`. That folder contains `content_inbox/`, `analytics/`, `queue/`, `clips/`, `captions/`, `logs/`, `out/`, and `config/`. It also writes `HIGHERKEY_OPERATOR_OS_SETUP.md` and `config/desktop_runtime.json` so the active local project path is easy to find.
+
+Use `File > Open Project` to switch the packaged app to another writable local project folder. Python scripts run from packaged resources with `PYTHONPATH` pointed at those resources and the selected project folder as the working directory, so generated outputs stay local and writable.
+
+The DMG is intentionally unsigned for local testing. macOS Gatekeeper may require opening it through Finder's contextual Open flow or local security settings. Packaging does not add cloud APIs, publishing integrations, or social APIs.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

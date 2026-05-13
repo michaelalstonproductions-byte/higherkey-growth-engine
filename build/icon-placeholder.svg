@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-label="HigherKey Operator OS placeholder icon">
+  <rect width="1024" height="1024" rx="184" fill="#0b1018"/>
+  <rect x="112" y="160" width="800" height="704" rx="80" fill="#121c29" stroke="#2b3d54" stroke-width="24"/>
+  <path d="M272 652V372h72v108h144V372h72v280h-72V540H344v112h-72Z" fill="#eef4ff"/>
+  <path d="M612 652V372h72v112l104-112h88L756 498l132 154h-92L684 518v134h-72Z" fill="#65a8ff"/>
+  <circle cx="224" cy="224" r="34" fill="#36d17c"/>
+  <circle cx="320" cy="224" r="34" fill="#f7b84b"/>
+  <circle cx="416" cy="224" r="34" fill="#ff6470"/>
+</svg>
