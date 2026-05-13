@@ -85,6 +85,42 @@ python3 scripts/export_approved_posts.py
 
 Approved posts are written to `out/approved_posts/<clip_id>/` with a final video copy, `caption.txt`, `hashtags.txt`, `title.txt`, `platform_notes.json`, and `manifest.json`. This only prepares local files; it does not publish to social platforms or call cloud APIs.
 
+## Local Multimodal Understanding
+
+V1.5 adds local-first architecture for multimodal understanding. FFmpeg frame sampling provides motion spikes, scene-change timestamps, brightness signals, and frame sampling metadata for future vision analysis. OCR and speech transcription are represented as placeholder schemas only; no OCR engine, Whisper install, cloud API, or external AI API is required.
+
+Queue entries and caption packages include `hook_moments` and `scene_labels`. Hook moments are estimated from local motion spikes, scene changes, audio peaks, and future detected text frequency. Scene labels are simple rule-based tags such as `talking`, `action`, `cinematic`, `dark`, `bright`, and `fast_cut`.
+
+## Local Performance Learning
+
+V1.6 adds a manual analytics import and learning loop. Create a local JSON file with performance records:
+
+```json
+{
+  "records": [
+    {
+      "queue_entry_id": "queue_example_clip_01",
+      "views": 1200,
+      "likes": 90,
+      "comments": 12,
+      "shares": 15,
+      "saves": 20,
+      "watch_time": 6200,
+      "retention_percent": 71,
+      "posted_at": "2026-05-12T09:00:00"
+    }
+  ]
+}
+```
+
+Import it locally:
+
+```bash
+python3 scripts/import_performance_metrics.py analytics/performance_imports.json
+```
+
+The importer updates `analytics/performance_history.json`, `analytics/learning_summary.json`, and `analytics/top_patterns.json`. It compares predicted hook score with normalized manual performance, stores `learning_delta`, and ranks best hooks, scene labels, clip lengths, and posting patterns. The dashboard reads these local analytics files when present.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

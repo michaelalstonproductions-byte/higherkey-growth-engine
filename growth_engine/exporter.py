@@ -114,6 +114,8 @@ def export_approved_posts(
             "title_txt": relative_path(post_dir / "title.txt", project_root),
             "platform_notes_json": relative_path(post_dir / "platform_notes.json", project_root),
             "score": entry.get("score", package.get("score", 0)),
+            "hook_moments": package.get("hook_moments", entry.get("hook_moments", [])),
+            "scene_labels": package.get("scene_labels", entry.get("scene_labels", [])),
             "subtitle_status": package.get("subtitle_status", entry.get("subtitle_status")),
             "has_audio": package.get("has_audio"),
             "exported_at": utc_now(),

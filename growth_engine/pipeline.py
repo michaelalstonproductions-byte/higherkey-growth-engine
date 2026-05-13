@@ -24,11 +24,19 @@ def add_content_intelligence(clips: list[dict[str, Any]], config: AppConfig) -> 
                 "method": analysis["method"],
                 "visual": analysis["visual"],
                 "audio": analysis["audio"],
+                "ocr": analysis["ocr"],
+                "speech": analysis["speech"],
+                "scene_labels": analysis["scene_labels"],
+                "hook_moments": analysis["hook_moments"],
             }
+            clip["hook_moments"] = analysis["hook_moments"]
+            clip["scene_labels"] = analysis["scene_labels"]
             clip["score"] = analysis["score"]
             clip["score_details"] = analysis["score_details"]
         except Exception as exc:  # noqa: BLE001 - local analysis should not discard generated clips.
             clip["analysis"] = {"method": "ffmpeg_local_frame_and_audio_sampling", "error": str(exc)}
+            clip["hook_moments"] = []
+            clip["scene_labels"] = []
             clip["score"] = 0
             clip["score_details"] = {"reasons": ["analysis failed"]}
 
@@ -43,16 +51,29 @@ def _subtitle_records_stale(subtitles: list[dict[str, Any]], clips: list[dict[st
     )
 
 
+def _clips_need_multimodal(clips: list[dict[str, Any]]) -> bool:
+    return any(
+        "hook_moments" not in clip
+        or "scene_labels" not in clip
+        or "ocr" not in clip.get("analysis", {})
+        or "speech" not in clip.get("analysis", {})
+        for clip in clips
+    )
+
+
 def backfill_caption_packages(index: dict[str, Any], config: AppConfig) -> None:
     for record in index.get("videos", {}).values():
         clips = record.get("clips", [])
         captions = record.get("captions", [])
         if not clips or not captions:
             continue
+        clips_need_multimodal = _clips_need_multimodal(clips)
+        if clips_need_multimodal:
+            add_content_intelligence(clips, config)
         subtitles = record.get("subtitles") or []
         subtitles_stale = _subtitle_records_stale(subtitles, clips)
         package_links_complete = record.get("packages") and all(entry.get("package_path") for entry in record.get("queue_entries", []))
-        if package_links_complete and not subtitles_stale:
+        if package_links_complete and not subtitles_stale and not clips_need_multimodal:
             continue
         try:
             if subtitles_stale:

@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from growth_engine.config import load_config
+from growth_engine.analytics import import_performance_metrics
 from growth_engine.exporter import export_approved_posts
 from growth_engine.pipeline import process_once
 
@@ -74,6 +75,10 @@ def main() -> int:
         assert (root / clip["path"]).exists(), clip["path"]
         assert isinstance(clip["score"], int), clip
         assert "analysis" in clip, clip
+        assert isinstance(clip.get("hook_moments"), list), clip
+        assert isinstance(clip.get("scene_labels"), list), clip
+        assert "ocr" in clip["analysis"], clip["analysis"]
+        assert "speech" in clip["analysis"], clip["analysis"]
     for caption in video["captions"]:
         assert (root / caption["path"]).exists(), caption["path"]
     for subtitle in video["subtitles"]:
@@ -83,11 +88,13 @@ def main() -> int:
         package_path = root / package["path"]
         assert package_path.exists(), package["path"]
         package_payload = json.loads(package_path.read_text(encoding="utf-8"))
-        for key in ("hook", "caption", "hashtags", "subtitle_status", "suggested_title", "suggested_cta", "platform_notes"):
+        for key in ("hook", "caption", "hashtags", "subtitle_status", "suggested_title", "suggested_cta", "platform_notes", "hook_moments", "scene_labels"):
             assert key in package_payload, package_payload
     scored_entries = [entry for entry in queue["entries"] if entry["source_video_id"] == video["id"]]
     assert all(isinstance(entry.get("score"), int) for entry in scored_entries), scored_entries
     assert all(entry.get("package_path") for entry in scored_entries), scored_entries
+    assert all(isinstance(entry.get("hook_moments"), list) for entry in scored_entries), scored_entries
+    assert all(isinstance(entry.get("scene_labels"), list) for entry in scored_entries), scored_entries
 
     approved_entry = scored_entries[0]
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -103,6 +110,37 @@ def main() -> int:
         for filename in ("caption.txt", "hashtags.txt", "title.txt", "platform_notes.json", "manifest.json"):
             assert (post_dir / filename).exists(), filename
         assert any(post_dir.glob("*.mp4")), list(post_dir.iterdir())
+
+        metrics_path = Path(temp_dir) / "performance_import.json"
+        history_path = Path(temp_dir) / "performance_history.json"
+        metrics_path.write_text(
+            json.dumps(
+                {
+                    "records": [
+                        {
+                            "queue_entry_id": approved_entry["id"],
+                            "views": 1200,
+                            "likes": 90,
+                            "comments": 12,
+                            "shares": 15,
+                            "saves": 20,
+                            "watch_time": 6200,
+                            "retention_percent": 71,
+                            "posted_at": "2026-05-12T09:00:00",
+                        }
+                    ]
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        analytics_summary = import_performance_metrics(root, metrics_path, history_path=history_path)
+        assert analytics_summary["imported"] == 1, analytics_summary
+        history = json.loads(history_path.read_text(encoding="utf-8"))
+        assert "learning_delta" in history["records"][0], history
+        assert (root / "analytics" / "learning_summary.json").exists()
+        assert (root / "analytics" / "top_patterns.json").exists()
 
     print(json.dumps({"smoke_test": "passed", "summary": summary}, indent=2, sort_keys=True))
     return 0

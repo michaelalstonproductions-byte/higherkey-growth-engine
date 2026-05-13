@@ -283,6 +283,28 @@
         gap: 8px;
       }
 
+      .labels,
+      .moments {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 10px 0;
+      }
+
+      .label,
+      .moment {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1;
+        padding: 6px 8px;
+      }
+
+      .moment {
+        color: var(--ink);
+      }
+
       .platform {
         border: 1px solid var(--line);
         border-radius: 7px;
@@ -334,6 +356,45 @@
         display: block;
       }
 
+      .analytics {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        margin-bottom: 16px;
+        padding: 14px;
+      }
+
+      .analytics h2 {
+        font-size: 16px;
+        line-height: 1.2;
+        margin: 0 0 10px;
+      }
+
+      .analytics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+      }
+
+      .analytics-item {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 9px;
+      }
+
+      .analytics-value {
+        display: block;
+        font-size: 16px;
+        font-weight: 800;
+      }
+
+      .analytics-label {
+        color: var(--muted);
+        display: block;
+        font-size: 12px;
+        margin-top: 3px;
+      }
+
       @media (max-width: 720px) {
         .header-inner,
         .toolbar {
@@ -377,12 +438,23 @@
           <button id="resetReviews" type="button">Reset Local Reviews</button>
         </div>
       </div>
+      <section class="analytics" id="analyticsPanel">
+        <h2>Analytics</h2>
+        <div class="analytics-grid" id="analyticsGrid">
+          <div class="analytics-item">
+            <span class="analytics-value">No local metrics imported</span>
+            <span class="analytics-label">Run scripts/import_performance_metrics.py</span>
+          </div>
+        </div>
+      </section>
       <section class="grid" id="queueGrid" aria-live="polite"></section>
       <section class="empty" id="emptyState">No clips match the current filter.</section>
     </main>
 
     <script>
       const QUEUE_PATH = "../queue/review_queue.json";
+      const LEARNING_SUMMARY_PATH = "../analytics/learning_summary.json";
+      const TOP_PATTERNS_PATH = "../analytics/top_patterns.json";
       const REVIEW_KEY = "higherkey.review_status.v1";
       const grid = document.querySelector("#queueGrid");
       const summary = document.querySelector("#summary");
@@ -391,6 +463,7 @@
       const exportApproved = document.querySelector("#exportApproved");
       const resetReviews = document.querySelector("#resetReviews");
       const emptyState = document.querySelector("#emptyState");
+      const analyticsGrid = document.querySelector("#analyticsGrid");
       let entries = [];
       let reviewState = loadReviewState();
 
@@ -496,6 +569,8 @@
         const visual = entry.analysis?.visual || {};
         const audio = entry.analysis?.audio || {};
         const reasons = Array.isArray(entry.score_details?.reasons) ? entry.score_details.reasons.join(", ") : "local score";
+        const sceneLabels = packageData.scene_labels || entry.scene_labels || entry.analysis?.scene_labels || [];
+        const hookMoments = packageData.hook_moments || entry.hook_moments || entry.analysis?.hook_moments || [];
         const packageHtml = renderPackage(packageData, entry);
         return `
           <article class="card">
@@ -521,6 +596,8 @@
               <p class="hook">${escapeHtml(hook)}</p>
               <p class="caption">${escapeHtml(captionText)}</p>
               <div class="hashtags">${escapeHtml(hashtags)}</div>
+              ${renderSceneLabels(sceneLabels)}
+              ${renderHookMoments(hookMoments)}
               <div class="signals" aria-label="Local analysis signals">
                 <div class="signal">
                   <span class="signal-value">${escapeHtml(formatMetric(visual.scene_changes))}</span>
@@ -550,6 +627,23 @@
             </div>
           </article>
         `;
+      }
+
+      function renderSceneLabels(labels) {
+        if (!Array.isArray(labels) || labels.length === 0) {
+          return '<div class="labels"><span class="label">unlabeled</span></div>';
+        }
+        return `<div class="labels">${labels.map((label) => `<span class="label">${escapeHtml(label)}</span>`).join("")}</div>`;
+      }
+
+      function renderHookMoments(moments) {
+        if (!Array.isArray(moments) || moments.length === 0) {
+          return '<div class="moments"><span class="moment">0.0s opening context</span></div>';
+        }
+        return `<div class="moments">${moments.slice(0, 3).map((moment) => {
+          const reasons = Array.isArray(moment.reasons) ? moment.reasons.join("+") : "hook";
+          return `<span class="moment">${escapeHtml(formatMetric(moment.timestamp, "0"))}s ${escapeHtml(reasons)}</span>`;
+        }).join("")}</div>`;
       }
 
       function renderPackage(packageData, entry) {
@@ -606,6 +700,34 @@
         setNotice(`${approvedEntries.length} approved review decision${approvedEntries.length === 1 ? "" : "s"} exported. Save the file as queue/approved_reviews.json before running the export script.`);
       }
 
+      function renderAnalytics(summary, topPatterns) {
+        if (!summary || !topPatterns) {
+          return;
+        }
+        const insights = Array.isArray(topPatterns.insights) ? topPatterns.insights : [];
+        const topItems = insights.map((insight) => {
+          const top = insight.top;
+          const value = top ? `${top.value} (${formatMetric(top.avg_actual_performance_score)})` : "No data";
+          return `
+            <div class="analytics-item">
+              <span class="analytics-value">${escapeHtml(value)}</span>
+              <span class="analytics-label">${escapeHtml(insight.type.replaceAll("_", " "))}</span>
+            </div>
+          `;
+        }).join("");
+        analyticsGrid.innerHTML = `
+          <div class="analytics-item">
+            <span class="analytics-value">${escapeHtml(summary.record_count || 0)}</span>
+            <span class="analytics-label">performance records</span>
+          </div>
+          <div class="analytics-item">
+            <span class="analytics-value">${escapeHtml(formatMetric(summary.avg_learning_delta || 0))}</span>
+            <span class="analytics-label">avg learning delta</span>
+          </div>
+          ${topItems}
+        `;
+      }
+
       async function loadDashboard() {
         try {
           const queue = await readJson(QUEUE_PATH);
@@ -630,6 +752,11 @@
             return { ...entry, caption, package: packageData };
           }));
           entries.sort((a, b) => scoreValue(b) - scoreValue(a));
+          try {
+            renderAnalytics(await readJson(LEARNING_SUMMARY_PATH), await readJson(TOP_PATTERNS_PATH));
+          } catch (error) {
+            // Analytics files are optional until manual metrics are imported.
+          }
           setNotice("");
           render();
         } catch (error) {

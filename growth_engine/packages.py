@@ -100,6 +100,8 @@ def build_caption_packages(
             "platform_notes": PLATFORM_NOTES,
             "score": clip.get("score", 0),
             "score_details": clip.get("score_details", {}),
+            "hook_moments": clip.get("hook_moments", []),
+            "scene_labels": clip.get("scene_labels", []),
             "analysis": clip.get("analysis", {}),
             "created_at": utc_now(),
             "status": "draft",

@@ -61,6 +61,13 @@ def create_subtitle_placeholder(clip: dict[str, Any], captions_dir: Path, root: 
             "required": False,
             "notes": "Future local Whisper integration can populate segments without changing package schema.",
         },
+        "speech_transcription": {
+            "status": "pending_local_transcription" if audio["has_audio"] else "no_audio",
+            "engine": "local_whisper_placeholder",
+            "configured": False,
+            "required": False,
+            "language": None,
+        },
         "segments": [],
         "notes": "Reserved for future local subtitle extraction. No cloud transcription is used.",
         "created_at": utc_now(),

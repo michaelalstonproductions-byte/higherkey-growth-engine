@@ -10,6 +10,7 @@ from typing import Any
 FRAME_WIDTH = 96
 FRAME_HEIGHT = 170
 FRAME_BYTES = FRAME_WIDTH * FRAME_HEIGHT * 3
+SAMPLE_FPS = 2.0
 
 
 def _clamp(value: float, low: float, high: float) -> float:
@@ -20,7 +21,7 @@ def _run_ffmpeg(args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(args, check=True, capture_output=True, text=True)
 
 
-def _sample_frames(clip_path: Path, sample_fps: float = 2.0) -> list[bytes]:
+def _sample_frames(clip_path: Path, sample_fps: float = SAMPLE_FPS) -> list[bytes]:
     result = subprocess.run(
         [
             "ffmpeg",
@@ -54,11 +55,20 @@ def _luma_values(frame: bytes) -> list[float]:
 
 
 def _visual_metrics(clip_path: Path) -> dict[str, Any]:
-    frames = _sample_frames(clip_path)
+    frames = _sample_frames(clip_path, SAMPLE_FPS)
     if not frames:
         return {
             "sampled_frames": 0,
+            "frame_sampling": {
+                "status": "failed",
+                "sample_fps": SAMPLE_FPS,
+                "width": FRAME_WIDTH,
+                "height": FRAME_HEIGHT,
+            },
             "scene_changes": 0,
+            "scene_change_timestamps": [],
+            "motion_spike_timestamps": [],
+            "motion_samples": [],
             "motion_intensity": 0.0,
             "brightness_mean": 0.0,
             "brightness_change": 0.0,
@@ -80,12 +90,32 @@ def _visual_metrics(clip_path: Path) -> dict[str, Any]:
         diffs.append(statistics.fmean(abs(a - b) for a, b in zip(previous, current)))
 
     scene_threshold = 32.0
+    motion_threshold = max(12.0, (statistics.fmean(diffs) if diffs else 0.0) + (statistics.pstdev(diffs) if len(diffs) > 1 else 0.0))
     scene_changes = sum(1 for diff in diffs if diff >= scene_threshold)
     motion_intensity = statistics.fmean(diffs) if diffs else 0.0
+    motion_samples = [
+        {"timestamp": round((index + 1) / SAMPLE_FPS, 3), "delta": round(diff, 3)}
+        for index, diff in enumerate(diffs)
+    ]
 
     return {
         "sampled_frames": len(frames),
+        "frame_sampling": {
+            "status": "sampled",
+            "sample_fps": SAMPLE_FPS,
+            "width": FRAME_WIDTH,
+            "height": FRAME_HEIGHT,
+            "sampled_frames": len(frames),
+            "purpose": "future_local_vision_analysis",
+        },
         "scene_changes": scene_changes,
+        "scene_change_timestamps": [
+            sample["timestamp"] for sample in motion_samples if sample["delta"] >= scene_threshold
+        ],
+        "motion_spike_timestamps": [
+            sample["timestamp"] for sample in motion_samples if sample["delta"] >= motion_threshold
+        ],
+        "motion_samples": motion_samples,
         "motion_intensity": round(motion_intensity, 3),
         "brightness_mean": round(statistics.fmean(brightness_values), 3),
         "brightness_change": round(max(brightness_values) - min(brightness_values), 3),
@@ -118,7 +148,7 @@ def _audio_metrics(clip_path: Path) -> dict[str, Any]:
             or "Cannot find a matching stream" in stderr
             or "does not contain any stream" in stderr
         ):
-            return {"rms_level_db": None, "peak_level_db": None, "audio_energy_peaks": 0}
+            return {"rms_level_db": None, "peak_level_db": None, "audio_energy_peaks": 0, "audio_peak_timestamps": []}
         raise
 
     rms_levels: list[float] = []
@@ -134,14 +164,102 @@ def _audio_metrics(clip_path: Path) -> dict[str, Any]:
                 peak_levels.append(float(value))
 
     if not rms_levels:
-        return {"rms_level_db": None, "peak_level_db": None, "audio_energy_peaks": 0}
+        return {"rms_level_db": None, "peak_level_db": None, "audio_energy_peaks": 0, "audio_peak_timestamps": []}
 
     peak_threshold = statistics.fmean(rms_levels) + max(1.5, statistics.pstdev(rms_levels))
+    peak_indexes = [index for index, level in enumerate(rms_levels) if level >= peak_threshold]
     return {
         "rms_level_db": round(statistics.fmean(rms_levels), 3),
         "peak_level_db": round(max(peak_levels), 3) if peak_levels else None,
-        "audio_energy_peaks": sum(1 for level in rms_levels if level >= peak_threshold),
+        "audio_energy_peaks": len(peak_indexes),
+        "audio_peak_timestamps": [round(index * 0.5, 3) for index in peak_indexes],
     }
+
+
+def _ocr_placeholder(visual: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "ocr_status": "not_configured",
+        "engine": {
+            "name": "local_ocr_placeholder",
+            "configured": False,
+            "required": False,
+        },
+        "detected_text": [],
+        "detected_text_frequency": 0.0,
+        "frame_sample_count": visual.get("sampled_frames", 0),
+        "notes": "Reserved for future local OCR over sampled frames. No cloud OCR is used.",
+    }
+
+
+def _speech_placeholder(audio: dict[str, Any]) -> dict[str, Any]:
+    has_audio_signal = audio.get("rms_level_db") is not None
+    return {
+        "transcription_status": "pending_local_transcription" if has_audio_signal else "no_audio_signal",
+        "engine": {
+            "name": "local_whisper_placeholder",
+            "configured": False,
+            "required": False,
+        },
+        "segments": [],
+        "detected_speech_frequency": 0.0,
+        "notes": "Reserved for future local speech transcription. No cloud transcription is used.",
+    }
+
+
+def _scene_labels(analysis: dict[str, Any]) -> list[str]:
+    visual = analysis.get("visual", {})
+    audio = analysis.get("audio", {})
+    labels: list[str] = []
+    brightness = float(visual.get("brightness_mean", 0.0))
+    contrast = float(visual.get("contrast_mean", 0.0))
+    motion = float(visual.get("motion_intensity", 0.0))
+    scene_changes = int(visual.get("scene_changes", 0))
+    audio_peaks = int(audio.get("audio_energy_peaks", 0))
+
+    if audio.get("rms_level_db") is not None and motion < 18.0:
+        labels.append("talking")
+    if motion >= 18.0:
+        labels.append("action")
+    if contrast >= 45.0 and 55.0 <= brightness <= 190.0:
+        labels.append("cinematic")
+    if brightness < 70.0:
+        labels.append("dark")
+    if brightness > 185.0:
+        labels.append("bright")
+    if scene_changes >= 2 or (scene_changes >= 1 and audio_peaks >= 1):
+        labels.append("fast_cut")
+    if not labels:
+        labels.append("cinematic")
+    return labels
+
+
+def _hook_moments(analysis: dict[str, Any]) -> list[dict[str, Any]]:
+    visual = analysis.get("visual", {})
+    audio = analysis.get("audio", {})
+    ocr = analysis.get("ocr", {})
+    candidates: dict[float, dict[str, Any]] = {}
+
+    def add(timestamp: float, reason: str, weight: int) -> None:
+        key = round(max(0.0, timestamp), 1)
+        item = candidates.setdefault(key, {"timestamp": key, "reasons": [], "score": 0})
+        item["reasons"].append(reason)
+        item["score"] += weight
+
+    for timestamp in visual.get("motion_spike_timestamps", []):
+        add(float(timestamp), "motion_spike", 25)
+    for timestamp in visual.get("scene_change_timestamps", []):
+        add(float(timestamp), "scene_change", 30)
+    for timestamp in audio.get("audio_peak_timestamps", []):
+        add(float(timestamp), "audio_peak", 20)
+
+    text_frequency = float(ocr.get("detected_text_frequency", 0.0))
+    if text_frequency > 0:
+        add(0.0, "detected_text", min(20, int(text_frequency * 20)))
+
+    if not candidates:
+        add(0.0, "opening_context", 8)
+
+    return sorted(candidates.values(), key=lambda item: item["score"], reverse=True)[:5]
 
 
 def score_hook_potential(analysis: dict[str, Any]) -> dict[str, Any]:
@@ -185,6 +303,10 @@ def analyze_clip(clip_path: Path) -> dict[str, Any]:
         "audio": _audio_metrics(clip_path),
         "method": "ffmpeg_local_frame_and_audio_sampling",
     }
+    analysis["ocr"] = _ocr_placeholder(analysis["visual"])
+    analysis["speech"] = _speech_placeholder(analysis["audio"])
+    analysis["scene_labels"] = _scene_labels(analysis)
+    analysis["hook_moments"] = _hook_moments(analysis)
     analysis.update(score_hook_potential(analysis))
     if math.isnan(float(analysis["score"])):
         analysis["score"] = 0

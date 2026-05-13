@@ -32,6 +32,8 @@ def build_queue_entries(video_record: dict[str, Any]) -> list[dict[str, Any]]:
                 "package_path": package["path"] if package else None,
                 "score": clip.get("score", 0),
                 "score_details": clip.get("score_details", {}),
+                "hook_moments": clip.get("hook_moments", []),
+                "scene_labels": clip.get("scene_labels", []),
                 "analysis": clip.get("analysis", {}),
                 "status": "needs_review",
                 "review_notes": "",
@@ -53,6 +55,8 @@ def save_review_queue(path: Path, index: dict[str, Any]) -> list[dict[str, Any]]
             entry.setdefault("subtitle_path", None)
             entry.setdefault("package_id", None)
             entry.setdefault("package_path", None)
+            entry.setdefault("hook_moments", entry.get("analysis", {}).get("hook_moments", []))
+            entry.setdefault("scene_labels", entry.get("analysis", {}).get("scene_labels", []))
             all_entries.append(entry)
     all_entries.sort(key=lambda item: item.get("score", 0), reverse=True)
     payload = {
