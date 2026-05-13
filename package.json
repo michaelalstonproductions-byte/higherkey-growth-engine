@@ -1,6 +1,6 @@
 {
   "name": "higherkey-growth-engine",
-  "version": "2.0.0",
+  "version": "2.7.0",
   "productName": "HigherKey Operator OS",
   "description": "HigherKey local-first autonomous growth engine desktop shell",
   "main": "electron/main.js",
@@ -12,7 +12,8 @@
     "dist:dir": "electron-builder --mac dir",
     "dist:unsigned": "electron-builder --mac dmg -c.mac.identity=null",
     "clean:dist": "rm -rf dist",
-    "qa:full": "python3 scripts/run_full_qa.py"
+    "qa:full": "python3 scripts/run_full_qa.py",
+    "release:notes": "python3 scripts/generate_release_notes.py"
   },
   "build": {
     "appId": "com.higherkey.operatoros",
@@ -64,8 +65,20 @@
         "to": "app-assets/README.md"
       },
       {
+        "from": "RELEASE_NOTES.md",
+        "to": "app-assets/RELEASE_NOTES.md"
+      },
+      {
+        "from": "DEMO_CHECKLIST.md",
+        "to": "app-assets/DEMO_CHECKLIST.md"
+      },
+      {
         "from": "build/icon-placeholder.svg",
         "to": "app-assets/build/icon-placeholder.svg"
+      },
+      {
+        "from": "build/ICON_NOTES.md",
+        "to": "app-assets/build/ICON_NOTES.md"
       },
       {
         "from": "build/icon.png",

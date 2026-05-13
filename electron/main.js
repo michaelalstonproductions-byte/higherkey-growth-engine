@@ -24,11 +24,30 @@ const MIME = new Map([
 ]);
 
 let mainWindow = null;
+let splashWindow = null;
 let staticServer = null;
 let watcherProcess = null;
 let activityPoll = null;
 let lastActivityCount = 0;
 let activeProjectRoot = DEFAULT_PROJECT_ROOT;
+let releaseInfoCache = null;
+
+function releaseInfo() {
+  if (releaseInfoCache) return releaseInfoCache;
+  try {
+    releaseInfoCache = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "config", "release.json"), "utf8"));
+  } catch {
+    releaseInfoCache = {
+      app_id: "com.higherkey.operatoros",
+      build_status: "release-candidate",
+      local_first_statement: "HigherKey Operator OS runs locally. No cloud APIs or social APIs are configured.",
+      product_name: "HigherKey Operator OS",
+      release_name: "Release Candidate Desktop Demo",
+      version: "V2.7"
+    };
+  }
+  return releaseInfoCache;
+}
 
 function settingsPath() {
   return path.join(app.getPath("userData"), SETTINGS_NAME);
@@ -49,7 +68,9 @@ function defaultSettings() {
         contentInbox: path.join(DEFAULT_PROJECT_ROOT, "content_inbox"),
         exportDirectory: path.join(DEFAULT_PROJECT_ROOT, "out", "approved_posts"),
         analyticsDirectory: path.join(DEFAULT_PROJECT_ROOT, "analytics"),
-        startWatcherOnLaunch: false
+        startWatcherOnLaunch: false,
+        setupCompleted: false,
+        setupCompletedAt: null
       }
     }
   };
@@ -95,6 +116,8 @@ async function writeSettings(settings) {
   settings.profiles.default.contentInbox = settings.profiles.default.contentInbox || path.join(settings.activeProject, "content_inbox");
   settings.profiles.default.exportDirectory = settings.profiles.default.exportDirectory || path.join(settings.activeProject, "out", "approved_posts");
   settings.profiles.default.analyticsDirectory = settings.profiles.default.analyticsDirectory || path.join(settings.activeProject, "analytics");
+  settings.profiles.default.setupCompleted = Boolean(settings.profiles.default.setupCompleted);
+  settings.profiles.default.setupCompletedAt = settings.profiles.default.setupCompletedAt || null;
   activeProjectRoot = settings.activeProject;
   await ensureRuntimeProject(activeProjectRoot);
   await fsp.mkdir(path.dirname(settingsPath()), { recursive: true });
@@ -204,6 +227,8 @@ function createMenu() {
         { label: "Open Project", click: () => pickDirectory("project") },
         { label: "Choose Content Inbox", click: () => pickDirectory("contentInbox") },
         { label: "Choose Export Directory", click: () => pickDirectory("exportDirectory") },
+        { label: "Open Content Inbox", click: () => openContentInbox() },
+        { label: "Run First-Run Setup", click: () => runFirstRunSetup(true) },
         { type: "separator" },
         { role: "quit" }
       ]
@@ -240,11 +265,25 @@ function createMenu() {
     {
       label: "Help",
       submenu: [
-        { label: "About HigherKey", click: () => dialog.showMessageBox({ message: "HigherKey Growth Engine", detail: "Local-first Operator shell. No cloud or social APIs." }) }
+        { label: "About HigherKey Operator OS", click: () => showAboutPanel() }
       ]
     }
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
+async function createSplashWindow() {
+  splashWindow = new BrowserWindow({
+    width: 460,
+    height: 360,
+    frame: false,
+    resizable: false,
+    show: false,
+    title: "HigherKey Operator OS",
+    webPreferences: { sandbox: true }
+  });
+  await splashWindow.loadFile(path.join(__dirname, "splash.html"));
+  splashWindow.once("ready-to-show", () => splashWindow?.show());
 }
 
 async function createWindow(url) {
@@ -262,10 +301,37 @@ async function createWindow(url) {
     }
   });
   await mainWindow.loadURL(url);
+  splashWindow?.close();
+  splashWindow = null;
   if (process.env.HK_ELECTRON_SMOKE === "1") {
     notify("HigherKey verification", "Electron notification path is wired.");
     setTimeout(() => app.quit(), 1200);
   }
+}
+
+async function showAboutPanel() {
+  const info = releaseInfo();
+  let diagnosticsStatus = "not run";
+  let qaStatus = "not run";
+  try {
+    diagnosticsStatus = JSON.parse(await fsp.readFile(path.join(activeProjectRoot, "analytics", "diagnostics.json"), "utf8")).status || diagnosticsStatus;
+  } catch {}
+  try {
+    qaStatus = JSON.parse(await fsp.readFile(path.join(activeProjectRoot, "analytics", "qa_report.json"), "utf8")).status || qaStatus;
+  } catch {}
+  return dialog.showMessageBox(mainWindow, {
+    type: "info",
+    message: `${info.product_name} ${info.version}`,
+    detail: [
+      info.release_name,
+      `Build status: ${info.build_status}`,
+      `App ID: ${info.app_id}`,
+      `Diagnostics: ${diagnosticsStatus}`,
+      `Full QA: ${qaStatus}`,
+      "",
+      info.local_first_statement
+    ].join("\n")
+  });
 }
 
 function runPython(args) {
@@ -354,6 +420,57 @@ async function pickDirectory(kind) {
   return selected;
 }
 
+async function openContentInbox() {
+  const settings = await readSettings();
+  const inbox = settings.profiles.default.contentInbox || path.join(activeProjectRoot, "content_inbox");
+  await fsp.mkdir(inbox, { recursive: true });
+  await shell.openPath(inbox);
+  return { path: inbox };
+}
+
+async function runFirstRunSetup(force = false) {
+  if (process.env.HK_ELECTRON_SMOKE === "1") return { skipped: true, reason: "smoke mode" };
+  const settings = await readSettings();
+  const profile = settings.profiles.default;
+  if (profile.setupCompleted && !force) return { skipped: true, reason: "already completed" };
+
+  const start = await dialog.showMessageBox(mainWindow, {
+    type: "info",
+    buttons: ["Start Setup", "Use Defaults"],
+    defaultId: 0,
+    cancelId: 1,
+    message: "Set up HigherKey Operator OS",
+    detail: "Choose local folders, verify FFmpeg, run diagnostics, then open the Operator workspace."
+  });
+  if (start.response === 0) {
+    const project = await dialog.showOpenDialog(mainWindow, { title: "Choose Project Folder", properties: ["openDirectory", "createDirectory"] });
+    if (!project.canceled && project.filePaths[0]) {
+      settings.activeProject = project.filePaths[0];
+      activeProjectRoot = project.filePaths[0];
+      profile.projectPath = project.filePaths[0];
+      profile.contentInbox = path.join(project.filePaths[0], "content_inbox");
+      profile.exportDirectory = path.join(project.filePaths[0], "out", "approved_posts");
+      profile.analyticsDirectory = path.join(project.filePaths[0], "analytics");
+    }
+    const inbox = await dialog.showOpenDialog(mainWindow, { title: "Choose Content Inbox", properties: ["openDirectory", "createDirectory"] });
+    if (!inbox.canceled && inbox.filePaths[0]) {
+      profile.contentInbox = inbox.filePaths[0];
+    }
+  }
+  await writeSettings(settings);
+  const diagnostics = await runPython(["scripts/run_diagnostics.py"]);
+  profile.setupCompleted = true;
+  profile.setupCompletedAt = new Date().toISOString();
+  await writeSettings(settings);
+  mainWindow?.webContents.send("higherkey:settings", settings);
+  await dialog.showMessageBox(mainWindow, {
+    type: diagnostics.code === 0 ? "info" : "warning",
+    message: diagnostics.code === 0 ? "Setup complete" : "Setup completed with diagnostics warnings",
+    detail: "The Operator workspace is ready. Generated outputs will stay in the selected local project folder."
+  });
+  return { completed: true, diagnostics };
+}
+
 async function ingestDroppedFiles(filePaths) {
   const settings = await readSettings();
   const inbox = settings.profiles.default.contentInbox || path.join(activeProjectRoot, "content_inbox");
@@ -379,6 +496,10 @@ function registerIpc() {
   ipcMain.handle("media:buildCache", () => runPython(["scripts/build_media_cache.py"]));
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("qa:runFull", () => runPython(["scripts/run_full_qa.py"]));
+  ipcMain.handle("app:info", () => ({ ...releaseInfo(), packaged: app.isPackaged, projectRoot: activeProjectRoot }));
+  ipcMain.handle("app:about", showAboutPanel);
+  ipcMain.handle("setup:firstRun", () => runFirstRunSetup(true));
+  ipcMain.handle("folder:openContentInbox", openContentInbox);
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
   ipcMain.handle("notify:test", () => {
     notify("HigherKey notification test", "Local notifications are wired.");
@@ -387,11 +508,13 @@ function registerIpc() {
 }
 
 app.whenReady().then(async () => {
+  await createSplashWindow();
   await writeSettings(await readSettings());
   registerIpc();
   createMenu();
   const url = await startStaticServer();
   await createWindow(url);
+  await runFirstRunSetup(false);
   activityPoll = setInterval(pollActivity, 4000);
   const settings = await readSettings();
   if (settings.profiles.default.startWatcherOnLaunch) {

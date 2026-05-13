@@ -1,0 +1,8 @@
+{
+  "app_id": "com.higherkey.operatoros",
+  "build_status": "release-candidate",
+  "local_first_statement": "HigherKey Operator OS runs locally. No cloud APIs or social APIs are configured.",
+  "product_name": "HigherKey Operator OS",
+  "release_name": "Release Candidate Desktop Demo",
+  "version": "V2.7"
+}

@@ -348,6 +348,48 @@ Packaged app QA checklist:
 - Confirm generated files appear in the selected project folder, not app resources or `app.asar`.
 - Confirm `analytics/diagnostics.json` and `analytics/qa_report.json` report `pass` or only expected warnings.
 
+## Release Candidate Desktop Demo
+
+V2.7 polishes HigherKey Operator OS for release-candidate desktop demos. The Electron shell now shows a startup splash screen, runs an optional first-run setup flow, and exposes an About panel with product identity, version, build status, app id, and local-first status.
+
+First-run setup guides the operator through a writable project folder, content inbox selection, FFmpeg health confirmation through diagnostics, and opening the Operator UI. The same runtime path rules from V2.4 remain in force: generated outputs stay in the selected writable project folder or Electron `userData`, never in app resources or `app.asar`.
+
+Demo-focused Operator UI controls:
+
+- `Open Inbox` opens the configured local content inbox.
+- `Run First Pipeline` runs one local pipeline pass.
+- `About` opens the desktop About panel in Electron or shows release info in static browser mode.
+- Empty states now explain the local first-run path without requiring cloud or social integrations.
+
+Generate release notes:
+
+```bash
+python3 scripts/generate_release_notes.py
+```
+
+This writes `RELEASE_NOTES.md`. A repeatable desktop demo script lives in `DEMO_CHECKLIST.md`, and final icon replacement notes live in `build/ICON_NOTES.md`.
+
+DMG/release build checklist:
+
+- Run `python3 scripts/generate_release_notes.py`.
+- Run `npm run electron:verify`.
+- Run `npm run qa:full`.
+- Run `npm run dist:dir` and verify `dist/mac-arm64/HigherKey Operator OS.app`.
+- Run `npm run dist:unsigned` only when an unsigned DMG is needed for local testing.
+- Launch the unpacked app and complete first-run setup against a writable project folder.
+- Confirm `dashboard/`, `electron/`, `growth_engine/`, `scripts/`, and `config/` are available from packaged resources.
+- Confirm `content_inbox/`, `analytics/`, `queue/`, `clips/`, `captions/`, `logs/`, and `out/` are writable in the runtime project folder.
+- Confirm diagnostics and QA reports are JSON-readable by the dashboard.
+- Confirm no cloud APIs, social APIs, or publishing credentials are configured.
+
+V2.7 verification note:
+
+- In a sandboxed macOS verification path, `npm run electron:verify` can abort with `SIGABRT` during Electron/AppKit/HIServices application registration before product renderer logic runs.
+- The same `electron:verify` path passed when run with GUI permission.
+- `npm run dist:dir` passed.
+- `npm run qa:full` passed.
+- Treat sandbox-only `SIGABRT` as an environment limitation unless it reproduces when launching `dist/mac-arm64/HigherKey Operator OS.app` directly.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

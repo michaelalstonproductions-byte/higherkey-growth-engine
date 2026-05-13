@@ -68,8 +68,16 @@
       }
 
       .topbar { align-items: center; justify-content: space-between; }
-      .brand h1 { font-size: 20px; line-height: 1; margin: 0; letter-spacing: 0; }
+      .brand h1 { align-items: center; display: flex; flex-wrap: wrap; font-size: 20px; gap: 8px; line-height: 1; margin: 0; letter-spacing: 0; }
       .brand div { color: var(--muted); font-size: 12px; margin-top: 4px; }
+      .version-badge {
+        border: 1px solid rgba(101, 168, 255, 0.45);
+        border-radius: 999px;
+        color: var(--accent);
+        font-size: 11px;
+        font-weight: 800;
+        padding: 4px 7px;
+      }
       .tools, .statusbar, .chips { align-items: center; flex-wrap: wrap; }
       .statusbar { margin-top: 12px; }
 
@@ -367,10 +375,13 @@
       <header>
         <div class="topbar">
           <div class="brand">
-            <h1>HigherKey Operator</h1>
+            <h1>HigherKey Operator <span class="version-badge" id="versionBadge">V2.7 RC</span></h1>
             <div id="sessionLine">Loading local session</div>
           </div>
           <div class="tools">
+            <button id="openInbox">Open Inbox</button>
+            <button id="runFirstPipeline">Run First Pipeline</button>
+            <button id="aboutApp">About</button>
             <button id="batchApprove">Approve Selected</button>
             <button id="batchReject" class="danger">Reject Selected</button>
             <button id="exportApproved" class="primary">Export Approved</button>
@@ -485,7 +496,8 @@
         recommendations: "../analytics/recommendations.json",
         mediaCache: "../analytics/media_cache.json",
         diagnostics: "../analytics/diagnostics.json",
-        qaReport: "../analytics/qa_report.json"
+        qaReport: "../analytics/qa_report.json",
+        release: "../config/release.json"
       };
       const REVIEW_KEY = "higherkey.review_status.v1";
       const PRIORITY_KEY = "higherkey.queue_priority.v21";
@@ -517,6 +529,8 @@
         mediaCacheByClip: {},
         diagnostics: null,
         qaReport: null,
+        release: null,
+        appInfo: null,
         live: { refreshing: false, intervalMs: 4000, lastRefresh: null },
         playback: { clipId: null, time: 0, paused: true }
       };
@@ -547,6 +561,12 @@
       function tags(entry) { return entry.metadata?.semantic_tags || []; }
       function labels(entry) { return entry.metadata?.scene_labels || entry.package?.scene_labels || entry.scene_labels || []; }
       function title(entry) { return entry.metadata?.optimized_title || entry.package?.suggested_title || entry.package?.hook || entry.clip_id; }
+      function releaseInfo() { return state.appInfo || state.release || { version: "V2.7", build_status: "release-candidate" }; }
+      function versionLabel() {
+        const release = releaseInfo();
+        const status = String(release.build_status || "").toLowerCase().includes("release") ? "RC" : (release.build_status || "local");
+        return `${release.version || "V2.7"} ${status}`;
+      }
       function setNotice(message) {
         $("notice").textContent = message;
         $("notice").classList.toggle("visible", Boolean(message));
@@ -581,6 +601,7 @@
         const cached = state.mediaCache?.status_counts?.cached || 0;
         const health = state.diagnostics?.status || state.qaReport?.status || "unknown";
         $("systemStatus").innerHTML = [
+          ["Version", versionLabel()],
           ["Queue", state.entries.length],
           ["Selected", state.selected.size],
           ["Approved", approved],
@@ -591,6 +612,7 @@
           ["Pipeline", state.status?.state || "idle"],
           ["Agents", runningAgents ? `${runningAgents} running` : (state.agents?.execution_mode || "idle")]
         ].map(([label, value]) => `<span class="stat"><strong>${html(value)}</strong> ${html(label)}</span>`).join("");
+        $("versionBadge").textContent = versionLabel();
         $("sessionLine").textContent = `${window.higherkey ? "Electron bridge online" : "Static browser mode"} · ${state.entries.length} local clips`;
       }
 
@@ -609,7 +631,7 @@
               </div>
             </div>
           </div>
-        `).join("") || `<div class="card">No clips match this workspace view.</div>`;
+        `).join("") || `<div class="card"><h3>No clips yet</h3><div class="muted">Open the content inbox, add local video files, then run the first pipeline pass. Static browser mode can review clips once local JSON files exist.</div></div>`;
         document.querySelectorAll("[data-entry-id]").forEach((node) => node.addEventListener("click", (event) => {
           if (event.target.matches("input")) return;
           setActive(node.dataset.entryId);
@@ -626,9 +648,9 @@
         snapshotPlayback();
         const entry = activeEntry();
         if (!entry) {
-          $("viewer").innerHTML = `<div class="viewer-empty"><h2>No media queued</h2><p>Drop clips into content_inbox or start the watcher daemon.</p></div>`;
+          $("viewer").innerHTML = `<div class="viewer-empty"><h2>No media queued</h2><p>Use Open Inbox to add local videos, then Run First Pipeline. In static browser mode, place videos in content_inbox and run python3 scripts/run_pipeline.py.</p></div>`;
           $("monitorTitle").textContent = "No clip selected";
-          $("monitorCaption").textContent = "Waiting for local queue data.";
+          $("monitorCaption").textContent = "Waiting for local queue data from queue/review_queue.json.";
           $("monitorChips").innerHTML = "";
           return;
         }
@@ -677,7 +699,9 @@
           <div class="card"><h3>Desktop Bridge</h3>
             <div class="tools">
               <button data-desktop-action="pick-content">Inbox</button>
+              <button data-desktop-action="open-inbox">Open Inbox</button>
               <button data-desktop-action="pick-export">Export</button>
+              <button data-desktop-action="first-run-setup">Setup</button>
               <button data-desktop-action="start-watcher">Start Watcher</button>
               <button data-desktop-action="run-once">Run Once</button>
               <button data-desktop-action="run-orchestrator">Run Agents</button>
@@ -992,6 +1016,27 @@
         setNotice(`${approved.length} approved decisions exported.`);
       }
 
+      async function openInbox() {
+        if (!window.higherkey) return setNotice("Static mode: open content_inbox from the project folder and add local videos.");
+        const result = await window.higherkey.openContentInbox();
+        setNotice(`Content inbox opened: ${result.path}`);
+      }
+
+      async function runFirstPipeline() {
+        if (!window.higherkey) return setNotice("Static mode: run python3 scripts/run_pipeline.py from the project root.");
+        await window.higherkey.runPipelineOnce();
+        setNotice("First pipeline pass completed. Refreshing local queue data.");
+        await refreshLiveData();
+      }
+
+      async function showAbout() {
+        if (!window.higherkey) {
+          const release = releaseInfo();
+          return setNotice(`${release.product_name || "HigherKey Operator OS"} ${release.version || "V2.7"} · local-first desktop demo.`);
+        }
+        await window.higherkey.showAbout();
+      }
+
       function wireDesktopActions() {
         document.querySelectorAll("[data-desktop-action]").forEach((button) => {
           button.disabled = !window.higherkey;
@@ -999,7 +1044,9 @@
             if (!window.higherkey) return setNotice("Desktop actions require Electron. Static mode remains fully usable for review.");
             const action = button.dataset.desktopAction;
             if (action === "pick-content") await window.higherkey.pickDirectory("contentInbox");
+            if (action === "open-inbox") await window.higherkey.openContentInbox();
             if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
+            if (action === "first-run-setup") await window.higherkey.runFirstRunSetup();
             if (action === "start-watcher") await window.higherkey.startWatcher();
             if (action === "run-once") await window.higherkey.runPipelineOnce();
             if (action === "run-orchestrator") await window.higherkey.runOrchestratorOnce();
@@ -1032,6 +1079,8 @@
           state.mediaCacheByClip = state.mediaCache?.clips || {};
           state.diagnostics = await optionalJson(PATHS.diagnostics, null);
           state.qaReport = await optionalJson(PATHS.qaReport, null);
+          state.release = await optionalJson(PATHS.release, null);
+          state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => null) : null;
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
           const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
           state.entries = await Promise.all(entries.map(async (entry) => ({
@@ -1075,6 +1124,8 @@
           state.mediaCacheByClip = state.mediaCache?.clips || {};
           state.diagnostics = await optionalJson(PATHS.diagnostics, state.diagnostics);
           state.qaReport = await optionalJson(PATHS.qaReport, state.qaReport);
+          state.release = await optionalJson(PATHS.release, state.release);
+          state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => state.appInfo) : state.appInfo;
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
           const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
           state.entries = await Promise.all(entries.map(async (entry) => ({
@@ -1128,6 +1179,9 @@
       $("batchApprove").addEventListener("click", () => batchReview("approved"));
       $("batchReject").addEventListener("click", () => batchReview("rejected"));
       $("exportApproved").addEventListener("click", exportApprovedReviews);
+      $("openInbox").addEventListener("click", openInbox);
+      $("runFirstPipeline").addEventListener("click", runFirstPipeline);
+      $("aboutApp").addEventListener("click", showAbout);
       $("closeStartup").addEventListener("click", () => $("startupOverlay").classList.remove("visible"));
       $("recoverSession").addEventListener("click", () => { setActive(state.workspace.lastActiveId || state.entries[0]?.id); $("startupOverlay").classList.remove("visible"); });
       $("startupRecover").addEventListener("click", () => { setActive(state.workspace.lastActiveId || state.entries[0]?.id); $("startupOverlay").classList.remove("visible"); });
