@@ -43,7 +43,7 @@ Stop the watcher with `Ctrl-C`.
 
 ## Review Dashboard
 
-Open the local dashboard after clips have been generated:
+Open the local Operator UI after clips have been generated:
 
 ```bash
 python3 -m http.server 8000
@@ -55,7 +55,16 @@ Then visit:
 http://localhost:8000/dashboard/review.html
 ```
 
-The dashboard reads `queue/review_queue.json`, previews generated clips, displays caption drafts, and stores pending, approved, or rejected review status in your browser's local storage. It does not call social platforms or external APIs.
+The Operator UI reads local JSON files, previews generated clips, displays caption packages, and stores pending, approved, or rejected review status in your browser's local storage. It does not call social platforms or external APIs.
+
+V1.8 organizes the UI into tabs:
+
+- `Queue` - review clips, scores, hook moments, labels, tags, and approval status.
+- `Analytics` - local learning summary, top patterns, and recent performance imports.
+- `Search` - filter by text, semantic tags, scene labels, clusters, status, and score.
+- `Clusters` - inspect local topic clusters from `analytics/metadata_index.json`.
+- `Exports` - review local approved-post export manifests.
+- `Settings` - static placeholders for local config, optional AI status, jobs, and logs.
 
 ## Local Content Intelligence
 

@@ -3,24 +3,24 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>HigherKey Review Queue</title>
+    <title>HigherKey Operator</title>
     <style>
       :root {
         color-scheme: light;
-        --bg: #f6f7f9;
+        --bg: #eef1f5;
         --panel: #ffffff;
-        --ink: #1d2430;
+        --panel-2: #f8fafc;
+        --ink: #172033;
         --muted: #667085;
-        --line: #d9dee8;
-        --accent: #2563eb;
-        --approved: #15803d;
-        --rejected: #b42318;
-        --pending: #92400e;
+        --line: #d8dee8;
+        --accent: #1f6feb;
+        --good: #15803d;
+        --warn: #b7791f;
+        --bad: #b42318;
+        --shadow: 0 12px 28px rgba(16, 24, 40, 0.08);
       }
 
-      * {
-        box-sizing: border-box;
-      }
+      * { box-sizing: border-box; }
 
       body {
         margin: 0;
@@ -29,276 +29,239 @@
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
-      header {
-        border-bottom: 1px solid var(--line);
-        background: var(--panel);
-      }
-
-      .header-inner,
-      main {
-        width: min(1180px, calc(100vw - 32px));
-        margin: 0 auto;
-      }
-
-      .header-inner {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        padding: 18px 0;
-      }
-
-      h1 {
-        margin: 0;
-        font-size: 22px;
-        line-height: 1.2;
-      }
-
-      .summary {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        justify-content: flex-end;
-      }
-
-      .pill {
-        border: 1px solid var(--line);
-        border-radius: 999px;
-        background: #fff;
-        color: var(--muted);
-        font-size: 13px;
-        padding: 6px 10px;
-        white-space: nowrap;
-      }
-
-      main {
-        padding: 22px 0 36px;
-      }
-
-      .notice {
-        display: none;
-        border: 1px solid #f3cf72;
-        background: #fff7df;
-        color: #6f4f00;
-        padding: 12px 14px;
-        border-radius: 8px;
-        margin-bottom: 16px;
-        font-size: 14px;
-        line-height: 1.45;
-      }
-
-      .notice.visible {
-        display: block;
-      }
-
-      .toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-
-      .filter {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      label {
-        color: var(--muted);
-        font-size: 13px;
-      }
-
-      select,
-      input,
-      button {
-        min-height: 36px;
+      button, input, select {
         border: 1px solid var(--line);
         border-radius: 7px;
         background: #fff;
         color: var(--ink);
         font: inherit;
-        font-size: 14px;
+        min-height: 36px;
         padding: 0 10px;
       }
 
-      button {
-        cursor: pointer;
+      button { cursor: pointer; }
+      button:hover, input:hover, select:hover { border-color: #aeb8c8; }
+
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-rows: auto 1fr;
       }
 
-      button:hover,
-      input:hover,
-      select:hover {
-        border-color: #b8c0cf;
+      header {
+        background: #fff;
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
 
-      input {
-        min-width: 220px;
+      .header-inner {
+        width: min(1440px, calc(100vw - 28px));
+        margin: 0 auto;
+        padding: 14px 0 12px;
       }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 22px;
+        letter-spacing: 0;
+        line-height: 1.1;
+      }
+
+      .subtitle {
+        color: var(--muted);
+        font-size: 13px;
+        margin-top: 3px;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(120px, 1fr));
+        gap: 10px;
+        margin-top: 14px;
+      }
+
+      .status-card {
+        background: var(--panel-2);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 10px;
+      }
+
+      .status-value {
+        display: block;
+        font-size: 20px;
+        font-weight: 800;
+        line-height: 1;
+      }
+
+      .status-label {
+        color: var(--muted);
+        display: block;
+        font-size: 12px;
+        margin-top: 5px;
+      }
+
+      main {
+        width: min(1440px, calc(100vw - 28px));
+        margin: 0 auto;
+        padding: 18px 0 34px;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        margin-bottom: 14px;
+      }
+
+      .tab {
+        background: #fff;
+        border: 1px solid var(--line);
+        color: var(--muted);
+        flex: 0 0 auto;
+        font-size: 14px;
+      }
+
+      .tab.active {
+        border-color: var(--accent);
+        color: var(--accent);
+        font-weight: 750;
+      }
+
+      .panel { display: none; }
+      .panel.active { display: block; }
+
+      .notice {
+        display: none;
+        border: 1px solid #f1cb66;
+        background: #fff8df;
+        color: #684b05;
+        border-radius: 8px;
+        padding: 10px 12px;
+        margin-bottom: 14px;
+        font-size: 14px;
+      }
+
+      .notice.visible { display: block; }
+
+      .toolbar, .filters {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .filters {
+        justify-content: flex-start;
+        flex-wrap: wrap;
+      }
+
+      label {
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      input[type="search"] { min-width: 280px; }
 
       .grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
-        gap: 16px;
+        gap: 14px;
       }
 
-      .card {
+      .wide-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 14px;
+      }
+
+      .card, .ops-card {
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 8px;
         overflow: hidden;
+        box-shadow: var(--shadow);
       }
 
+      .ops-card { padding: 14px; }
+
       .preview {
-        background: #111827;
+        background: #0f172a;
         display: grid;
         place-items: center;
         aspect-ratio: 9 / 16;
-        max-height: 540px;
+        max-height: 500px;
       }
 
       video {
+        display: block;
         width: 100%;
         height: 100%;
         object-fit: contain;
-        display: block;
       }
 
-      .body {
-        padding: 14px;
-      }
+      .body { padding: 13px; }
 
       .row {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
         gap: 10px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
       }
 
       .clip-id {
-        font-weight: 700;
-        font-size: 14px;
+        font-size: 13px;
+        font-weight: 800;
         line-height: 1.35;
         overflow-wrap: anywhere;
-      }
-
-      .status {
-        flex: 0 0 auto;
-      }
-
-      .status[data-state="pending"] {
-        color: var(--pending);
-      }
-
-      .status[data-state="approved"] {
-        color: var(--approved);
-      }
-
-      .status[data-state="rejected"] {
-        color: var(--rejected);
-      }
-
-      .scoreline {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        margin: 0 0 10px;
       }
 
       .score {
         color: var(--accent);
         font-size: 28px;
-        font-weight: 800;
+        font-weight: 850;
         line-height: 1;
       }
 
-      .score-label {
+      .score-label, .muted, .meta {
         color: var(--muted);
         font-size: 12px;
+        line-height: 1.4;
       }
 
-      .signals {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 6px;
-        margin: 10px 0;
-      }
-
-      .signal {
-        border: 1px solid var(--line);
-        border-radius: 7px;
-        padding: 7px 8px;
-        min-width: 0;
-      }
-
-      .signal-value {
-        display: block;
-        color: var(--ink);
-        font-size: 14px;
-        font-weight: 750;
-        line-height: 1.2;
-      }
-
-      .signal-label {
-        display: block;
-        color: var(--muted);
-        font-size: 11px;
-        line-height: 1.2;
-        margin-top: 2px;
-      }
-
-      .hook {
-        font-size: 18px;
+      .title {
+        font-size: 16px;
+        font-weight: 800;
         line-height: 1.25;
-        font-weight: 750;
-        margin: 0 0 8px;
+        margin: 0 0 7px;
       }
 
       .caption {
         color: #344054;
-        font-size: 14px;
-        line-height: 1.45;
-        margin: 0 0 10px;
-      }
-
-      .package {
-        border-top: 1px solid var(--line);
-        margin-top: 12px;
-        padding-top: 12px;
-      }
-
-      .package-title {
-        font-size: 14px;
-        font-weight: 750;
-        line-height: 1.35;
-        margin: 0 0 6px;
-      }
-
-      .package-cta {
-        color: #344054;
         font-size: 13px;
-        line-height: 1.4;
-        margin: 0 0 10px;
+        line-height: 1.45;
+        margin: 0 0 8px;
       }
 
-      .platforms {
-        display: grid;
-        gap: 8px;
-      }
-
-      .labels,
-      .moments {
+      .chips {
         display: flex;
         flex-wrap: wrap;
         gap: 6px;
-        margin: 10px 0;
+        margin: 8px 0;
       }
 
-      .label,
-      .moment {
+      .chip {
         border: 1px solid var(--line);
         border-radius: 999px;
         color: var(--muted);
@@ -307,312 +270,211 @@
         padding: 6px 8px;
       }
 
-      .moment {
+      .chip.strong {
         color: var(--ink);
+        border-color: #b9c2d0;
       }
 
-      .platform {
-        border: 1px solid var(--line);
-        border-radius: 7px;
-        padding: 8px;
-      }
-
-      .platform-name {
-        display: block;
-        font-size: 12px;
-        font-weight: 750;
-        margin-bottom: 4px;
-        text-transform: capitalize;
-      }
-
-      .platform-note {
-        color: var(--muted);
-        display: block;
-        font-size: 12px;
-        line-height: 1.35;
-      }
-
-      .hashtags,
       .meta {
-        color: var(--muted);
-        font-size: 12px;
-        line-height: 1.45;
+        border-top: 1px solid var(--line);
+        display: grid;
+        gap: 3px;
+        margin-top: 10px;
+        padding-top: 10px;
         overflow-wrap: anywhere;
       }
 
-      .meta {
-        display: grid;
-        gap: 3px;
-        border-top: 1px solid var(--line);
-        padding-top: 10px;
-        margin-top: 10px;
-      }
-
-      .empty {
-        display: none;
-        border: 1px dashed var(--line);
-        border-radius: 8px;
-        padding: 26px;
-        text-align: center;
-        color: var(--muted);
-        background: #fff;
-      }
-
-      .empty.visible {
-        display: block;
-      }
-
-      .analytics {
-        background: var(--panel);
+      .metric {
         border: 1px solid var(--line);
         border-radius: 8px;
-        margin-bottom: 16px;
-        padding: 14px;
+        padding: 10px;
       }
 
-      .analytics h2 {
-        font-size: 16px;
-        line-height: 1.2;
-        margin: 0 0 10px;
-      }
-
-      .analytics-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-        gap: 10px;
-      }
-
-      .analytics-item {
-        border: 1px solid var(--line);
-        border-radius: 7px;
-        padding: 9px;
-      }
-
-      .analytics-value {
+      .metric-value {
         display: block;
-        font-size: 16px;
-        font-weight: 800;
+        font-size: 18px;
+        font-weight: 850;
       }
 
-      .analytics-label {
+      .metric-label {
         color: var(--muted);
         display: block;
         font-size: 12px;
         margin-top: 3px;
       }
 
-      .searchbar {
-        align-items: center;
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
-        margin-bottom: 16px;
+      .empty {
+        display: none;
+        background: #fff;
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+        padding: 24px;
+        text-align: center;
       }
 
-      @media (max-width: 720px) {
-        .header-inner,
-        .toolbar {
-          align-items: stretch;
-          flex-direction: column;
-        }
+      .empty.visible { display: block; }
 
-        .summary {
-          justify-content: flex-start;
-        }
-
-        .grid {
-          grid-template-columns: 1fr;
-        }
+      @media (max-width: 900px) {
+        .topbar, .toolbar { align-items: stretch; flex-direction: column; }
+        .status-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        input[type="search"] { min-width: 180px; width: 100%; }
       }
     </style>
   </head>
   <body>
-    <header>
-      <div class="header-inner">
-        <h1>HigherKey Review Queue</h1>
-        <div class="summary" id="summary">
-          <span class="pill">Loading queue</span>
-        </div>
-      </div>
-    </header>
-    <main>
-      <div class="notice" id="notice"></div>
-      <div class="toolbar">
-        <div class="filter">
-          <label for="statusFilter">Status</label>
-          <select id="statusFilter">
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-        </div>
-        <div class="filter">
-          <button id="exportApproved" type="button">Export Approved JSON</button>
-          <button id="resetReviews" type="button">Reset Local Reviews</button>
-        </div>
-      </div>
-      <div class="searchbar">
-        <label for="searchInput">Search</label>
-        <input id="searchInput" type="search" placeholder="Hook, tag, label, cluster">
-        <label for="tagFilter">Tag</label>
-        <select id="tagFilter"><option value="all">All tags</option></select>
-        <label for="labelFilter">Label</label>
-        <select id="labelFilter"><option value="all">All labels</option></select>
-        <label for="clusterFilter">Cluster</label>
-        <select id="clusterFilter"><option value="all">All clusters</option></select>
-        <label for="scoreFilter">Score</label>
-        <select id="scoreFilter">
-          <option value="all">Any score</option>
-          <option value="50">50+</option>
-          <option value="25">25+</option>
-        </select>
-      </div>
-      <section class="analytics" id="analyticsPanel">
-        <h2>Analytics</h2>
-        <div class="analytics-grid" id="analyticsGrid">
-          <div class="analytics-item">
-            <span class="analytics-value">No local metrics imported</span>
-            <span class="analytics-label">Run scripts/import_performance_metrics.py</span>
+    <div class="shell">
+      <header>
+        <div class="header-inner">
+          <div class="topbar">
+            <div>
+              <h1>HigherKey Operator</h1>
+              <div class="subtitle">Local growth engine control surface</div>
+            </div>
+            <div class="filters">
+              <button id="exportApproved" type="button">Export Approved JSON</button>
+              <button id="resetReviews" type="button">Reset Local Reviews</button>
+            </div>
           </div>
+          <section class="status-grid" id="systemStatus">
+            <div class="status-card"><span class="status-value">...</span><span class="status-label">Queue</span></div>
+          </section>
         </div>
-      </section>
-      <section class="grid" id="queueGrid" aria-live="polite"></section>
-      <section class="empty" id="emptyState">No clips match the current filter.</section>
-    </main>
+      </header>
+
+      <main>
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="queue">Queue</button>
+          <button class="tab" data-tab="analytics">Analytics</button>
+          <button class="tab" data-tab="search">Search</button>
+          <button class="tab" data-tab="clusters">Clusters</button>
+          <button class="tab" data-tab="exports">Exports</button>
+          <button class="tab" data-tab="settings">Settings</button>
+        </div>
+        <div class="notice" id="notice"></div>
+
+        <section class="panel active" id="panel-queue">
+          <div class="toolbar">
+            <div class="filters">
+              <label for="queueStatusFilter">Status</label>
+              <select id="queueStatusFilter">
+                <option value="all">All</option>
+                <option value="pending">Pending</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+            </div>
+            <div class="muted">Sorted by hook score</div>
+          </div>
+          <section class="grid" id="queueGrid"></section>
+          <section class="empty" id="queueEmpty">No queue items match the current filter.</section>
+        </section>
+
+        <section class="panel" id="panel-analytics">
+          <section class="wide-grid" id="analyticsGrid"></section>
+          <section class="ops-card" style="margin-top:14px">
+            <h2 class="title">Recent Performance</h2>
+            <div id="recentPerformance" class="wide-grid"></div>
+          </section>
+        </section>
+
+        <section class="panel" id="panel-search">
+          <div class="filters">
+            <label for="searchInput">Search</label>
+            <input id="searchInput" type="search" placeholder="Hook, tag, label, title, cluster">
+            <label for="tagFilter">Tag</label>
+            <select id="tagFilter"><option value="all">All tags</option></select>
+            <label for="labelFilter">Label</label>
+            <select id="labelFilter"><option value="all">All labels</option></select>
+            <label for="clusterFilter">Cluster</label>
+            <select id="clusterFilter"><option value="all">All clusters</option></select>
+            <label for="searchStatusFilter">Status</label>
+            <select id="searchStatusFilter">
+              <option value="all">All</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+            </select>
+            <label for="scoreFilter">Score</label>
+            <select id="scoreFilter">
+              <option value="all">Any</option>
+              <option value="50">50+</option>
+              <option value="25">25+</option>
+            </select>
+          </div>
+          <section class="grid" id="searchGrid"></section>
+          <section class="empty" id="searchEmpty">No indexed clips match the current search.</section>
+        </section>
+
+        <section class="panel" id="panel-clusters">
+          <section class="wide-grid" id="clustersGrid"></section>
+        </section>
+
+        <section class="panel" id="panel-exports">
+          <section class="wide-grid" id="exportsGrid"></section>
+        </section>
+
+        <section class="panel" id="panel-settings">
+          <section class="wide-grid" id="settingsGrid"></section>
+        </section>
+      </main>
+    </div>
 
     <script>
-      const QUEUE_PATH = "../queue/review_queue.json";
-      const LEARNING_SUMMARY_PATH = "../analytics/learning_summary.json";
-      const TOP_PATTERNS_PATH = "../analytics/top_patterns.json";
-      const METADATA_INDEX_PATH = "../analytics/metadata_index.json";
+      const PATHS = {
+        queue: "../queue/review_queue.json",
+        learning: "../analytics/learning_summary.json",
+        patterns: "../analytics/top_patterns.json",
+        metadata: "../analytics/metadata_index.json",
+        exports: "../out/approved_posts/manifest.json",
+        index: "../analytics/video_index.json"
+      };
       const REVIEW_KEY = "higherkey.review_status.v1";
-      const grid = document.querySelector("#queueGrid");
-      const summary = document.querySelector("#summary");
-      const notice = document.querySelector("#notice");
-      const statusFilter = document.querySelector("#statusFilter");
-      const exportApproved = document.querySelector("#exportApproved");
-      const resetReviews = document.querySelector("#resetReviews");
-      const emptyState = document.querySelector("#emptyState");
-      const analyticsGrid = document.querySelector("#analyticsGrid");
-      const searchInput = document.querySelector("#searchInput");
-      const tagFilter = document.querySelector("#tagFilter");
-      const labelFilter = document.querySelector("#labelFilter");
-      const clusterFilter = document.querySelector("#clusterFilter");
-      const scoreFilter = document.querySelector("#scoreFilter");
-      let entries = [];
-      let metadataByClip = {};
-      let reviewState = loadReviewState();
+
+      const state = {
+        queue: { entries: [] },
+        entries: [],
+        metadata: { items: [], clusters: [] },
+        metadataByClip: {},
+        learning: null,
+        patterns: null,
+        exports: null,
+        index: null,
+        review: loadReviewState(),
+        activeTab: "queue"
+      };
+
+      const el = (id) => document.getElementById(id);
 
       function loadReviewState() {
-        try {
-          return JSON.parse(localStorage.getItem(REVIEW_KEY) || "{}");
-        } catch (error) {
-          return {};
-        }
+        try { return JSON.parse(localStorage.getItem(REVIEW_KEY) || "{}"); }
+        catch (error) { return {}; }
       }
 
       function saveReviewState() {
-        localStorage.setItem(REVIEW_KEY, JSON.stringify(reviewState));
+        localStorage.setItem(REVIEW_KEY, JSON.stringify(state.review));
       }
 
       async function readJson(path) {
         const response = await fetch(path, { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(`${path} returned ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`${path} returned ${response.status}`);
         return response.json();
       }
 
-      function normalizeStatus(entry) {
-        const stored = reviewState[entry.id];
-        if (stored === "approved" || stored === "rejected" || stored === "pending") {
-          return stored;
-        }
-        return "pending";
-      }
-
-      function setNotice(message) {
-        notice.textContent = message;
-        notice.classList.toggle("visible", Boolean(message));
+      async function optionalJson(path, fallback) {
+        try { return await readJson(path); }
+        catch (error) { return fallback; }
       }
 
       function escapeHtml(value) {
         return String(value ?? "").replace(/[&<>"']/g, (char) => ({
-          "&": "&amp;",
-          "<": "&lt;",
-          ">": "&gt;",
-          '"': "&quot;",
-          "'": "&#39;"
+          "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
         })[char]);
       }
 
-      function renderSummary(filtered) {
-        const counts = entries.reduce((acc, entry) => {
-          acc[normalizeStatus(entry)] += 1;
-          return acc;
-        }, { pending: 0, approved: 0, rejected: 0 });
-        summary.innerHTML = [
-          `<span class="pill">${entries.length} total</span>`,
-          `<span class="pill">${filtered.length} shown</span>`,
-          `<span class="pill">${counts.pending} pending</span>`,
-          `<span class="pill">${counts.approved} approved</span>`,
-          `<span class="pill">${counts.rejected} rejected</span>`
-        ].join("");
-      }
-
-      function render() {
-        const filter = statusFilter.value;
-        const query = searchInput.value.trim().toLowerCase();
-        const filtered = entries
-          .filter((entry) => filter === "all" || normalizeStatus(entry) === filter)
-          .filter((entry) => passesMetadataFilters(entry, query))
-          .sort((a, b) => scoreValue(b) - scoreValue(a));
-        renderSummary(filtered);
-        emptyState.classList.toggle("visible", filtered.length === 0);
-        grid.innerHTML = filtered.map(renderCard).join("");
-
-        grid.querySelectorAll("[data-status-select]").forEach((select) => {
-          select.addEventListener("change", (event) => {
-            const id = event.currentTarget.dataset.entryId;
-            reviewState[id] = event.currentTarget.value;
-            saveReviewState();
-            render();
-          });
-        });
-      }
-
-      function passesMetadataFilters(entry, query) {
-        const metadata = entry.metadata || {};
-        const tags = metadata.semantic_tags || [];
-        const labels = metadata.scene_labels || entry.scene_labels || [];
-        const cluster = metadata.cluster_id || "";
-        const haystack = [
-          metadata.search_text,
-          metadata.optimized_title,
-          entry.clip_id,
-          entry.package?.hook,
-          entry.package?.caption,
-          tags.join(" "),
-          labels.join(" "),
-          cluster
-        ].join(" ").toLowerCase();
-        if (query && !haystack.includes(query)) {
-          return false;
-        }
-        if (tagFilter.value !== "all" && !tags.includes(tagFilter.value)) {
-          return false;
-        }
-        if (labelFilter.value !== "all" && !labels.includes(labelFilter.value)) {
-          return false;
-        }
-        if (clusterFilter.value !== "all" && cluster !== clusterFilter.value) {
-          return false;
-        }
-        if (scoreFilter.value !== "all" && scoreValue(entry) < Number(scoreFilter.value)) {
-          return false;
-        }
-        return true;
+      function normalizeStatus(entry) {
+        const stored = state.review[entry.id];
+        return ["approved", "rejected", "pending"].includes(stored) ? stored : "pending";
       }
 
       function scoreValue(entry) {
@@ -620,158 +482,235 @@
       }
 
       function formatMetric(value, fallback = "0") {
-        if (value === null || value === undefined || value === "") {
-          return fallback;
-        }
-        if (Number.isFinite(Number(value))) {
-          return Number(value).toFixed(Number(value) % 1 === 0 ? 0 : 1);
-        }
-        return String(value);
+        if (value === null || value === undefined || value === "") return fallback;
+        const num = Number(value);
+        return Number.isFinite(num) ? num.toFixed(num % 1 === 0 ? 0 : 1) : String(value);
       }
 
-      function renderCard(entry) {
-        const packageData = entry.package || {};
+      function setNotice(message) {
+        el("notice").textContent = message;
+        el("notice").classList.toggle("visible", Boolean(message));
+      }
+
+      function chips(values, strong = false) {
+        if (!Array.isArray(values) || values.length === 0) return "";
+        return `<div class="chips">${values.slice(0, 10).map((value) => `<span class="chip${strong ? " strong" : ""}">${escapeHtml(value)}</span>`).join("")}</div>`;
+      }
+
+      function moments(values) {
+        if (!Array.isArray(values) || values.length === 0) return chips(["0.0s opening_context"], true);
+        return chips(values.slice(0, 3).map((moment) => `${formatMetric(moment.timestamp)}s ${(moment.reasons || ["hook"]).join("+")}`), true);
+      }
+
+      function card(entry, compact = false) {
         const metadata = entry.metadata || {};
-        const caption = entry.caption || {};
-        const status = normalizeStatus(entry);
-        const hook = packageData.hook || caption.hook || "Caption hook unavailable";
-        const captionText = packageData.caption || caption.caption || "Caption draft unavailable.";
-        const hashtags = Array.isArray(packageData.hashtags)
-          ? packageData.hashtags.join(" ")
-          : (Array.isArray(caption.hashtags) ? caption.hashtags.join(" ") : "");
-        const visual = entry.analysis?.visual || {};
-        const audio = entry.analysis?.audio || {};
-        const reasons = Array.isArray(entry.score_details?.reasons) ? entry.score_details.reasons.join(", ") : "local score";
-        const sceneLabels = metadata.scene_labels || packageData.scene_labels || entry.scene_labels || entry.analysis?.scene_labels || [];
-        const hookMoments = packageData.hook_moments || entry.hook_moments || entry.analysis?.hook_moments || [];
-        const optimizedTitle = metadata.optimized_title || packageData.suggested_title;
-        const semanticTags = metadata.semantic_tags || [];
-        const packageHtml = renderPackage(packageData, entry);
+        const packageData = entry.package || {};
+        const title = metadata.optimized_title || packageData.suggested_title || packageData.hook || entry.clip_id;
+        const tags = metadata.semantic_tags || [];
+        const labels = metadata.scene_labels || packageData.scene_labels || entry.scene_labels || [];
+        const hookMoments = packageData.hook_moments || entry.hook_moments || [];
         return `
           <article class="card">
-            <div class="preview">
-              <video src="../${escapeHtml(entry.clip_path)}" controls preload="metadata" playsinline></video>
-            </div>
+            ${compact ? "" : `<div class="preview"><video src="../${escapeHtml(entry.clip_path)}" controls preload="metadata" playsinline></video></div>`}
             <div class="body">
               <div class="row">
-                <div class="clip-id">${escapeHtml(entry.clip_id)}</div>
-                <select class="status" data-state="${status}" data-status-select data-entry-id="${escapeHtml(entry.id)}" aria-label="Review status for ${escapeHtml(entry.clip_id)}">
-                  <option value="pending"${status === "pending" ? " selected" : ""}>Pending</option>
-                  <option value="approved"${status === "approved" ? " selected" : ""}>Approved</option>
-                  <option value="rejected"${status === "rejected" ? " selected" : ""}>Rejected</option>
-                </select>
-              </div>
-              <div class="scoreline">
+                <div>
+                  <div class="clip-id">${escapeHtml(entry.clip_id)}</div>
+                  <div class="muted">${escapeHtml(metadata.cluster_id || "unclustered")}</div>
+                </div>
                 <div>
                   <div class="score">${escapeHtml(scoreValue(entry))}</div>
-                  <div class="score-label">Hook score</div>
-                </div>
-                <div class="score-label">${escapeHtml(reasons)}</div>
-              </div>
-              <p class="hook">${escapeHtml(hook)}</p>
-              <p class="package-title">${escapeHtml(optimizedTitle || "")}</p>
-              <p class="caption">${escapeHtml(captionText)}</p>
-              <div class="hashtags">${escapeHtml(hashtags)}</div>
-              ${renderSemanticTags(semanticTags)}
-              ${renderSceneLabels(sceneLabels)}
-              ${renderHookMoments(hookMoments)}
-              <div class="signals" aria-label="Local analysis signals">
-                <div class="signal">
-                  <span class="signal-value">${escapeHtml(formatMetric(visual.scene_changes))}</span>
-                  <span class="signal-label">Scene changes</span>
-                </div>
-                <div class="signal">
-                  <span class="signal-value">${escapeHtml(formatMetric(visual.motion_intensity))}</span>
-                  <span class="signal-label">Motion</span>
-                </div>
-                <div class="signal">
-                  <span class="signal-value">${escapeHtml(formatMetric(visual.brightness_change))}</span>
-                  <span class="signal-label">Brightness shift</span>
-                </div>
-                <div class="signal">
-                  <span class="signal-value">${escapeHtml(formatMetric(audio.audio_energy_peaks))}</span>
-                  <span class="signal-label">Audio peaks</span>
+                  <div class="score-label">score</div>
                 </div>
               </div>
-              ${packageHtml}
+              <p class="title">${escapeHtml(title)}</p>
+              <p class="caption">${escapeHtml(packageData.caption || entry.caption?.caption || "")}</p>
+              ${moments(hookMoments)}
+              ${chips(labels, true)}
+              ${chips(tags)}
+              <div class="row">
+                <select data-status-select data-entry-id="${escapeHtml(entry.id)}" aria-label="Approval status">
+                  <option value="pending"${normalizeStatus(entry) === "pending" ? " selected" : ""}>Pending</option>
+                  <option value="approved"${normalizeStatus(entry) === "approved" ? " selected" : ""}>Approved</option>
+                  <option value="rejected"${normalizeStatus(entry) === "rejected" ? " selected" : ""}>Rejected</option>
+                </select>
+              </div>
               <div class="meta">
-                <div>Source: ${escapeHtml(entry.source_path)}</div>
                 <div>Clip: ${escapeHtml(entry.clip_path)}</div>
-                <div>Caption: ${escapeHtml(entry.caption_path || "none")}</div>
                 <div>Package: ${escapeHtml(entry.package_path || "none")}</div>
-                <div>Cluster: ${escapeHtml(metadata.cluster_id || "none")}</div>
-                <div>Subtitles: ${escapeHtml(packageData.subtitle_status || entry.subtitle_status || "not_extracted")}</div>
               </div>
             </div>
           </article>
         `;
       }
 
-      function renderSemanticTags(tags) {
-        if (!Array.isArray(tags) || tags.length === 0) {
-          return "";
-        }
-        return `<div class="labels">${tags.slice(0, 8).map((tag) => `<span class="label">${escapeHtml(tag)}</span>`).join("")}</div>`;
+      function wireStatusSelects(root) {
+        root.querySelectorAll("[data-status-select]").forEach((select) => {
+          select.addEventListener("change", (event) => {
+            state.review[event.currentTarget.dataset.entryId] = event.currentTarget.value;
+            saveReviewState();
+            renderAll();
+          });
+        });
       }
 
-      function renderSceneLabels(labels) {
-        if (!Array.isArray(labels) || labels.length === 0) {
-          return '<div class="labels"><span class="label">unlabeled</span></div>';
-        }
-        return `<div class="labels">${labels.map((label) => `<span class="label">${escapeHtml(label)}</span>`).join("")}</div>`;
+      function renderStatus() {
+        const approved = state.entries.filter((entry) => normalizeStatus(entry) === "approved").length;
+        const exported = state.exports?.count || 0;
+        const indexed = state.metadata?.count || state.metadata?.items?.length || 0;
+        const lastRun = state.queue.updated_at || state.index?.videos ? state.queue.updated_at || "available" : "unknown";
+        el("systemStatus").innerHTML = [
+          ["Queue", state.entries.length],
+          ["Approved", approved],
+          ["Exported", exported],
+          ["Indexed clips", indexed],
+          ["Last pipeline run", lastRun || "unknown"]
+        ].map(([label, value]) => `
+          <div class="status-card"><span class="status-value">${escapeHtml(value)}</span><span class="status-label">${escapeHtml(label)}</span></div>
+        `).join("");
       }
 
-      function renderHookMoments(moments) {
-        if (!Array.isArray(moments) || moments.length === 0) {
-          return '<div class="moments"><span class="moment">0.0s opening context</span></div>';
-        }
-        return `<div class="moments">${moments.slice(0, 3).map((moment) => {
-          const reasons = Array.isArray(moment.reasons) ? moment.reasons.join("+") : "hook";
-          return `<span class="moment">${escapeHtml(formatMetric(moment.timestamp, "0"))}s ${escapeHtml(reasons)}</span>`;
-        }).join("")}</div>`;
+      function renderQueue() {
+        const filter = el("queueStatusFilter").value;
+        const entries = state.entries
+          .filter((entry) => filter === "all" || normalizeStatus(entry) === filter)
+          .sort((a, b) => scoreValue(b) - scoreValue(a));
+        el("queueGrid").innerHTML = entries.map((entry) => card(entry)).join("");
+        el("queueEmpty").classList.toggle("visible", entries.length === 0);
+        wireStatusSelects(el("queueGrid"));
       }
 
-      function renderPackage(packageData, entry) {
-        const title = packageData.suggested_title || "Package details unavailable";
-        const cta = packageData.suggested_cta || "CTA unavailable.";
-        const subtitleStatus = packageData.subtitle_status || entry.subtitle_status || "not_extracted";
-        const audioStatus = packageData.has_audio === true ? "audio detected" : "no audio detected";
-        const platformNotes = packageData.platform_notes || {};
-        const platformHtml = Object.entries(platformNotes).map(([platform, notes]) => {
-          const noteText = Array.isArray(notes) ? notes.join(" ") : String(notes);
-          return `
-            <div class="platform">
-              <span class="platform-name">${escapeHtml(platform.replaceAll("_", " "))}</span>
-              <span class="platform-note">${escapeHtml(noteText)}</span>
+      function renderAnalytics() {
+        const summary = state.learning || {};
+        const insights = state.patterns?.insights || [];
+        el("analyticsGrid").innerHTML = [
+          metric("Performance records", summary.record_count || 0),
+          metric("Avg predicted score", summary.avg_predicted_hook_score || 0),
+          metric("Avg actual score", summary.avg_actual_performance_score || 0),
+          metric("Avg learning delta", summary.avg_learning_delta || 0),
+          ...insights.map((insight) => metric(insight.type.replaceAll("_", " "), insight.top ? `${insight.top.value} (${formatMetric(insight.top.avg_actual_performance_score)})` : "No data"))
+        ].join("");
+        el("recentPerformance").innerHTML = (summary.recent_records || []).slice().reverse().map((record) => `
+          <div class="ops-card">
+            <p class="title">${escapeHtml(record.clip_id || record.queue_entry_id)}</p>
+            <div class="muted">Predicted ${escapeHtml(record.predicted_hook_score)} / Actual ${escapeHtml(record.actual_performance_score)} / Delta ${escapeHtml(record.learning_delta)}</div>
+          </div>
+        `).join("") || `<div class="ops-card muted">No performance history imported.</div>`;
+      }
+
+      function metric(label, value) {
+        return `<div class="metric"><span class="metric-value">${escapeHtml(value)}</span><span class="metric-label">${escapeHtml(label)}</span></div>`;
+      }
+
+      function passesSearch(entry) {
+        const metadata = entry.metadata || {};
+        const query = el("searchInput").value.trim().toLowerCase();
+        const tags = metadata.semantic_tags || [];
+        const labels = metadata.scene_labels || entry.scene_labels || [];
+        const cluster = metadata.cluster_id || "";
+        const text = [metadata.search_text, metadata.optimized_title, entry.clip_id, entry.package?.hook, entry.package?.caption, tags.join(" "), labels.join(" "), cluster].join(" ").toLowerCase();
+        if (query && !text.includes(query)) return false;
+        if (el("tagFilter").value !== "all" && !tags.includes(el("tagFilter").value)) return false;
+        if (el("labelFilter").value !== "all" && !labels.includes(el("labelFilter").value)) return false;
+        if (el("clusterFilter").value !== "all" && cluster !== el("clusterFilter").value) return false;
+        if (el("searchStatusFilter").value !== "all" && normalizeStatus(entry) !== el("searchStatusFilter").value) return false;
+        if (el("scoreFilter").value !== "all" && scoreValue(entry) < Number(el("scoreFilter").value)) return false;
+        return true;
+      }
+
+      function renderSearch() {
+        const entries = state.entries.filter(passesSearch).sort((a, b) => scoreValue(b) - scoreValue(a));
+        el("searchGrid").innerHTML = entries.map((entry) => card(entry, true)).join("");
+        el("searchEmpty").classList.toggle("visible", entries.length === 0);
+        wireStatusSelects(el("searchGrid"));
+      }
+
+      function renderClusters() {
+        const clusters = state.metadata.clusters || [];
+        el("clustersGrid").innerHTML = clusters.map((cluster) => `
+          <div class="ops-card">
+            <p class="title">${escapeHtml(cluster.id)} · ${escapeHtml(cluster.topic_summary)}</p>
+            ${chips(cluster.representative_tags, true)}
+            <div class="muted">${escapeHtml((cluster.clip_ids || []).length)} clips</div>
+            <div class="meta">${(cluster.clip_ids || []).slice(0, 12).map((id) => `<div>${escapeHtml(id)}</div>`).join("")}</div>
+          </div>
+        `).join("") || `<div class="ops-card muted">No metadata clusters. Run scripts/rebuild_metadata_index.py.</div>`;
+      }
+
+      function renderExports() {
+        const posts = state.exports?.posts || [];
+        el("exportsGrid").innerHTML = posts.map((post) => `
+          <div class="ops-card">
+            <p class="title">${escapeHtml(post.clip_id)}</p>
+            <div class="muted">Score ${escapeHtml(post.score)} · ${escapeHtml(post.status)}</div>
+            <div class="meta">
+              <div>Video: ${escapeHtml(post.final_video)}</div>
+              <div>Caption: ${escapeHtml(post.caption_txt)}</div>
+              <div>Manifest: ${escapeHtml(post.id)}</div>
             </div>
-          `;
-        }).join("");
-        return `
-          <section class="package">
-            <p class="package-title">${escapeHtml(title)}</p>
-            <p class="package-cta">${escapeHtml(cta)}</p>
-            <div class="hashtags">${escapeHtml(`${subtitleStatus} / ${audioStatus}`)}</div>
-            <div class="platforms">${platformHtml}</div>
-          </section>
+          </div>
+        `).join("") || `<div class="ops-card muted">No approved export manifest found. Approve clips, export approved JSON, then run scripts/export_approved_posts.py.</div>`;
+      }
+
+      function renderSettings() {
+        const ai = state.metadata.optional_ai_status || {};
+        el("settingsGrid").innerHTML = `
+          <div class="ops-card">
+            <p class="title">Settings / Config</p>
+            <div class="muted">Static placeholder for future local configuration controls.</div>
+            <div class="meta"><div>Config path: config/</div><div>Queue path: queue/review_queue.json</div></div>
+          </div>
+          <div class="ops-card">
+            <p class="title">Local AI Status</p>
+            <div class="meta">
+              <div>Whisper: ${escapeHtml(ai.whisper?.available ? "available" : "optional / unavailable")}</div>
+              <div>OCR: ${escapeHtml(ai.ocr?.available ? "available" : "optional / unavailable")}</div>
+              <div>Default mode: deterministic local fallback</div>
+            </div>
+          </div>
+          <div class="ops-card">
+            <p class="title">Jobs / History</p>
+            <div class="muted">Placeholder for local job history, pipeline runs, and export runs.</div>
+          </div>
+          <div class="ops-card">
+            <p class="title">Logs / Status</p>
+            <div class="muted">Placeholder for local logs and health checks.</div>
+            <div class="meta"><div>Logs path: logs/</div><div>Analytics path: analytics/</div></div>
+          </div>
         `;
       }
 
+      function populateFilters() {
+        const tags = new Set();
+        const labels = new Set();
+        const clusters = new Set();
+        state.entries.forEach((entry) => {
+          (entry.metadata?.semantic_tags || []).forEach((tag) => tags.add(tag));
+          (entry.metadata?.scene_labels || entry.scene_labels || []).forEach((label) => labels.add(label));
+          if (entry.metadata?.cluster_id) clusters.add(entry.metadata.cluster_id);
+        });
+        fillSelect(el("tagFilter"), "All tags", tags);
+        fillSelect(el("labelFilter"), "All labels", labels);
+        fillSelect(el("clusterFilter"), "All clusters", clusters);
+      }
+
+      function fillSelect(select, label, values) {
+        const current = select.value;
+        select.innerHTML = `<option value="all">${label}</option>` + [...values].sort().map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+        select.value = [...values].includes(current) ? current : "all";
+      }
+
       function exportApprovedReviews() {
-        const approvedEntries = entries
-          .filter((entry) => normalizeStatus(entry) === "approved")
-          .map((entry) => ({
-            id: entry.id,
-            clip_id: entry.clip_id,
-            package_path: entry.package_path || null,
-            score: scoreValue(entry)
-          }));
+        const approved = state.entries.filter((entry) => normalizeStatus(entry) === "approved").map((entry) => ({
+          id: entry.id, clip_id: entry.clip_id, package_path: entry.package_path || null, score: scoreValue(entry)
+        }));
         const payload = {
           exported_at: new Date().toISOString(),
-          source: "dashboard_localStorage",
+          source: "operator_localStorage",
           instructions: "Place this file at queue/approved_reviews.json, then run python3 scripts/export_approved_posts.py from the project root.",
-          approved_entry_ids: approvedEntries.map((entry) => entry.id),
-          approved_clip_ids: approvedEntries.map((entry) => entry.clip_id),
-          approved: approvedEntries
+          approved_entry_ids: approved.map((entry) => entry.id),
+          approved_clip_ids: approved.map((entry) => entry.clip_id),
+          approved
         };
         const blob = new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -782,114 +721,60 @@
         link.click();
         link.remove();
         URL.revokeObjectURL(url);
-        setNotice(`${approvedEntries.length} approved review decision${approvedEntries.length === 1 ? "" : "s"} exported. Save the file as queue/approved_reviews.json before running the export script.`);
+        setNotice(`${approved.length} approved review decision${approved.length === 1 ? "" : "s"} exported. Save as queue/approved_reviews.json before running the export script.`);
       }
 
-      function renderAnalytics(summary, topPatterns) {
-        if (!summary || !topPatterns) {
-          return;
-        }
-        const insights = Array.isArray(topPatterns.insights) ? topPatterns.insights : [];
-        const topItems = insights.map((insight) => {
-          const top = insight.top;
-          const value = top ? `${top.value} (${formatMetric(top.avg_actual_performance_score)})` : "No data";
-          return `
-            <div class="analytics-item">
-              <span class="analytics-value">${escapeHtml(value)}</span>
-              <span class="analytics-label">${escapeHtml(insight.type.replaceAll("_", " "))}</span>
-            </div>
-          `;
-        }).join("");
-        analyticsGrid.innerHTML = `
-          <div class="analytics-item">
-            <span class="analytics-value">${escapeHtml(summary.record_count || 0)}</span>
-            <span class="analytics-label">performance records</span>
-          </div>
-          <div class="analytics-item">
-            <span class="analytics-value">${escapeHtml(formatMetric(summary.avg_learning_delta || 0))}</span>
-            <span class="analytics-label">avg learning delta</span>
-          </div>
-          ${topItems}
-        `;
-      }
-
-      function populateMetadataFilters() {
-        const tags = new Set();
-        const labels = new Set();
-        const clusters = new Set();
-        entries.forEach((entry) => {
-          (entry.metadata?.semantic_tags || []).forEach((tag) => tags.add(tag));
-          (entry.metadata?.scene_labels || entry.scene_labels || []).forEach((label) => labels.add(label));
-          if (entry.metadata?.cluster_id) {
-            clusters.add(entry.metadata.cluster_id);
-          }
-        });
-        fillSelect(tagFilter, "All tags", tags);
-        fillSelect(labelFilter, "All labels", labels);
-        fillSelect(clusterFilter, "All clusters", clusters);
-      }
-
-      function fillSelect(select, label, values) {
-        const current = select.value;
-        select.innerHTML = `<option value="all">${label}</option>` + [...values].sort().map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
-        select.value = [...values].includes(current) ? current : "all";
+      function renderAll() {
+        renderStatus();
+        renderQueue();
+        renderAnalytics();
+        renderSearch();
+        renderClusters();
+        renderExports();
+        renderSettings();
       }
 
       async function loadDashboard() {
         try {
-          const queue = await readJson(QUEUE_PATH);
-          try {
-            const metadataIndex = await readJson(METADATA_INDEX_PATH);
-            metadataByClip = Object.fromEntries((metadataIndex.items || []).map((item) => [item.clip_id, item]));
-          } catch (error) {
-            metadataByClip = {};
-          }
-          const queueEntries = Array.isArray(queue.entries) ? queue.entries : [];
-          entries = await Promise.all(queueEntries.map(async (entry) => {
-            let caption = null;
+          state.queue = await readJson(PATHS.queue);
+          state.learning = await optionalJson(PATHS.learning, null);
+          state.patterns = await optionalJson(PATHS.patterns, null);
+          state.metadata = await optionalJson(PATHS.metadata, { items: [], clusters: [] });
+          state.exports = await optionalJson(PATHS.exports, null);
+          state.index = await optionalJson(PATHS.index, null);
+          state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
+
+          const queueEntries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
+          state.entries = await Promise.all(queueEntries.map(async (entry) => {
             let packageData = null;
-            if (entry.caption_path) {
-              try {
-                caption = await readJson(`../${entry.caption_path}`);
-              } catch (error) {
-                caption = { hook: "Caption failed to load", caption: error.message };
-              }
-            }
-            if (entry.package_path) {
-              try {
-                packageData = await readJson(`../${entry.package_path}`);
-              } catch (error) {
-                packageData = { suggested_title: "Package failed to load", suggested_cta: error.message };
-              }
-            }
-            return { ...entry, caption, package: packageData, metadata: metadataByClip[entry.clip_id] || null };
+            let caption = null;
+            if (entry.package_path) packageData = await optionalJson(`../${entry.package_path}`, null);
+            if (entry.caption_path) caption = await optionalJson(`../${entry.caption_path}`, null);
+            return { ...entry, package: packageData, caption, metadata: state.metadataByClip[entry.clip_id] || null };
           }));
-          entries.sort((a, b) => scoreValue(b) - scoreValue(a));
-          populateMetadataFilters();
-          try {
-            renderAnalytics(await readJson(LEARNING_SUMMARY_PATH), await readJson(TOP_PATTERNS_PATH));
-          } catch (error) {
-            // Analytics files are optional until manual metrics are imported.
-          }
-          setNotice("");
-          render();
+          populateFilters();
+          renderAll();
         } catch (error) {
-          summary.innerHTML = '<span class="pill">Queue unavailable</span>';
-          setNotice(`Could not load ${QUEUE_PATH}. Open through a local server from the project root: python3 -m http.server 8000, then visit http://localhost:8000/dashboard/review.html`);
+          setNotice(`Could not load local dashboard data. Start from the project root with python3 -m http.server 8000, then open /dashboard/review.html.`);
         }
       }
 
-      statusFilter.addEventListener("change", render);
-      searchInput.addEventListener("input", render);
-      tagFilter.addEventListener("change", render);
-      labelFilter.addEventListener("change", render);
-      clusterFilter.addEventListener("change", render);
-      scoreFilter.addEventListener("change", render);
-      exportApproved.addEventListener("click", exportApprovedReviews);
-      resetReviews.addEventListener("click", () => {
-        reviewState = {};
+      document.querySelectorAll(".tab").forEach((tab) => {
+        tab.addEventListener("click", () => {
+          state.activeTab = tab.dataset.tab;
+          document.querySelectorAll(".tab").forEach((node) => node.classList.toggle("active", node === tab));
+          document.querySelectorAll(".panel").forEach((panel) => panel.classList.toggle("active", panel.id === `panel-${state.activeTab}`));
+        });
+      });
+
+      ["queueStatusFilter", "searchInput", "tagFilter", "labelFilter", "clusterFilter", "searchStatusFilter", "scoreFilter"].forEach((id) => {
+        el(id).addEventListener(id === "searchInput" ? "input" : "change", renderAll);
+      });
+      el("exportApproved").addEventListener("click", exportApprovedReviews);
+      el("resetReviews").addEventListener("click", () => {
+        state.review = {};
         saveReviewState();
-        render();
+        renderAll();
       });
 
       loadDashboard();
