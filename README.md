@@ -188,6 +188,26 @@ python3 scripts/watch_daemon.py --once
 
 The Operator UI Settings tab reads the live pipeline status, job history, and activity feed. The local API contract is a JSON placeholder for future desktop/mobile wrapping; no API server is required.
 
+## Desktop App Shell
+
+V2.0 wraps the existing Operator UI in a lightweight Electron shell without changing the Python engine. The static browser workflow still works.
+
+Install Electron locally:
+
+```bash
+npm install
+```
+
+Run the desktop shell:
+
+```bash
+npm start
+```
+
+The Electron app starts a local static server, opens `dashboard/review.html`, and exposes a secure preload bridge with `contextIsolation: true` and `nodeIntegration: false`. Desktop-only controls in the Settings tab support local folder pickers, watcher start/stop, one daemon tick, drag/drop ingest into `content_inbox/`, and test notifications.
+
+Project profiles, recent projects, active project path, folder settings, and watcher startup preference are stored locally in Electron's user data directory. No cloud APIs or social APIs are used.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

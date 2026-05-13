@@ -662,11 +662,17 @@
         const jobs = state.jobHistory?.jobs || [];
         const events = state.activityFeed?.events || [];
         const api = state.apiContract || {};
+        const hasBridge = Boolean(window.higherkey);
         el("settingsGrid").innerHTML = `
           <div class="ops-card">
             <p class="title">Settings / Config</p>
-            <div class="muted">Static placeholder for future local configuration controls.</div>
-            <div class="meta"><div>Config path: config/</div><div>Queue path: queue/review_queue.json</div></div>
+            <div class="muted">${hasBridge ? "Desktop bridge available" : "Static browser mode"}</div>
+            <div class="filters">
+              <button data-desktop-action="pick-content">Pick Content Inbox</button>
+              <button data-desktop-action="pick-export">Pick Export Directory</button>
+              <button data-desktop-action="pick-analytics">Pick Analytics Directory</button>
+            </div>
+            <div class="meta"><div>Config path: config/</div><div>Queue path: queue/review_queue.json</div><div>Drag/drop ingest is enabled in Electron.</div></div>
           </div>
           <div class="ops-card">
             <p class="title">Local AI Status</p>
@@ -679,6 +685,12 @@
           <div class="ops-card">
             <p class="title">Jobs / History</p>
             <div class="muted">${escapeHtml(status.state || "unknown")} · ${escapeHtml(status.message || "No daemon status yet")}</div>
+            <div class="filters">
+              <button data-desktop-action="start-watcher">Start Watcher</button>
+              <button data-desktop-action="stop-watcher">Stop Watcher</button>
+              <button data-desktop-action="run-once">Run Once</button>
+              <button data-desktop-action="notify-test">Test Notification</button>
+            </div>
             <div class="meta">
               <div>Queued: ${escapeHtml(status.counts?.queued || 0)}</div>
               <div>Processing: ${escapeHtml(status.counts?.processing || 0)}</div>
@@ -698,6 +710,28 @@
             <div class="meta">${events.slice(-8).reverse().map((event) => `<div>${escapeHtml(event.at)} · ${escapeHtml(event.event)} · ${escapeHtml(event.message)}</div>`).join("") || "<div>No activity events yet.</div>"}</div>
           </div>
         `;
+        wireDesktopActions();
+      }
+
+      function wireDesktopActions() {
+        document.querySelectorAll("[data-desktop-action]").forEach((button) => {
+          button.disabled = !window.higherkey;
+          button.addEventListener("click", async () => {
+            if (!window.higherkey) {
+              setNotice("Desktop actions require the Electron shell. Static browser mode remains read-only.");
+              return;
+            }
+            const action = button.dataset.desktopAction;
+            if (action === "pick-content") await window.higherkey.pickDirectory("contentInbox");
+            if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
+            if (action === "pick-analytics") await window.higherkey.pickDirectory("analyticsDirectory");
+            if (action === "start-watcher") await window.higherkey.startWatcher();
+            if (action === "stop-watcher") await window.higherkey.stopWatcher();
+            if (action === "run-once") await window.higherkey.runPipelineOnce();
+            if (action === "notify-test") await window.higherkey.testNotification();
+            setNotice(`Desktop action completed: ${action}`);
+          });
+        });
       }
 
       function populateFilters() {
@@ -782,6 +816,19 @@
           setNotice(`Could not load local dashboard data. Start from the project root with python3 -m http.server 8000, then open /dashboard/review.html.`);
         }
       }
+
+      window.addEventListener("dragover", (event) => {
+        if (window.higherkey) event.preventDefault();
+      });
+      window.addEventListener("drop", async (event) => {
+        if (!window.higherkey) return;
+        event.preventDefault();
+        const paths = [...event.dataTransfer.files].map((file) => file.path).filter(Boolean);
+        if (paths.length) {
+          const result = await window.higherkey.ingestDroppedFiles(paths);
+          setNotice(`Ingested ${result.copied.length} file${result.copied.length === 1 ? "" : "s"} into ${result.inbox}`);
+        }
+      });
 
       document.querySelectorAll(".tab").forEach((tab) => {
         tab.addEventListener("click", () => {

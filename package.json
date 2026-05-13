@@ -1,0 +1,15 @@
+{
+  "name": "higherkey-growth-engine",
+  "version": "2.0.0",
+  "description": "HigherKey local-first autonomous growth engine desktop shell",
+  "main": "electron/main.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "electron": "electron .",
+    "electron:verify": "HK_ELECTRON_SMOKE=1 electron ."
+  },
+  "devDependencies": {
+    "electron": "^31.7.7"
+  }
+}
