@@ -208,6 +208,26 @@ The Electron app starts a local static server, opens `dashboard/review.html`, an
 
 Project profiles, recent projects, active project path, folder settings, and watcher startup preference are stored locally in Electron's user data directory. No cloud APIs or social APIs are used.
 
+## Operator Workflow UX
+
+V2.1 turns the Operator UI into a workstation layout:
+
+- Left media bin for queue navigation, batch selection, search, and status filtering.
+- Center review monitor with video playback, approval controls, and queue priority.
+- Right intelligence inspector for labels, tags, metadata, analytics, desktop bridge actions, and local session state.
+- Bottom processing strip from local activity and job history files.
+
+Keyboard shortcuts:
+
+- `A` approve active clip
+- `R` reject active clip
+- `Right Arrow` or `N` next clip
+- `Left Arrow` or `P` previous clip
+- `Space` play/pause
+- `E` export approved review JSON
+
+Batch review state and queue priorities are stored in browser local storage. The static browser workflow and Electron bridge workflow both remain supported.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.
