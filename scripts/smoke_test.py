@@ -55,11 +55,18 @@ def main() -> int:
     queue = json.loads(config.queue_path.read_text(encoding="utf-8"))
     processed = [video for video in index["videos"].values() if video["filename"] == sample_path.name]
     assert processed, "sample video was not registered"
-    video = sorted(processed, key=lambda item: item["updated_at"])[-1]
+    v13_ready = [
+        video
+        for video in processed
+        if video.get("packages") and all("score" in clip for clip in video.get("clips", []))
+    ]
+    assert v13_ready, processed
+    video = sorted(v13_ready, key=lambda item: item["updated_at"])[-1]
     assert video["status"] == "processed", video
     assert 3 <= len(video["clips"]) <= 5, video["clips"]
     assert len(video["captions"]) == len(video["clips"])
     assert len(video["subtitles"]) == len(video["clips"])
+    assert len(video["packages"]) == len(video["clips"])
     assert queue["count"] >= len(video["clips"])
     for clip in video["clips"]:
         assert (root / clip["path"]).exists(), clip["path"]
@@ -69,8 +76,16 @@ def main() -> int:
         assert (root / caption["path"]).exists(), caption["path"]
     for subtitle in video["subtitles"]:
         assert (root / subtitle["path"]).exists(), subtitle["path"]
+        assert subtitle["status"] in {"pending_local_transcription", "no_audio"}, subtitle
+    for package in video["packages"]:
+        package_path = root / package["path"]
+        assert package_path.exists(), package["path"]
+        package_payload = json.loads(package_path.read_text(encoding="utf-8"))
+        for key in ("hook", "caption", "hashtags", "subtitle_status", "suggested_title", "suggested_cta", "platform_notes"):
+            assert key in package_payload, package_payload
     scored_entries = [entry for entry in queue["entries"] if entry["source_video_id"] == video["id"]]
     assert all(isinstance(entry.get("score"), int) for entry in scored_entries), scored_entries
+    assert all(entry.get("package_path") for entry in scored_entries), scored_entries
 
     print(json.dumps({"smoke_test": "passed", "summary": summary}, indent=2, sort_keys=True))
     return 0

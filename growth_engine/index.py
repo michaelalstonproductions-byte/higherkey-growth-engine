@@ -58,6 +58,7 @@ def register_video(index: dict[str, Any], video_path: Path, root: Path) -> dict[
         "clips": existing.get("clips", []),
         "captions": existing.get("captions", []),
         "subtitles": existing.get("subtitles", []),
+        "packages": existing.get("packages", []),
         "queue_entries": existing.get("queue_entries", []),
         "errors": existing.get("errors", []),
     }

@@ -258,6 +258,52 @@
         margin: 0 0 10px;
       }
 
+      .package {
+        border-top: 1px solid var(--line);
+        margin-top: 12px;
+        padding-top: 12px;
+      }
+
+      .package-title {
+        font-size: 14px;
+        font-weight: 750;
+        line-height: 1.35;
+        margin: 0 0 6px;
+      }
+
+      .package-cta {
+        color: #344054;
+        font-size: 13px;
+        line-height: 1.4;
+        margin: 0 0 10px;
+      }
+
+      .platforms {
+        display: grid;
+        gap: 8px;
+      }
+
+      .platform {
+        border: 1px solid var(--line);
+        border-radius: 7px;
+        padding: 8px;
+      }
+
+      .platform-name {
+        display: block;
+        font-size: 12px;
+        font-weight: 750;
+        margin-bottom: 4px;
+        text-transform: capitalize;
+      }
+
+      .platform-note {
+        color: var(--muted);
+        display: block;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
       .hashtags,
       .meta {
         color: var(--muted);
@@ -435,12 +481,18 @@
       }
 
       function renderCard(entry) {
+        const packageData = entry.package || {};
         const caption = entry.caption || {};
         const status = normalizeStatus(entry);
-        const hashtags = Array.isArray(caption.hashtags) ? caption.hashtags.join(" ") : "";
+        const hook = packageData.hook || caption.hook || "Caption hook unavailable";
+        const captionText = packageData.caption || caption.caption || "Caption draft unavailable.";
+        const hashtags = Array.isArray(packageData.hashtags)
+          ? packageData.hashtags.join(" ")
+          : (Array.isArray(caption.hashtags) ? caption.hashtags.join(" ") : "");
         const visual = entry.analysis?.visual || {};
         const audio = entry.analysis?.audio || {};
         const reasons = Array.isArray(entry.score_details?.reasons) ? entry.score_details.reasons.join(", ") : "local score";
+        const packageHtml = renderPackage(packageData, entry);
         return `
           <article class="card">
             <div class="preview">
@@ -462,8 +514,8 @@
                 </div>
                 <div class="score-label">${escapeHtml(reasons)}</div>
               </div>
-              <p class="hook">${escapeHtml(caption.hook || "Caption hook unavailable")}</p>
-              <p class="caption">${escapeHtml(caption.caption || "Caption draft unavailable.")}</p>
+              <p class="hook">${escapeHtml(hook)}</p>
+              <p class="caption">${escapeHtml(captionText)}</p>
               <div class="hashtags">${escapeHtml(hashtags)}</div>
               <div class="signals" aria-label="Local analysis signals">
                 <div class="signal">
@@ -483,14 +535,41 @@
                   <span class="signal-label">Audio peaks</span>
                 </div>
               </div>
+              ${packageHtml}
               <div class="meta">
                 <div>Source: ${escapeHtml(entry.source_path)}</div>
                 <div>Clip: ${escapeHtml(entry.clip_path)}</div>
                 <div>Caption: ${escapeHtml(entry.caption_path || "none")}</div>
-                <div>Subtitles: ${escapeHtml(entry.subtitle_status || "not_extracted")}</div>
+                <div>Package: ${escapeHtml(entry.package_path || "none")}</div>
+                <div>Subtitles: ${escapeHtml(packageData.subtitle_status || entry.subtitle_status || "not_extracted")}</div>
               </div>
             </div>
           </article>
+        `;
+      }
+
+      function renderPackage(packageData, entry) {
+        const title = packageData.suggested_title || "Package details unavailable";
+        const cta = packageData.suggested_cta || "CTA unavailable.";
+        const subtitleStatus = packageData.subtitle_status || entry.subtitle_status || "not_extracted";
+        const audioStatus = packageData.has_audio === true ? "audio detected" : "no audio detected";
+        const platformNotes = packageData.platform_notes || {};
+        const platformHtml = Object.entries(platformNotes).map(([platform, notes]) => {
+          const noteText = Array.isArray(notes) ? notes.join(" ") : String(notes);
+          return `
+            <div class="platform">
+              <span class="platform-name">${escapeHtml(platform.replaceAll("_", " "))}</span>
+              <span class="platform-note">${escapeHtml(noteText)}</span>
+            </div>
+          `;
+        }).join("");
+        return `
+          <section class="package">
+            <p class="package-title">${escapeHtml(title)}</p>
+            <p class="package-cta">${escapeHtml(cta)}</p>
+            <div class="hashtags">${escapeHtml(`${subtitleStatus} / ${audioStatus}`)}</div>
+            <div class="platforms">${platformHtml}</div>
+          </section>
         `;
       }
 
@@ -499,14 +578,23 @@
           const queue = await readJson(QUEUE_PATH);
           const queueEntries = Array.isArray(queue.entries) ? queue.entries : [];
           entries = await Promise.all(queueEntries.map(async (entry) => {
-            if (!entry.caption_path) {
-              return { ...entry, caption: null };
+            let caption = null;
+            let packageData = null;
+            if (entry.caption_path) {
+              try {
+                caption = await readJson(`../${entry.caption_path}`);
+              } catch (error) {
+                caption = { hook: "Caption failed to load", caption: error.message };
+              }
             }
-            try {
-              return { ...entry, caption: await readJson(`../${entry.caption_path}`) };
-            } catch (error) {
-              return { ...entry, caption: { hook: "Caption failed to load", caption: error.message } };
+            if (entry.package_path) {
+              try {
+                packageData = await readJson(`../${entry.package_path}`);
+              } catch (error) {
+                packageData = { suggested_title: "Package failed to load", suggested_cta: error.message };
+              }
             }
+            return { ...entry, caption, package: packageData };
           }));
           entries.sort((a, b) => scoreValue(b) - scoreValue(a));
           setNotice("");

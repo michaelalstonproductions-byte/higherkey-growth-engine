@@ -10,10 +10,12 @@ from .index import utc_now
 def build_queue_entries(video_record: dict[str, Any]) -> list[dict[str, Any]]:
     captions_by_clip = {caption["clip_id"]: caption for caption in video_record.get("captions", [])}
     subtitles_by_clip = {subtitle["id"].replace("_subtitles", ""): subtitle for subtitle in video_record.get("subtitles", [])}
+    packages_by_clip = {package["clip_id"]: package for package in video_record.get("packages", [])}
     entries: list[dict[str, Any]] = []
     for clip in video_record.get("clips", []):
         caption = captions_by_clip.get(clip["id"])
         subtitle = subtitles_by_clip.get(clip["id"])
+        package = packages_by_clip.get(clip["id"])
         entries.append(
             {
                 "id": f"queue_{clip['id']}",
@@ -26,6 +28,8 @@ def build_queue_entries(video_record: dict[str, Any]) -> list[dict[str, Any]]:
                 "subtitle_id": subtitle["id"] if subtitle else None,
                 "subtitle_path": subtitle["path"] if subtitle else None,
                 "subtitle_status": subtitle["status"] if subtitle else "not_extracted",
+                "package_id": package["id"] if package else None,
+                "package_path": package["path"] if package else None,
                 "score": clip.get("score", 0),
                 "score_details": clip.get("score_details", {}),
                 "analysis": clip.get("analysis", {}),
@@ -47,6 +51,8 @@ def save_review_queue(path: Path, index: dict[str, Any]) -> list[dict[str, Any]]
             entry.setdefault("subtitle_status", "not_extracted")
             entry.setdefault("subtitle_id", None)
             entry.setdefault("subtitle_path", None)
+            entry.setdefault("package_id", None)
+            entry.setdefault("package_path", None)
             all_entries.append(entry)
     all_entries.sort(key=lambda item: item.get("score", 0), reverse=True)
     payload = {

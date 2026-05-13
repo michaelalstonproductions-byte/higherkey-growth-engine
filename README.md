@@ -63,6 +63,12 @@ Each generated clip is analyzed locally with FFmpeg-driven sampling. The V1.2 pr
 
 The dashboard sorts clips by score descending and displays the local analysis signals. Subtitle extraction is scaffolded with placeholder JSON files under `captions/subtitles/`; no transcription service or cloud AI API is used.
 
+## Caption Packages
+
+V1.3 prepares one local caption package per generated clip under `captions/packages/`. Each package includes the hook, caption, hashtags, subtitle status, suggested title, suggested CTA, platform notes for Instagram, TikTok, and YouTube Shorts, score details, and local file paths.
+
+FFprobe is used to detect whether each clip has audio. Subtitle JSON remains a local placeholder designed for a future optional Whisper workflow, but Whisper is not required and no cloud transcription is used.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.
