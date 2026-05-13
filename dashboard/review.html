@@ -212,6 +212,23 @@
       .event strong { display: block; font-size: 12px; }
       .event span { color: var(--muted); display: block; font-size: 11px; margin-top: 4px; }
 
+      .heatmap {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 3px;
+        margin-top: 8px;
+      }
+      .heat {
+        height: 12px;
+        border-radius: 999px;
+        background: #1b2838;
+        border: 1px solid #26384d;
+      }
+      .heat.on { background: linear-gradient(90deg, var(--warn), var(--bad)); border-color: rgba(255,255,255,.18); }
+      .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .mini-preview { background:#05080d; border:1px solid var(--line); border-radius:8px; aspect-ratio:9/16; overflow:hidden; display:grid; place-items:center; }
+      .mini-preview video { width:100%; height:100%; object-fit:contain; }
+
       .overlay {
         position: fixed;
         inset: 0;
@@ -383,7 +400,9 @@
         status: null,
         history: null,
         activity: null,
-        api: null
+        api: null,
+        live: { refreshing: false, intervalMs: 4000, lastRefresh: null },
+        playback: { clipId: null, time: 0, paused: true }
       };
 
       const $ = (id) => document.getElementById(id);
@@ -394,9 +413,11 @@
       }
       function writeLocal(key, value) { localStorage.setItem(key, JSON.stringify(value)); }
       async function readJson(path) {
-        const response = await fetch(path, { cache: "no-store" });
+        const separator = path.includes("?") ? "&" : "?";
+        const response = await fetch(`${path}${separator}t=${Date.now()}`, { cache: "no-store" });
         if (!response.ok) throw new Error(`${path} returned ${response.status}`);
-        return response.json();
+        const text = await response.text();
+        return JSON.parse(text);
       }
       async function optionalJson(path, fallback) { try { return await readJson(path); } catch { return fallback; } }
       function html(value) {
@@ -453,12 +474,13 @@
       function renderBin() {
         const entries = filteredEntries();
         $("binList").innerHTML = entries.map((entry) => `
-          <div class="bin-item ${entry.id === state.activeId ? "active" : ""} ${state.selected.has(entry.id) ? "selected" : ""}" data-entry-id="${html(entry.id)}">
+          <div class="bin-item ${entry.id === state.activeId ? "active" : ""} ${state.selected.has(entry.id) ? "selected" : ""}" data-entry-id="${html(entry.id)}" title="Hover markers show hook intensity">
             <div class="row">
               <input type="checkbox" data-select-id="${html(entry.id)}" ${state.selected.has(entry.id) ? "checked" : ""}>
               <div style="flex:1">
                 <div class="bin-title">${html(title(entry))}</div>
                 <div class="bin-meta">${html(entry.clip_id)} · ${html(statusOf(entry))} · <span class="priority-${priorityOf(entry)}">${html(priorityOf(entry))}</span> · ${score(entry)}</div>
+                ${heatmap(entry)}
               </div>
             </div>
           </div>
@@ -476,6 +498,7 @@
       }
 
       function renderMonitor() {
+        snapshotPlayback();
         const entry = activeEntry();
         if (!entry) {
           $("viewer").innerHTML = `<div class="viewer-empty"><h2>No media queued</h2><p>Drop clips into content_inbox or start the watcher daemon.</p></div>`;
@@ -486,6 +509,7 @@
         }
         state.activeId = entry.id;
         $("viewer").innerHTML = `<video id="reviewVideo" src="../${html(entry.clip_path)}" controls preload="metadata" playsinline></video>`;
+        restorePlayback(entry);
         $("monitorTitle").textContent = title(entry);
         $("monitorCaption").textContent = entry.package?.caption || entry.caption?.caption || "";
         const moments = (entry.package?.hook_moments || entry.hook_moments || []).slice(0, 3).map((moment) => `${moment.timestamp || 0}s ${(moment.reasons || ["hook"]).join("+")}`);
@@ -504,6 +528,8 @@
         const analytics = state.learning || {};
         const cluster = entry.metadata?.cluster_id || "unclustered";
         $("inspector").innerHTML = `
+          <div class="card"><h3>Recommendation</h3>${recommendationHtml()}</div>
+          <div class="card"><h3>Compare Selected</h3>${comparisonHtml()}</div>
           <div class="card"><h3>Clip Intelligence</h3>
             <div class="metric"><span>Hook score</span><strong>${html(score(entry))}</strong></div>
             <div class="metric"><span>Cluster</span><strong>${html(cluster)}</strong></div>
@@ -537,6 +563,53 @@
         wireDesktopActions();
       }
 
+      function heatmap(entry) {
+        const moments = entry.package?.hook_moments || entry.hook_moments || [];
+        const audio = entry.analysis?.audio?.audio_peak_timestamps || entry.package?.analysis?.audio?.audio_peak_timestamps || [];
+        const visual = entry.analysis?.visual || entry.package?.analysis?.visual || {};
+        const motion = visual.motion_spike_timestamps || [];
+        const scenes = visual.scene_change_timestamps || [];
+        const hot = new Set();
+        [...moments.map((m) => m.timestamp || 0), ...audio, ...motion, ...scenes].forEach((time) => hot.add(Math.max(0, Math.min(11, Math.floor(Number(time || 0))))));
+        if (score(entry) > 40) hot.add(0);
+        return `<div class="heatmap">${Array.from({ length: 12 }, (_, i) => `<span class="heat ${hot.has(i) ? "on" : ""}"></span>`).join("")}</div>`;
+      }
+
+      function recommendationHtml() {
+        const pending = state.entries.filter((entry) => statusOf(entry) !== "rejected");
+        const top = pending.slice().sort((a, b) => score(b) - score(a))[0];
+        const bestLabel = mostCommon(pending.flatMap(labels));
+        const exportBatch = pending.filter((entry) => statusOf(entry) === "approved").slice(0, 5);
+        if (!top) return `<div class="muted">No recommendation yet.</div>`;
+        const reason = (top.score_details?.reasons || top.package?.score_details?.reasons || tags(top)).slice(0, 3).join(", ") || "highest local score";
+        return `
+          <div class="metric"><span>Post next</span><strong>${html(top.clip_id)}</strong></div>
+          <div class="metric"><span>Reason</span><strong>${html(reason)}</strong></div>
+          <div class="metric"><span>Best label</span><strong>${html(bestLabel || "none")}</strong></div>
+          <div class="metric"><span>Suggested batch</span><strong>${html(exportBatch.length || 1)} clips</strong></div>
+        `;
+      }
+
+      function mostCommon(values) {
+        const counts = new Map();
+        values.filter(Boolean).forEach((value) => counts.set(value, (counts.get(value) || 0) + 1));
+        return [...counts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] || "";
+      }
+
+      function comparisonHtml() {
+        const selected = [...state.selected].map((id) => state.entries.find((entry) => entry.id === id)).filter(Boolean).slice(0, 2);
+        if (selected.length < 2) return `<div class="muted">Select two clips to compare side by side.</div>`;
+        return `<div class="compare-grid">${selected.map((entry) => `
+          <div>
+            <div class="mini-preview"><video src="../${html(entry.clip_path)}" preload="metadata" muted></video></div>
+            <p class="bin-title">${html(title(entry))}</p>
+            <div class="metric"><span>Score</span><strong>${html(score(entry))}</strong></div>
+            <div class="chips">${chips(labels(entry), true)}${chips(tags(entry))}</div>
+            <p class="caption">${html(entry.package?.caption || "")}</p>
+          </div>
+        `).join("")}</div>`;
+      }
+
       function renderTimeline() {
         const events = (state.activity?.events || []).slice(-30).reverse();
         $("pipelineLine").textContent = `${state.status?.state || "idle"} · ${state.status?.message || "No live status yet"}`;
@@ -547,6 +620,23 @@
             <span>${html(event.at || "")}</span>
           </div>
         `).join("") || `<div class="event"><strong>No activity yet</strong><span>Run the watcher daemon to populate the processing strip.</span></div>`;
+      }
+
+      function snapshotPlayback() {
+        const video = $("reviewVideo");
+        if (!video || !state.activeId) return;
+        state.playback = { clipId: state.activeId, time: video.currentTime || 0, paused: video.paused };
+      }
+
+      function restorePlayback(entry) {
+        const video = $("reviewVideo");
+        if (!video) return;
+        if (state.playback.clipId === entry.id) {
+          video.addEventListener("loadedmetadata", () => {
+            video.currentTime = Math.min(state.playback.time || 0, video.duration || state.playback.time || 0);
+            if (!state.playback.paused) video.play().catch(() => {});
+          }, { once: true });
+        }
       }
 
       function renderModeDetails() {
@@ -686,6 +776,39 @@
         }
       }
 
+      async function refreshLiveData() {
+        if (state.live.refreshing) return;
+        state.live.refreshing = true;
+        snapshotPlayback();
+        const previousActive = state.activeId;
+        try {
+          state.queue = await optionalJson(PATHS.queue, state.queue);
+          state.learning = await optionalJson(PATHS.learning, state.learning);
+          state.patterns = await optionalJson(PATHS.patterns, state.patterns);
+          state.metadata = await optionalJson(PATHS.metadata, state.metadata);
+          state.exports = await optionalJson(PATHS.exports, state.exports);
+          state.status = await optionalJson(PATHS.status, state.status);
+          state.history = await optionalJson(PATHS.history, state.history);
+          state.activity = await optionalJson(PATHS.activity, state.activity);
+          state.api = await optionalJson(PATHS.api, state.api);
+          state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
+          const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
+          state.entries = await Promise.all(entries.map(async (entry) => ({
+            ...entry,
+            package: entry.package_path ? await optionalJson(`../${entry.package_path}`, null) : null,
+            caption: entry.caption_path ? await optionalJson(`../${entry.caption_path}`, null) : null,
+            metadata: state.metadataByClip[entry.clip_id] || null
+          })));
+          state.activeId = state.entries.find((entry) => entry.id === previousActive)?.id || state.entries[0]?.id || null;
+          state.live.lastRefresh = new Date().toISOString();
+          render();
+        } catch (error) {
+          setNotice(`Live refresh skipped: ${error.message || error}`);
+        } finally {
+          state.live.refreshing = false;
+        }
+      }
+
       function handleShortcut(event) {
         if (["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName)) return;
         const key = event.key.toLowerCase();
@@ -738,6 +861,7 @@
       });
 
       loadDashboard();
+      setInterval(refreshLiveData, state.live.intervalMs);
     </script>
   </body>
 </html>

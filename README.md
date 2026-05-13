@@ -228,6 +228,14 @@ Keyboard shortcuts:
 
 Batch review state and queue priorities are stored in browser local storage. The static browser workflow and Electron bridge workflow both remain supported.
 
+## Live Operator Intelligence
+
+V2.2 adds live polling over local JSON files. The Operator UI auto-refreshes the review queue, metadata index, analytics outputs, pipeline status, activity feed, job history, exports, and video index without a manual page reload. Playback state, active clip, selection, review status, and priority state are preserved during refreshes.
+
+The review monitor now includes local recommendation signals, hook-intensity heatmaps, and a two-clip comparison mode. Select two clips in the media bin to compare score, hook moments, labels, tags, title, and caption in the inspector.
+
+Polling remains the default live mechanism. `config/live_events_contract.json` documents a local-only placeholder for future WebSocket or server-sent event wrappers.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

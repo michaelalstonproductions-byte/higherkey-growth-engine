@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "local_only": true,
+  "default_transport": "polling",
+  "future_transports": [
+    "websocket",
+    "server_sent_events"
+  ],
+  "resources": {
+    "activity_feed": "analytics/activity_feed.json",
+    "job_history": "analytics/job_history.json",
+    "metadata_index": "analytics/metadata_index.json",
+    "pipeline_status": "analytics/pipeline_status.json",
+    "review_queue": "queue/review_queue.json"
+  },
+  "event_types": [
+    "queue_updated",
+    "metadata_updated",
+    "analytics_updated",
+    "job_queued",
+    "job_processing",
+    "job_completed",
+    "job_failed",
+    "job_retrying"
+  ],
+  "notes": "V2.2 uses resilient local polling. This contract reserves a local-only shape for future WebSocket or SSE wrappers."
+}
