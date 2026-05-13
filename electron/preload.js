@@ -7,6 +7,7 @@ contextBridge.exposeInMainWorld("higherkey", {
   startWatcher: () => ipcRenderer.invoke("pipeline:startWatcher"),
   stopWatcher: () => ipcRenderer.invoke("pipeline:stopWatcher"),
   runPipelineOnce: () => ipcRenderer.invoke("pipeline:runOnce"),
+  runOrchestratorOnce: () => ipcRenderer.invoke("orchestrator:runOnce"),
   pipelineStatus: () => ipcRenderer.invoke("pipeline:status"),
   ingestDroppedFiles: (paths) => ipcRenderer.invoke("files:ingestDropped", paths),
   testNotification: () => ipcRenderer.invoke("notify:test"),

@@ -16,6 +16,7 @@ from growth_engine.analytics import import_performance_metrics
 from growth_engine.exporter import export_approved_posts
 from growth_engine.local_ai import build_metadata_index
 from growth_engine.jobs import daemon_tick
+from growth_engine.orchestrator import AGENT_STATES, run_orchestrator
 from growth_engine.pipeline import process_once
 
 
@@ -153,14 +154,36 @@ def main() -> int:
         assert key in first_item, first_item
     daemon_summary = daemon_tick(config)
     assert "queued" in daemon_summary, daemon_summary
+
+    orchestration_summary = run_orchestrator(config, task="smoke_fixture")
+    assert orchestration_summary["failed"] == 0, orchestration_summary
+    assert orchestration_summary["completed"] >= 7, orchestration_summary
     for path in (
         config.analytics_dir / "jobs.json",
         config.analytics_dir / "job_history.json",
         config.analytics_dir / "pipeline_status.json",
         config.analytics_dir / "activity_feed.json",
         config.analytics_dir / "local_api_contract.json",
+        config.analytics_dir / "agents.json",
+        config.analytics_dir / "agent_activity.json",
+        config.analytics_dir / "orchestration_graph.json",
     ):
         assert path.exists(), path
+    agents = json.loads((config.analytics_dir / "agents.json").read_text(encoding="utf-8"))
+    graph = json.loads((config.analytics_dir / "orchestration_graph.json").read_text(encoding="utf-8"))
+    assert agents["local_only"] is True, agents
+    assert all(agent["state"] in AGENT_STATES for agent in agents["agents"]), agents
+    assert {agent["id"] for agent in agents["agents"]} >= {
+        "ingest",
+        "clip_generation",
+        "content_intelligence",
+        "metadata_indexing",
+        "analytics_learning",
+        "recommendation",
+        "export",
+    }, agents
+    assert graph["execution_mode"] == "sequential", graph
+    assert len(graph["nodes"]) >= 7, graph
 
     print(json.dumps({"smoke_test": "passed", "summary": summary}, indent=2, sort_keys=True))
     return 0

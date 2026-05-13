@@ -228,6 +228,20 @@
       .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .mini-preview { background:#05080d; border:1px solid var(--line); border-radius:8px; aspect-ratio:9/16; overflow:hidden; display:grid; place-items:center; }
       .mini-preview video { width:100%; height:100%; object-fit:contain; }
+      .agent-list { display: grid; gap: 8px; }
+      .agent-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding: 8px 0; }
+      .agent-row:first-child { border-top: 0; padding-top: 0; }
+      .agent-name { font-size: 12px; font-weight: 800; }
+      .agent-role { color: var(--muted); font-size: 11px; margin-top: 3px; }
+      .agent-state { border: 1px solid var(--line); border-radius: 999px; font-size: 11px; padding: 4px 7px; text-transform: uppercase; }
+      .agent-state.completed { color: var(--good); border-color: rgba(54, 209, 124, .35); }
+      .agent-state.running, .agent-state.assigned { color: var(--accent); border-color: rgba(101,168,255,.45); }
+      .agent-state.failed { color: var(--bad); border-color: rgba(255,100,112,.4); }
+      .agent-state.disabled { color: var(--muted); }
+      .graph-placeholder { display: grid; gap: 8px; }
+      .graph-node { border: 1px solid var(--line); border-radius: 8px; background: #101a27; padding: 8px; position: relative; }
+      .graph-node::after { content: ""; display: block; width: 1px; height: 9px; background: var(--line); position: absolute; left: 16px; bottom: -10px; }
+      .graph-node:last-child::after { display: none; }
 
       .overlay {
         position: fixed;
@@ -284,6 +298,7 @@
           <button class="tab" data-mode="analytics">Analytics</button>
           <button class="tab" data-mode="search">Search</button>
           <button class="tab" data-mode="clusters">Clusters</button>
+          <button class="tab" data-mode="agents">Agents</button>
           <button class="tab" data-mode="exports">Exports</button>
           <button class="tab" data-mode="settings">Settings</button>
         </div>
@@ -377,7 +392,11 @@
         status: "../analytics/pipeline_status.json",
         history: "../analytics/job_history.json",
         activity: "../analytics/activity_feed.json",
-        api: "../analytics/local_api_contract.json"
+        api: "../analytics/local_api_contract.json",
+        agents: "../analytics/agents.json",
+        agentActivity: "../analytics/agent_activity.json",
+        orchestrationGraph: "../analytics/orchestration_graph.json",
+        recommendations: "../analytics/recommendations.json"
       };
       const REVIEW_KEY = "higherkey.review_status.v1";
       const PRIORITY_KEY = "higherkey.queue_priority.v21";
@@ -401,6 +420,10 @@
         history: null,
         activity: null,
         api: null,
+        agents: null,
+        agentActivity: null,
+        orchestrationGraph: null,
+        recommendations: null,
         live: { refreshing: false, intervalMs: 4000, lastRefresh: null },
         playback: { clipId: null, time: 0, paused: true }
       };
@@ -460,13 +483,15 @@
         const approved = state.entries.filter((entry) => statusOf(entry) === "approved").length;
         const exported = state.exports?.count || 0;
         const indexed = state.metadata?.count || state.metadata?.items?.length || 0;
+        const runningAgents = (state.agents?.agents || []).filter((agent) => ["assigned", "running"].includes(agent.state)).length;
         $("systemStatus").innerHTML = [
           ["Queue", state.entries.length],
           ["Selected", state.selected.size],
           ["Approved", approved],
           ["Exported", exported],
           ["Indexed", indexed],
-          ["Pipeline", state.status?.state || "idle"]
+          ["Pipeline", state.status?.state || "idle"],
+          ["Agents", runningAgents ? `${runningAgents} running` : (state.agents?.execution_mode || "idle")]
         ].map(([label, value]) => `<span class="stat"><strong>${html(value)}</strong> ${html(label)}</span>`).join("");
         $("sessionLine").textContent = `${window.higherkey ? "Electron bridge online" : "Static browser mode"} · ${state.entries.length} local clips`;
       }
@@ -529,6 +554,8 @@
         const cluster = entry.metadata?.cluster_id || "unclustered";
         $("inspector").innerHTML = `
           <div class="card"><h3>Recommendation</h3>${recommendationHtml()}</div>
+          <div class="card"><h3>Agent Health</h3>${agentHealthHtml()}</div>
+          <div class="card"><h3>Orchestration Graph</h3>${orchestrationGraphHtml()}</div>
           <div class="card"><h3>Compare Selected</h3>${comparisonHtml()}</div>
           <div class="card"><h3>Clip Intelligence</h3>
             <div class="metric"><span>Hook score</span><strong>${html(score(entry))}</strong></div>
@@ -551,6 +578,7 @@
               <button data-desktop-action="pick-export">Export</button>
               <button data-desktop-action="start-watcher">Start Watcher</button>
               <button data-desktop-action="run-once">Run Once</button>
+              <button data-desktop-action="run-orchestrator">Run Agents</button>
               <button data-desktop-action="notify-test">Notify</button>
             </div>
             <div class="muted">${window.higherkey ? "Available" : "Static browser mode"}</div>
@@ -576,6 +604,14 @@
       }
 
       function recommendationHtml() {
+        const agentRecommendation = state.recommendations?.recommendations?.[0];
+        if (agentRecommendation) {
+          return `
+            <div class="metric"><span>Post next</span><strong>${html(agentRecommendation.clip_id)}</strong></div>
+            <div class="metric"><span>Reason</span><strong>${html(agentRecommendation.reason)}</strong></div>
+            <div class="metric"><span>Agent score</span><strong>${html(agentRecommendation.score)}</strong></div>
+          `;
+        }
         const pending = state.entries.filter((entry) => statusOf(entry) !== "rejected");
         const top = pending.slice().sort((a, b) => score(b) - score(a))[0];
         const bestLabel = mostCommon(pending.flatMap(labels));
@@ -587,6 +623,35 @@
           <div class="metric"><span>Reason</span><strong>${html(reason)}</strong></div>
           <div class="metric"><span>Best label</span><strong>${html(bestLabel || "none")}</strong></div>
           <div class="metric"><span>Suggested batch</span><strong>${html(exportBatch.length || 1)} clips</strong></div>
+        `;
+      }
+
+      function agentHealthHtml() {
+        const agents = state.agents?.agents || [];
+        if (!agents.length) return `<div class="muted">Run the local orchestrator to populate agent status.</div>`;
+        return `<div class="agent-list">${agents.map((agent) => `
+          <div class="agent-row">
+            <div>
+              <div class="agent-name">${html(agent.name || agent.id)}</div>
+              <div class="agent-role">${html(agent.role || "")}</div>
+            </div>
+            <span class="agent-state ${html(agent.state || "idle")}">${html(agent.state || "idle")}</span>
+          </div>
+        `).join("")}</div>`;
+      }
+
+      function orchestrationGraphHtml() {
+        const graph = state.orchestrationGraph || {};
+        const nodes = graph.nodes || [];
+        if (!nodes.length) return `<div class="muted">Sequential orchestration graph placeholder is waiting for local JSON.</div>`;
+        return `
+          <div class="metric"><span>Mode</span><strong>${html(graph.execution_mode || "sequential")}</strong></div>
+          <div class="graph-placeholder">${nodes.map((node) => `
+            <div class="graph-node">
+              <div class="agent-name">${html(node.label || node.id)}</div>
+              <div class="agent-role">${html(node.role || "")}</div>
+            </div>
+          `).join("")}</div>
         `;
       }
 
@@ -644,6 +709,8 @@
           setNotice(`Analytics: ${state.learning?.record_count || 0} performance records, avg delta ${state.learning?.avg_learning_delta || 0}.`);
         } else if (state.mode === "clusters") {
           setNotice(`Clusters: ${(state.metadata.clusters || []).length} local narrative groups.`);
+        } else if (state.mode === "agents") {
+          setNotice(`Agents: ${(state.agents?.agents || []).length} local workers, ${state.agents?.execution_mode || "sequential"} execution.`);
         } else if (state.mode === "exports") {
           setNotice(`Exports: ${state.exports?.count || 0} approved posts in local manifest.`);
         } else if (state.mode === "settings") {
@@ -738,6 +805,7 @@
             if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
             if (action === "start-watcher") await window.higherkey.startWatcher();
             if (action === "run-once") await window.higherkey.runPipelineOnce();
+            if (action === "run-orchestrator") await window.higherkey.runOrchestratorOnce();
             if (action === "notify-test") await window.higherkey.testNotification();
             setNotice(`Desktop action completed: ${action}`);
           };
@@ -756,6 +824,10 @@
           state.history = await optionalJson(PATHS.history, null);
           state.activity = await optionalJson(PATHS.activity, null);
           state.api = await optionalJson(PATHS.api, null);
+          state.agents = await optionalJson(PATHS.agents, null);
+          state.agentActivity = await optionalJson(PATHS.agentActivity, null);
+          state.orchestrationGraph = await optionalJson(PATHS.orchestrationGraph, null);
+          state.recommendations = await optionalJson(PATHS.recommendations, null);
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
           const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
           state.entries = await Promise.all(entries.map(async (entry) => ({
@@ -791,6 +863,10 @@
           state.history = await optionalJson(PATHS.history, state.history);
           state.activity = await optionalJson(PATHS.activity, state.activity);
           state.api = await optionalJson(PATHS.api, state.api);
+          state.agents = await optionalJson(PATHS.agents, state.agents);
+          state.agentActivity = await optionalJson(PATHS.agentActivity, state.agentActivity);
+          state.orchestrationGraph = await optionalJson(PATHS.orchestrationGraph, state.orchestrationGraph);
+          state.recommendations = await optionalJson(PATHS.recommendations, state.recommendations);
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
           const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
           state.entries = await Promise.all(entries.map(async (entry) => ({
