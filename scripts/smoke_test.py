@@ -15,6 +15,7 @@ from growth_engine.config import load_config
 from growth_engine.analytics import import_performance_metrics
 from growth_engine.exporter import export_approved_posts
 from growth_engine.local_ai import build_metadata_index
+from growth_engine.jobs import daemon_tick
 from growth_engine.pipeline import process_once
 
 
@@ -150,6 +151,16 @@ def main() -> int:
     first_item = metadata_index["items"][0]
     for key in ("semantic_tags", "embedding", "similar_clips", "cluster_id", "optimized_title"):
         assert key in first_item, first_item
+    daemon_summary = daemon_tick(config)
+    assert "queued" in daemon_summary, daemon_summary
+    for path in (
+        config.analytics_dir / "jobs.json",
+        config.analytics_dir / "job_history.json",
+        config.analytics_dir / "pipeline_status.json",
+        config.analytics_dir / "activity_feed.json",
+        config.analytics_dir / "local_api_contract.json",
+    ):
+        assert path.exists(), path
 
     print(json.dumps({"smoke_test": "passed", "summary": summary}, indent=2, sort_keys=True))
     return 0

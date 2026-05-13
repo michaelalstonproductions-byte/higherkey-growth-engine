@@ -440,6 +440,10 @@
         patterns: null,
         exports: null,
         index: null,
+        pipelineStatus: null,
+        jobHistory: null,
+        activityFeed: null,
+        apiContract: null,
         review: loadReviewState(),
         activeTab: "queue"
       };
@@ -654,6 +658,10 @@
 
       function renderSettings() {
         const ai = state.metadata.optional_ai_status || {};
+        const status = state.pipelineStatus || {};
+        const jobs = state.jobHistory?.jobs || [];
+        const events = state.activityFeed?.events || [];
+        const api = state.apiContract || {};
         el("settingsGrid").innerHTML = `
           <div class="ops-card">
             <p class="title">Settings / Config</p>
@@ -670,12 +678,24 @@
           </div>
           <div class="ops-card">
             <p class="title">Jobs / History</p>
-            <div class="muted">Placeholder for local job history, pipeline runs, and export runs.</div>
+            <div class="muted">${escapeHtml(status.state || "unknown")} · ${escapeHtml(status.message || "No daemon status yet")}</div>
+            <div class="meta">
+              <div>Queued: ${escapeHtml(status.counts?.queued || 0)}</div>
+              <div>Processing: ${escapeHtml(status.counts?.processing || 0)}</div>
+              <div>Completed: ${escapeHtml(status.counts?.completed || 0)}</div>
+              <div>Failed: ${escapeHtml(status.counts?.failed || 0)}</div>
+            </div>
+            <div class="meta">${jobs.slice(-6).reverse().map((job) => `<div>${escapeHtml(job.state)} · ${escapeHtml(job.source_path)}</div>`).join("") || "<div>No job history yet.</div>"}</div>
           </div>
           <div class="ops-card">
             <p class="title">Logs / Status</p>
-            <div class="muted">Placeholder for local logs and health checks.</div>
-            <div class="meta"><div>Logs path: logs/</div><div>Analytics path: analytics/</div></div>
+            <div class="muted">Activity feed and local API placeholder.</div>
+            <div class="meta">
+              <div>Status path: analytics/pipeline_status.json</div>
+              <div>Activity path: analytics/activity_feed.json</div>
+              <div>API contract: ${escapeHtml(api.description || "not generated yet")}</div>
+            </div>
+            <div class="meta">${events.slice(-8).reverse().map((event) => `<div>${escapeHtml(event.at)} · ${escapeHtml(event.event)} · ${escapeHtml(event.message)}</div>`).join("") || "<div>No activity events yet.</div>"}</div>
           </div>
         `;
       }
@@ -742,6 +762,10 @@
           state.metadata = await optionalJson(PATHS.metadata, { items: [], clusters: [] });
           state.exports = await optionalJson(PATHS.exports, null);
           state.index = await optionalJson(PATHS.index, null);
+          state.pipelineStatus = await optionalJson("../analytics/pipeline_status.json", null);
+          state.jobHistory = await optionalJson("../analytics/job_history.json", null);
+          state.activityFeed = await optionalJson("../analytics/activity_feed.json", null);
+          state.apiContract = await optionalJson("../analytics/local_api_contract.json", null);
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
 
           const queueEntries = Array.isArray(state.queue.entries) ? state.queue.entries : [];

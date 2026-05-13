@@ -148,6 +148,46 @@ python3 scripts/rebuild_metadata_index.py --enable-whisper --enable-ocr
 
 `--enable-whisper` looks for a local `whisper` command. `--enable-ocr` looks for a local `tesseract` command. If they are missing, the indexer records `unavailable` and continues. No cloud APIs, external AI APIs, or social APIs are used.
 
+## Watcher Daemon
+
+V1.9 adds a dependency-light local watcher daemon for continuous background processing:
+
+```bash
+python3 scripts/watch_daemon.py --interval 5
+```
+
+For a single tick during testing:
+
+```bash
+python3 scripts/watch_daemon.py --once
+```
+
+The daemon polls `content_inbox/`, queues new videos, processes queued jobs, and writes local status files:
+
+- `analytics/jobs.json`
+- `analytics/job_history.json`
+- `analytics/pipeline_status.json`
+- `analytics/activity_feed.json`
+- `analytics/local_api_contract.json`
+
+Job states are `queued`, `processing`, `completed`, `failed`, and `retrying`. To request reprocessing, write a local request to `queue/reprocess_requests.json`:
+
+```json
+{
+  "requests": [
+    { "source_path": "content_inbox/example.mp4" }
+  ]
+}
+```
+
+Then run:
+
+```bash
+python3 scripts/watch_daemon.py --once
+```
+
+The Operator UI Settings tab reads the live pipeline status, job history, and activity feed. The local API contract is a JSON placeholder for future desktop/mobile wrapping; no API server is required.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.
