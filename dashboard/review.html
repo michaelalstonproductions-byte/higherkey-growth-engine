@@ -860,6 +860,7 @@
         mediaCache: "../analytics/media_cache.json",
         diagnostics: "../analytics/diagnostics.json",
         qaReport: "../analytics/qa_report.json",
+        repairReport: "../analytics/project_repair_report.json",
         release: "../config/release.json",
         socialManifest: "../out/social_exports/manifest.json",
         socialHistory: "../analytics/social_export_history.json",
@@ -897,6 +898,7 @@
         mediaCacheByClip: {},
         diagnostics: null,
         qaReport: null,
+        repairReport: null,
         socialManifest: null,
         socialHistory: null,
         socialPresets: null,
@@ -955,6 +957,8 @@
         document.querySelectorAll("[data-notice-action]").forEach((button) => {
           button.onclick = async () => {
             if (button.dataset.noticeAction === "open-inbox") await openInbox();
+            if (button.dataset.noticeAction === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); render(); }
+            if (button.dataset.noticeAction === "repair-project") await repairProjectMedia();
           };
         });
       }
@@ -1268,11 +1272,11 @@
         return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Export Assets / Packages</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Prep Checklist</div></div><div class="checklist"><span>✓ Review generated caption.txt</span><span>✓ Confirm hashtags.txt and title.txt</span><span>✓ Check thumbnail.jpg when available</span><span>✓ Upload manually from local files.</span></div></section></div>`;
       }
       function renderDiagnosticsView() {
-        return `<div class="view diagnostics-view">${kpiCards([["Diagnostics", state.diagnostics?.status || "not run", "analytics/diagnostics.json"],["Full QA", state.qaReport?.status || "not run", "analytics/qa_report.json"],["Build Guard", state.appInfo?.buildWarnings?.length ? "warning" : "aligned", "Version checks"],["Test Media", testEntries().length, state.production.hideTestMedia ? "Hidden in Production" : "Visible"]])}<div class="diagnostics-grid"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Health Checks</div></div>${diagnosticsHtml()}${productionModeControlsHtml()}</section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Diagnostics JSON</div></div><pre class="json-panel">${html(JSON.stringify(state.diagnostics || {}, null, 2))}</pre></section></div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">QA Report Summary</div></div><pre class="json-panel">${html(JSON.stringify(state.qaReport || {}, null, 2))}</pre></section></div>`;
+        return `<div class="view diagnostics-view">${kpiCards([["Diagnostics", state.diagnostics?.status || "not run", "analytics/diagnostics.json"],["Full QA", state.qaReport?.status || "not run", "analytics/qa_report.json"],["Build Guard", state.appInfo?.buildWarnings?.length ? "warning" : "aligned", "Version checks"],["Test Media", testEntries().length, state.production.hideTestMedia ? "Hidden in Production" : "Visible"]])}<div class="diagnostics-grid"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Health Checks</div></div>${diagnosticsHtml()}${productionModeControlsHtml()}<div class="toolbar"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button></div></section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Diagnostics JSON</div></div><pre class="json-panel">${html(JSON.stringify(state.diagnostics || {}, null, 2))}</pre></section></div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Project Repair Report</div></div><pre class="json-panel">${html(JSON.stringify(state.repairReport || {}, null, 2))}</pre></section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">QA Report Summary</div></div><pre class="json-panel">${html(JSON.stringify(state.qaReport || {}, null, 2))}</pre></section></div>`;
       }
       function renderSettingsView() {
         const info = state.appInfo || {};
-        return `<div class="view settings-view">${settingsCard("Project Preferences", [["Active Project", info.activeProjectRoot || info.projectRoot || "static"],["Content Inbox", info.contentInbox || "content_inbox"],["Export Folder", info.exportDirectory || "out/approved_posts"]])}${settingsCard("Runtime Folders", [["Analytics", info.analyticsDirectory || "analytics"],["App Root", info.appRoot || "static browser"],["Mode", info.packaged ? "packaged" : window.higherkey ? "dev electron" : "static"]])}${settingsCard("Theme & Appearance", [["Theme", "Red / black / graphite"],["Density", "Cinematic desktop"],["Logo", "Inline HigherKey mark"]])}${settingsCard("Startup & Launch", [["Launcher", "npm run app:open-latest"],["Version", versionLabel()],["Build", info.build?.buildStatus || "release-candidate"]])}${settingsCard("Production Mode", [["Hide Test Media", state.production.hideTestMedia ? "on" : "off"],["Detected Test Media", testEntries().length],["Real Clips", realEntries().length]])}${settingsCard("Watcher & Pipeline", [["Pipeline", state.status?.state || "idle"],["Last CWD", info.lastPipeline?.cwd || "not run"],["Watcher", "manual"]])}<section class="settings-card"><h2>Advanced</h2>${desktopBridgeHtml()}</section></div>`;
+        return `<div class="view settings-view">${settingsCard("Project Preferences", [["Active Project", info.activeProjectRoot || info.projectRoot || "static"],["Content Inbox", info.contentInbox || "content_inbox"],["Export Folder", info.exportDirectory || "out/approved_posts"]])}${settingsCard("Runtime Folders", [["Analytics", info.analyticsDirectory || "analytics"],["App Root", info.appRoot || "static browser"],["Mode", info.packaged ? "packaged" : window.higherkey ? "dev electron" : "static"]])}${settingsCard("Theme & Appearance", [["Theme", "Red / black / graphite"],["Density", "Cinematic desktop"],["Logo", "Inline HigherKey mark"]])}${settingsCard("Startup & Launch", [["Launcher", "npm run app:open-latest"],["Version", versionLabel()],["Build", info.build?.buildStatus || "release-candidate"]])}${settingsCard("Production Mode", [["Hide Test Media", state.production.hideTestMedia ? "on" : "off"],["Detected Test Media", testEntries().length],["Real Clips", realEntries().length]])}${settingsCard("Watcher & Pipeline", [["Pipeline", state.status?.state || "idle"],["Last CWD", info.lastPipeline?.cwd || "not run"],["Watcher", "manual"]])}<section class="settings-card"><h2>Advanced</h2>${desktopBridgeHtml()}<div class="toolbar"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button></div></section></div>`;
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
@@ -1362,6 +1366,7 @@
             <strong>${html(compactHealthLabel())}</strong>
             <span>${html(state.diagnostics?.status || state.qaReport?.status || "not run")}</span>
             <button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button>
+            <button class="btn" data-desktop-action="repair-project">Repair Project Media</button>
           </div>
         `;
       }
@@ -2136,6 +2141,23 @@
         }
       }
 
+      async function repairProjectMedia() {
+        if (!window.higherkey?.repairProjectMedia) {
+          return setNotice(staticModeMessage());
+        }
+        setNotice("Repairing project media references...");
+        const result = await window.higherkey.repairProjectMedia();
+        await refreshLiveData();
+        if (result.code === 0) {
+          const counts = result.parsed?.counts || {};
+          const missing = counts.missing_sources || 0;
+          const stale = counts.stale_queue_entries || 0;
+          setNotice(missing || stale ? `Project repaired. ${missing} missing source reference${missing === 1 ? "" : "s"} and ${stale} stale queue item${stale === 1 ? "" : "s"} were reported.` : "Project media references are healthy.");
+        } else {
+          setNotice("Project repair needs attention. Open Diagnostics for details.");
+        }
+      }
+
       function summarizeImport(result) {
         if (!result) return "No import result returned.";
         if (result.canceled) return "Import cancelled.";
@@ -2183,8 +2205,7 @@
         if (result.code === 0) {
           setNotice(`${imported.imported} video${imported.imported === 1 ? "" : "s"} imported and processed. Ready for review.`);
         } else {
-          const failed = (result.prep?.steps || []).find((step) => step.code !== 0);
-          setNotice(`Import completed, but processing failed at ${failed?.name || "media prep"}: ${(failed?.stderr || failed?.stdout || "unknown error").slice(-700)}`);
+          setNotice("Import completed, but processing needs attention. Open Diagnostics or repair project media.", [{ label: "Open Diagnostics", action: "go-diagnostics" }, { label: "Repair Project Media", action: "repair-project" }]);
         }
         return result;
       }
@@ -2250,8 +2271,7 @@
         if (result.code === 0) {
           setNotice("Ready for review. Pipeline, metadata, thumbnails, and local agents completed.");
         } else {
-          const failed = (result.steps || []).find((step) => step.code !== 0);
-          setNotice(`Full media prep failed at ${failed?.name || "unknown step"}: ${(failed?.stderr || failed?.stdout || "unknown error").slice(-700)}`);
+          setNotice("Pipeline needs attention. Some older media references may have been skipped.", [{ label: "Open Diagnostics", action: "go-diagnostics" }, { label: "Repair Project Media", action: "repair-project" }]);
         }
       }
 
@@ -2300,6 +2320,7 @@
             if (action === "import-footage") return importFootage();
             if (action === "import-and-process") return importAndProcessFootage();
             if (action === "run-full-media-prep") return runFullMediaPrep();
+            if (action === "repair-project") return repairProjectMedia();
             if (!window.higherkey) return setNotice(staticModeMessage());
             if (action === "pick-project") await selectProjectFolder();
             if (action === "use-current-repo") await useCurrentRepoProject();
@@ -2345,6 +2366,7 @@
           state.mediaCacheByClip = state.mediaCache?.clips || {};
           state.diagnostics = await optionalJson(PATHS.diagnostics, null);
           state.qaReport = await optionalJson(PATHS.qaReport, null);
+          state.repairReport = await optionalJson(PATHS.repairReport, null);
           state.socialManifest = await optionalJson(PATHS.socialManifest, null);
           state.socialHistory = await optionalJson(PATHS.socialHistory, null);
           state.socialPresets = await optionalJson(PATHS.socialPresets, null);
@@ -2396,6 +2418,7 @@
           state.mediaCacheByClip = state.mediaCache?.clips || {};
           state.diagnostics = await optionalJson(PATHS.diagnostics, state.diagnostics);
           state.qaReport = await optionalJson(PATHS.qaReport, state.qaReport);
+          state.repairReport = await optionalJson(PATHS.repairReport, state.repairReport);
           state.socialManifest = await optionalJson(PATHS.socialManifest, state.socialManifest);
           state.socialHistory = await optionalJson(PATHS.socialHistory, state.socialHistory);
           state.socialPresets = await optionalJson(PATHS.socialPresets, state.socialPresets);

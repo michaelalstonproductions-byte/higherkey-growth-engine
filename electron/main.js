@@ -553,6 +553,7 @@ async function runFullMediaPrep() {
   const profile = projectProfile(settings);
   await fsp.mkdir(profile.contentInbox, { recursive: true });
   const steps = [
+    { name: "Repairing media references", stage: "repair_preflight", args: ["scripts/repair_project_media.py"] },
     { name: "Creating clips", stage: "creating_clips", args: ["scripts/run_pipeline.py"] },
     { name: "Indexing metadata", stage: "indexing_metadata", args: ["scripts/rebuild_metadata_index.py"] },
     { name: "Building thumbnails", stage: "building_thumbnails", args: ["scripts/build_media_cache.py"] },
@@ -578,6 +579,15 @@ async function runFullMediaPrep() {
     }
   }
   return { code: 0, steps: results, activeProjectRoot, contentInbox: profile.contentInbox };
+}
+
+async function repairProjectMedia() {
+  const result = await runPython(["scripts/repair_project_media.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
 }
 
 async function importAndProcessFootage() {
@@ -616,7 +626,7 @@ async function verifyImportAndProcessBridge() {
   const bridge = await verifyImportBridge();
   return {
     ...bridge,
-    fullMediaPrep: ["run_pipeline.py", "rebuild_metadata_index.py", "build_media_cache.py", "run_orchestrator.py --once"]
+    fullMediaPrep: ["repair_project_media.py", "run_pipeline.py", "rebuild_metadata_index.py", "build_media_cache.py", "run_orchestrator.py --once"]
   };
 }
 
@@ -699,10 +709,12 @@ async function pickDirectory(kind) {
   if (result.canceled || !result.filePaths[0]) {
     return null;
   }
-  const selected = result.filePaths[0];
+  let selected = result.filePaths[0];
   const settings = await readSettings();
   const profile = settings.profiles.default;
   if (kind === "project") {
+    selected = await normalizeProjectSelection(selected);
+    if (!selected) return null;
     settings.activeProject = selected;
     profile.projectPath = selected;
     profile.contentInbox = path.join(selected, "content_inbox");
@@ -716,6 +728,22 @@ async function pickDirectory(kind) {
   mainWindow?.webContents.send("higherkey:settings", settings);
   mainWindow?.webContents.send("higherkey:project", await appInfo());
   return selected;
+}
+
+async function normalizeProjectSelection(selected) {
+  if (path.basename(selected) !== "content_inbox") {
+    return selected;
+  }
+  const parent = path.dirname(selected);
+  const choice = await dialog.showMessageBox(mainWindow, {
+    type: "warning",
+    buttons: ["Use Parent Project Folder", "Cancel"],
+    defaultId: 0,
+    cancelId: 1,
+    message: "You selected the inbox folder.",
+    detail: "Select the project folder that contains content_inbox instead."
+  });
+  return choice.response === 0 ? parent : null;
 }
 
 async function openContentInbox() {
@@ -745,12 +773,15 @@ async function runFirstRunSetup(force = false) {
   if (start.response === 0) {
     const project = await dialog.showOpenDialog(mainWindow, { title: "Choose Project Folder", properties: ["openDirectory", "createDirectory"] });
     if (!project.canceled && project.filePaths[0]) {
-      settings.activeProject = project.filePaths[0];
-      activeProjectRoot = project.filePaths[0];
-      profile.projectPath = project.filePaths[0];
-      profile.contentInbox = path.join(project.filePaths[0], "content_inbox");
-      profile.exportDirectory = path.join(project.filePaths[0], "out", "approved_posts");
-      profile.analyticsDirectory = path.join(project.filePaths[0], "analytics");
+      const selectedProject = await normalizeProjectSelection(project.filePaths[0]);
+      if (selectedProject) {
+        settings.activeProject = selectedProject;
+        activeProjectRoot = selectedProject;
+        profile.projectPath = selectedProject;
+        profile.contentInbox = path.join(selectedProject, "content_inbox");
+        profile.exportDirectory = path.join(selectedProject, "out", "approved_posts");
+        profile.analyticsDirectory = path.join(selectedProject, "analytics");
+      }
     }
     const inbox = await dialog.showOpenDialog(mainWindow, { title: "Choose Content Inbox", properties: ["openDirectory", "createDirectory"] });
     if (!inbox.canceled && inbox.filePaths[0]) {
@@ -833,6 +864,7 @@ function registerIpc() {
   ipcMain.handle("orchestrator:runOnce", () => runPython(["scripts/run_orchestrator.py", "--once"]));
   ipcMain.handle("media:buildCache", () => runPython(["scripts/build_media_cache.py"]));
   ipcMain.handle("media:archiveTestMedia", archiveTestMedia);
+  ipcMain.handle("media:repairProject", repairProjectMedia);
   ipcMain.handle("social:exportPacks", exportSocialPacks);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("qa:runFull", () => runPython(["scripts/run_full_qa.py"]));

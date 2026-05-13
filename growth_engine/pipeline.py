@@ -7,7 +7,7 @@ from typing import Any
 from .captions import generate_captions
 from .config import AppConfig, ensure_directories
 from .content_intelligence import analyze_clip
-from .index import load_index, register_video, save_index, utc_now
+from .index import load_index, mark_missing_source, register_video, resolve_media_path, save_index, utc_now
 from .ingest import discover_videos
 from .media import generate_clips
 from .packages import build_caption_packages
@@ -94,9 +94,18 @@ def process_once(config: AppConfig) -> dict[str, Any]:
     processed = 0
     skipped = 0
     errors: list[dict[str, str]] = []
+    warnings: list[dict[str, Any]] = []
 
     for video_path in videos:
         record = register_video(index, video_path, config.root)
+        resolved_path, attempts = resolve_media_path(record.get("source_path"), config.root, config.inbox_dir)
+        if not resolved_path:
+            message = "Source media is missing and was skipped."
+            mark_missing_source(record, record.get("source_path"), attempts, message)
+            warnings.append({"video": record.get("source_path"), "status": "missing_source", "resolved_attempts": attempts})
+            skipped += 1
+            continue
+        video_path = resolved_path
         if record.get("status") == "processed" and record.get("clips"):
             skipped += 1
             continue
@@ -118,10 +127,14 @@ def process_once(config: AppConfig) -> dict[str, Any]:
             processed += 1
         except Exception as exc:  # noqa: BLE001 - prototype should preserve failure detail locally.
             message = str(exc)
-            record["status"] = "error"
-            record["updated_at"] = utc_now()
-            record.setdefault("errors", []).append({"at": utc_now(), "message": message})
-            errors.append({"video": record["source_path"], "error": message})
+            if not video_path.exists():
+                mark_missing_source(record, record.get("source_path"), attempts, "Source media disappeared during processing.")
+                warnings.append({"video": record.get("source_path"), "status": "missing_source", "resolved_attempts": attempts})
+            else:
+                record["status"] = "error"
+                record["updated_at"] = utc_now()
+                record.setdefault("errors", []).append({"at": utc_now(), "message": message})
+                errors.append({"video": record["source_path"], "error": message})
 
     backfill_caption_packages(index, config)
     queue_entries = save_review_queue(config.queue_path, index)
@@ -131,6 +144,8 @@ def process_once(config: AppConfig) -> dict[str, Any]:
         "processed": processed,
         "skipped": skipped,
         "errors": errors,
+        "warnings": warnings,
+        "missing_sources": len([item for item in index.get("videos", {}).values() if item.get("status") == "missing_source"]),
         "queue_entries": len(queue_entries),
         "index_path": str(config.index_path),
         "queue_path": str(config.queue_path),

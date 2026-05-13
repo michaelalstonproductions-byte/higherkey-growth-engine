@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld("higherkey", {
   runOrchestratorOnce: () => ipcRenderer.invoke("orchestrator:runOnce"),
   buildMediaCache: () => ipcRenderer.invoke("media:buildCache"),
   archiveTestMedia: () => ipcRenderer.invoke("media:archiveTestMedia"),
+  repairProjectMedia: () => ipcRenderer.invoke("media:repairProject"),
   exportSocialPacks: (options) => ipcRenderer.invoke("social:exportPacks", options),
   runDiagnostics: () => ipcRenderer.invoke("diagnostics:run"),
   runFullQa: () => ipcRenderer.invoke("qa:runFull"),

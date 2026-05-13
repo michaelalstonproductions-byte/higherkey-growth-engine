@@ -46,7 +46,12 @@ def build_queue_entries(video_record: dict[str, Any]) -> list[dict[str, Any]]:
 def save_review_queue(path: Path, index: dict[str, Any]) -> list[dict[str, Any]]:
     all_entries: list[dict[str, Any]] = []
     for video in sorted(index.get("videos", {}).values(), key=lambda item: item["registered_at"]):
+        if video.get("status") == "missing_source":
+            continue
         for entry in video.get("queue_entries", []):
+            matching_clip = next((clip for clip in video.get("clips", []) if clip.get("id") == entry.get("clip_id")), None)
+            if matching_clip and matching_clip.get("status") == "missing_clip":
+                continue
             entry.setdefault("score", 0)
             entry.setdefault("score_details", {})
             entry.setdefault("analysis", {})

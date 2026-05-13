@@ -23,6 +23,55 @@ def relative_path(path: Path, root: Path) -> str:
         return str(path.resolve())
 
 
+def resolve_media_path(value: str | Path | None, root: Path, content_inbox: Path | None = None) -> tuple[Path | None, list[str]]:
+    """Resolve a media reference without assuming where older indexes stored it."""
+    attempts: list[Path] = []
+    if not value:
+        return None, []
+    source = Path(str(value)).expanduser()
+    inbox = content_inbox or root / "content_inbox"
+    if source.is_absolute():
+        attempts.append(source)
+    else:
+        attempts.extend([
+            root / source,
+            inbox / source,
+            inbox / source.name,
+        ])
+    seen: set[str] = set()
+    clean_attempts: list[Path] = []
+    for attempt in attempts:
+        key = str(attempt)
+        if key not in seen:
+            seen.add(key)
+            clean_attempts.append(attempt)
+            if attempt.exists():
+                return attempt.resolve(), [str(item) for item in clean_attempts]
+    if source.name:
+        matches = sorted(path for path in inbox.rglob(source.name) if path.is_file()) if inbox.exists() else []
+        if matches:
+            clean_attempts.append(matches[0])
+            return matches[0].resolve(), [str(item) for item in clean_attempts]
+    return None, [str(item) for item in clean_attempts]
+
+
+def mark_missing_source(record: dict[str, Any], original_path: str | None, attempts: list[str], message: str) -> None:
+    record["status"] = "missing_source"
+    record["updated_at"] = utc_now()
+    record["missing_source"] = {
+        "original_path": original_path,
+        "resolved_attempts": attempts,
+        "error": message,
+        "updated_at": record["updated_at"],
+    }
+    record.setdefault("errors", []).append({
+        "at": record["updated_at"],
+        "type": "missing_source",
+        "message": message,
+        "original_path": original_path,
+    })
+
+
 def file_fingerprint(path: Path) -> str:
     stat = path.stat()
     digest = hashlib.sha1()
