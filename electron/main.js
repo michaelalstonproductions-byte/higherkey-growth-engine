@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const fsp = require("node:fs/promises");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
+const { ingestDroppedFilesToInbox } = require("./ingest");
 
 if (process.env.HK_OPERATOR_USER_DATA) {
   app.setPath("userData", process.env.HK_OPERATOR_USER_DATA);
@@ -474,14 +475,7 @@ async function runFirstRunSetup(force = false) {
 async function ingestDroppedFiles(filePaths) {
   const settings = await readSettings();
   const inbox = settings.profiles.default.contentInbox || path.join(activeProjectRoot, "content_inbox");
-  await fsp.mkdir(inbox, { recursive: true });
-  const copied = [];
-  for (const filePath of filePaths) {
-    const target = path.join(inbox, path.basename(filePath));
-    await fsp.copyFile(filePath, target);
-    copied.push(target);
-  }
-  return { copied, inbox };
+  return ingestDroppedFilesToInbox(filePaths, inbox);
 }
 
 function registerIpc() {

@@ -1,4 +1,4 @@
-const { contextBridge, ipcRenderer } = require("electron");
+const { contextBridge, ipcRenderer, webUtils } = require("electron");
 
 contextBridge.exposeInMainWorld("higherkey", {
   getSettings: () => ipcRenderer.invoke("settings:get"),
@@ -16,6 +16,12 @@ contextBridge.exposeInMainWorld("higherkey", {
   runFirstRunSetup: () => ipcRenderer.invoke("setup:firstRun"),
   openContentInbox: () => ipcRenderer.invoke("folder:openContentInbox"),
   pipelineStatus: () => ipcRenderer.invoke("pipeline:status"),
+  getDroppedFilePaths: (files) => Array.from(files || []).map((file) => ({
+    name: file.name || "",
+    path: webUtils.getPathForFile(file) || file.path || "",
+    size: file.size || 0,
+    type: file.type || ""
+  })),
   ingestDroppedFiles: (paths) => ipcRenderer.invoke("files:ingestDropped", paths),
   testNotification: () => ipcRenderer.invoke("notify:test"),
   onSettingsChanged: (callback) => ipcRenderer.on("higherkey:settings", (_event, settings) => callback(settings))

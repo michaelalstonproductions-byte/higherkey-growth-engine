@@ -109,6 +109,8 @@
         padding: 8px 10px;
       }
       .notice.visible { display: block; }
+      .notice .notice-actions { display: inline-flex; gap: 8px; margin-left: 10px; vertical-align: middle; }
+      .notice .notice-actions button { min-height: 28px; }
 
       .workspace {
         min-height: 0;
@@ -567,9 +569,14 @@
         const status = String(release.build_status || "").toLowerCase().includes("release") ? "RC" : (release.build_status || "local");
         return `${release.version || "V2.7"} ${status}`;
       }
-      function setNotice(message) {
-        $("notice").textContent = message;
+      function setNotice(message, actions = []) {
+        $("notice").innerHTML = `${html(message)}${actions.length ? `<span class="notice-actions">${actions.map((action) => `<button data-notice-action="${html(action.action)}">${html(action.label)}</button>`).join("")}</span>` : ""}`;
         $("notice").classList.toggle("visible", Boolean(message));
+        document.querySelectorAll("[data-notice-action]").forEach((button) => {
+          button.onclick = async () => {
+            if (button.dataset.noticeAction === "open-inbox") await openInbox();
+          };
+        });
       }
       function chips(values, strong = false) {
         if (!Array.isArray(values) || values.length === 0) return "";
@@ -1022,6 +1029,29 @@
         setNotice(`Content inbox opened: ${result.path}`);
       }
 
+      async function ingestDroppedFiles(files) {
+        if (!window.higherkey) {
+          return setNotice("Static mode: drag/drop ingest requires Electron. Open content_inbox from the project folder and add local videos.");
+        }
+        const descriptors = window.higherkey.getDroppedFilePaths ? await window.higherkey.getDroppedFilePaths(files) : Array.from(files || []).map((file) => ({ name: file.name || "", path: file.path || "" }));
+        const received = descriptors.filter((item) => item.path || item.name);
+        if (!received.length) {
+          return setNotice("Drop failed: no file paths were received from Electron.", [{ label: "Open Content Inbox", action: "open-inbox" }]);
+        }
+        setNotice(`Dropped file received: ${received.map((item) => item.name || item.path).join(", ")}`);
+        const result = await window.higherkey.ingestDroppedFiles(received);
+        const copied = result.copied || [];
+        const skipped = result.skipped || [];
+        const errors = result.errors || [];
+        if (copied.length) {
+          setNotice(`Copied ${copied.length} file${copied.length === 1 ? "" : "s"} to inbox: ${result.inbox}`, [{ label: "Open Content Inbox", action: "open-inbox" }]);
+          return result;
+        }
+        const reason = [...errors, ...skipped].map((item) => `${item.name || item.path || "file"}: ${item.reason}`).join("; ") || "No accepted media files were copied.";
+        setNotice(`Drop failed: ${reason}`, [{ label: "Open Content Inbox", action: "open-inbox" }]);
+        return result;
+      }
+
       async function runFirstPipeline() {
         if (!window.higherkey) return setNotice("Static mode: run python3 scripts/run_pipeline.py from the project root.");
         await window.higherkey.runPipelineOnce();
@@ -1187,14 +1217,19 @@
       $("startupRecover").addEventListener("click", () => { setActive(state.workspace.lastActiveId || state.entries[0]?.id); $("startupOverlay").classList.remove("visible"); });
       document.addEventListener("keydown", handleShortcut);
 
-      window.addEventListener("dragover", (event) => { if (window.higherkey) event.preventDefault(); });
+      window.addEventListener("dragover", (event) => {
+        if (window.higherkey) {
+          event.preventDefault();
+          event.dataTransfer.dropEffect = "copy";
+        }
+      });
       window.addEventListener("drop", async (event) => {
         if (!window.higherkey) return;
         event.preventDefault();
-        const paths = [...event.dataTransfer.files].map((file) => file.path).filter(Boolean);
-        if (paths.length) {
-          const result = await window.higherkey.ingestDroppedFiles(paths);
-          setNotice(`Ingested ${result.copied.length} file${result.copied.length === 1 ? "" : "s"} into ${result.inbox}`);
+        try {
+          await ingestDroppedFiles(event.dataTransfer.files);
+        } catch (error) {
+          setNotice(`Drop failed: ${error.message || error}`, [{ label: "Open Content Inbox", action: "open-inbox" }]);
         }
       });
 
