@@ -294,6 +294,32 @@ Use `File > Open Project` to switch the packaged app to another writable local p
 
 The DMG is intentionally unsigned for local testing. macOS Gatekeeper may require opening it through Finder's contextual Open flow or local security settings. Packaging does not add cloud APIs, publishing integrations, or social APIs.
 
+## Native Media Preview Cache
+
+V2.5 adds a local FFmpeg media preview cache for the Operator workspace:
+
+```bash
+python3 scripts/build_media_cache.py
+```
+
+Force a rebuild or cache only a few queue entries during testing:
+
+```bash
+python3 scripts/build_media_cache.py --force --limit 3
+```
+
+The builder reads `queue/review_queue.json`, generates preview assets under `out/media_cache/`, and writes `analytics/media_cache.json`. Each cached clip can include:
+
+- a primary thumbnail
+- timeline strip thumbnails
+- a contact-sheet style timeline strip image
+- normalized waveform/audio-energy bars when audio exists
+- hook overlay positions for the Operator timeline
+
+The Operator UI reads the cache manifest to show thumbnail grids, hover scrub previews, visual timeline strips, waveform bars, hook markers, and cache status indicators. In Electron, the `Re-cache Media` control runs the local cache builder through the same packaged-safe Python bridge. Static browser mode remains compatible; it simply reads existing cache JSON and preview files.
+
+All preview generation is local and FFmpeg-based. Generated cache outputs stay in the selected writable project folder, not in packaged app resources or `app.asar`. No cloud APIs or social APIs are used.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

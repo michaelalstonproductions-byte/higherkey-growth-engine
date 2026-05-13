@@ -142,6 +142,41 @@
       .bin-item.selected { box-shadow: inset 3px 0 0 var(--violet); }
       .bin-title { font-size: 12px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
       .bin-meta { color: var(--muted); font-size: 11px; margin-top: 5px; }
+      .thumb {
+        width: 48px;
+        aspect-ratio: 9 / 16;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: #05080d;
+        flex: 0 0 auto;
+        overflow: hidden;
+        position: relative;
+      }
+      .thumb img, .strip-frame img, .timeline-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .cache-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--muted);
+        display: inline-block;
+        margin-right: 5px;
+      }
+      .cache-dot.cached { background: var(--good); }
+      .cache-dot.error, .cache-dot.missing { background: var(--bad); }
+      .scrub-popover {
+        display: none;
+        grid-template-columns: repeat(5, 42px);
+        gap: 3px;
+        margin-top: 7px;
+      }
+      .bin-item:hover .scrub-popover { display: grid; }
+      .strip-frame {
+        aspect-ratio: 9 / 16;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        overflow: hidden;
+        background: #05080d;
+      }
 
       .monitor {
         min-height: 0;
@@ -169,6 +204,50 @@
       .monitor-info { padding: 12px 2px 0; }
       .monitor-title { font-size: 22px; font-weight: 850; line-height: 1.15; margin: 0 0 8px; }
       .caption { color: #c9d5e6; font-size: 14px; line-height: 1.45; margin: 0; }
+      .media-timeline {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #0d1420;
+        margin: 10px 0;
+        padding: 8px;
+        width: 100%;
+      }
+      .timeline-strip {
+        display: grid;
+        grid-template-columns: repeat(10, minmax(0, 1fr));
+        gap: 3px;
+        position: relative;
+      }
+      .timeline-frame {
+        aspect-ratio: 9 / 16;
+        border-radius: 4px;
+        background: #05080d;
+        overflow: hidden;
+      }
+      .hook-marker {
+        position: absolute;
+        top: -3px;
+        width: 3px;
+        height: calc(100% + 6px);
+        border-radius: 999px;
+        background: var(--warn);
+        box-shadow: 0 0 0 1px rgba(0,0,0,.55);
+      }
+      .waveform {
+        align-items: end;
+        display: grid;
+        grid-template-columns: repeat(48, 1fr);
+        gap: 2px;
+        height: 34px;
+        margin-top: 7px;
+      }
+      .wavebar {
+        background: linear-gradient(180deg, var(--accent), #23476f);
+        border-radius: 999px 999px 0 0;
+        min-height: 2px;
+      }
+      .thumb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+      .thumb-grid .strip-frame { border-radius: 6px; }
 
       .inspector-grid { display: grid; gap: 10px; }
       .card {
@@ -396,7 +475,8 @@
         agents: "../analytics/agents.json",
         agentActivity: "../analytics/agent_activity.json",
         orchestrationGraph: "../analytics/orchestration_graph.json",
-        recommendations: "../analytics/recommendations.json"
+        recommendations: "../analytics/recommendations.json",
+        mediaCache: "../analytics/media_cache.json"
       };
       const REVIEW_KEY = "higherkey.review_status.v1";
       const PRIORITY_KEY = "higherkey.queue_priority.v21";
@@ -424,6 +504,8 @@
         agentActivity: null,
         orchestrationGraph: null,
         recommendations: null,
+        mediaCache: null,
+        mediaCacheByClip: {},
         live: { refreshing: false, intervalMs: 4000, lastRefresh: null },
         playback: { clipId: null, time: 0, paused: true }
       };
@@ -450,6 +532,7 @@
       function priorityOf(entry) { return state.priority[entry.id] || "normal"; }
       function score(entry) { return Number(entry.score || entry.package?.score || 0); }
       function activeEntry() { return state.entries.find((entry) => entry.id === state.activeId) || state.entries[0] || null; }
+      function cacheFor(entry) { return state.mediaCacheByClip[entry?.clip_id || ""] || null; }
       function tags(entry) { return entry.metadata?.semantic_tags || []; }
       function labels(entry) { return entry.metadata?.scene_labels || entry.package?.scene_labels || entry.scene_labels || []; }
       function title(entry) { return entry.metadata?.optimized_title || entry.package?.suggested_title || entry.package?.hook || entry.clip_id; }
@@ -484,12 +567,14 @@
         const exported = state.exports?.count || 0;
         const indexed = state.metadata?.count || state.metadata?.items?.length || 0;
         const runningAgents = (state.agents?.agents || []).filter((agent) => ["assigned", "running"].includes(agent.state)).length;
+        const cached = state.mediaCache?.status_counts?.cached || 0;
         $("systemStatus").innerHTML = [
           ["Queue", state.entries.length],
           ["Selected", state.selected.size],
           ["Approved", approved],
           ["Exported", exported],
           ["Indexed", indexed],
+          ["Cache", `${cached}/${state.entries.length}`],
           ["Pipeline", state.status?.state || "idle"],
           ["Agents", runningAgents ? `${runningAgents} running` : (state.agents?.execution_mode || "idle")]
         ].map(([label, value]) => `<span class="stat"><strong>${html(value)}</strong> ${html(label)}</span>`).join("");
@@ -502,10 +587,12 @@
           <div class="bin-item ${entry.id === state.activeId ? "active" : ""} ${state.selected.has(entry.id) ? "selected" : ""}" data-entry-id="${html(entry.id)}" title="Hover markers show hook intensity">
             <div class="row">
               <input type="checkbox" data-select-id="${html(entry.id)}" ${state.selected.has(entry.id) ? "checked" : ""}>
+              ${thumbnailHtml(entry)}
               <div style="flex:1">
                 <div class="bin-title">${html(title(entry))}</div>
-                <div class="bin-meta">${html(entry.clip_id)} · ${html(statusOf(entry))} · <span class="priority-${priorityOf(entry)}">${html(priorityOf(entry))}</span> · ${score(entry)}</div>
+                <div class="bin-meta">${cacheStatusHtml(entry)}${html(entry.clip_id)} · ${html(statusOf(entry))} · <span class="priority-${priorityOf(entry)}">${html(priorityOf(entry))}</span> · ${score(entry)}</div>
                 ${heatmap(entry)}
+                ${scrubHtml(entry)}
               </div>
             </div>
           </div>
@@ -538,7 +625,7 @@
         $("monitorTitle").textContent = title(entry);
         $("monitorCaption").textContent = entry.package?.caption || entry.caption?.caption || "";
         const moments = (entry.package?.hook_moments || entry.hook_moments || []).slice(0, 3).map((moment) => `${moment.timestamp || 0}s ${(moment.reasons || ["hook"]).join("+")}`);
-        $("monitorChips").innerHTML = chips([`score ${score(entry)}`, statusOf(entry), priorityOf(entry)], true) + chips(moments, true) + chips(labels(entry), true) + chips(tags(entry));
+        $("monitorChips").innerHTML = mediaTimelineHtml(entry) + chips([`score ${score(entry)}`, statusOf(entry), priorityOf(entry), `cache ${cacheFor(entry)?.status || "missing"}`], true) + chips(moments, true) + chips(labels(entry), true) + chips(tags(entry));
         $("prioritySelect").value = priorityOf(entry);
       }
 
@@ -554,6 +641,7 @@
         const cluster = entry.metadata?.cluster_id || "unclustered";
         $("inspector").innerHTML = `
           <div class="card"><h3>Recommendation</h3>${recommendationHtml()}</div>
+          <div class="card"><h3>Media Cache</h3>${mediaCacheHtml(entry)}</div>
           <div class="card"><h3>Agent Health</h3>${agentHealthHtml()}</div>
           <div class="card"><h3>Orchestration Graph</h3>${orchestrationGraphHtml()}</div>
           <div class="card"><h3>Compare Selected</h3>${comparisonHtml()}</div>
@@ -579,6 +667,7 @@
               <button data-desktop-action="start-watcher">Start Watcher</button>
               <button data-desktop-action="run-once">Run Once</button>
               <button data-desktop-action="run-orchestrator">Run Agents</button>
+              <button data-desktop-action="build-media-cache">Re-cache Media</button>
               <button data-desktop-action="notify-test">Notify</button>
             </div>
             <div class="muted">${window.higherkey ? "Available" : "Static browser mode"}</div>
@@ -601,6 +690,70 @@
         [...moments.map((m) => m.timestamp || 0), ...audio, ...motion, ...scenes].forEach((time) => hot.add(Math.max(0, Math.min(11, Math.floor(Number(time || 0))))));
         if (score(entry) > 40) hot.add(0);
         return `<div class="heatmap">${Array.from({ length: 12 }, (_, i) => `<span class="heat ${hot.has(i) ? "on" : ""}"></span>`).join("")}</div>`;
+      }
+
+      function thumbnailHtml(entry) {
+        const cache = cacheFor(entry);
+        if (cache?.thumbnail_path) {
+          return `<div class="thumb"><img src="../${html(cache.thumbnail_path)}" alt=""></div>`;
+        }
+        return `<div class="thumb"></div>`;
+      }
+
+      function cacheStatusHtml(entry) {
+        const status = cacheFor(entry)?.status || "missing";
+        return `<span class="cache-dot ${html(status)}"></span>`;
+      }
+
+      function scrubHtml(entry) {
+        const frames = (cacheFor(entry)?.strip_thumbnails || []).slice(0, 10);
+        if (!frames.length) return "";
+        return `<div class="scrub-popover">${frames.map((frame) => `
+          <div class="strip-frame" title="${html(frame.timestamp || 0)}s"><img src="../${html(frame.path)}" alt=""></div>
+        `).join("")}</div>`;
+      }
+
+      function waveformHtml(cache) {
+        const bars = cache?.waveform?.bars || [];
+        if (!bars.length) return `<div class="waveform">${Array.from({ length: 48 }, () => `<span class="wavebar" style="height:2px"></span>`).join("")}</div>`;
+        return `<div class="waveform">${bars.slice(0, 48).map((bar) => `<span class="wavebar" style="height:${Math.max(2, Math.round(Number(bar.value || 0) * 34))}px"></span>`).join("")}</div>`;
+      }
+
+      function mediaTimelineHtml(entry) {
+        const cache = cacheFor(entry);
+        const frames = cache?.strip_thumbnails || [];
+        if (!cache || !frames.length) return "";
+        const markers = (cache.hook_overlays || []).map((marker) => `<span class="hook-marker" style="left:${Math.max(0, Math.min(100, Number(marker.position || 0) * 100))}%"></span>`).join("");
+        return `
+          <div class="media-timeline">
+            <div class="timeline-strip">
+              ${frames.slice(0, 10).map((frame) => `<div class="timeline-frame"><img src="../${html(frame.path)}" alt=""></div>`).join("")}
+              ${markers}
+            </div>
+            ${waveformHtml(cache)}
+          </div>
+        `;
+      }
+
+      function mediaCacheHtml(entry) {
+        const cache = cacheFor(entry);
+        const counts = state.mediaCache?.status_counts || {};
+        if (!cache) {
+          return `
+            <div class="metric"><span>Status</span><strong>missing</strong></div>
+            <div class="metric"><span>Cached clips</span><strong>${html(counts.cached || 0)}</strong></div>
+            <div class="muted">Run Re-cache Media to build local thumbnails and waveform previews.</div>
+          `;
+        }
+        const frames = cache.strip_thumbnails || [];
+        return `
+          <div class="metric"><span>Status</span><strong>${html(cache.status || "unknown")}</strong></div>
+          <div class="metric"><span>Frames</span><strong>${html(frames.length)}</strong></div>
+          <div class="metric"><span>Wave bars</span><strong>${html(cache.waveform?.bar_count || 0)}</strong></div>
+          <div class="metric"><span>Hooks</span><strong>${html((cache.hook_overlays || []).length)}</strong></div>
+          <div class="thumb-grid">${frames.slice(0, 6).map((frame) => `<div class="strip-frame"><img src="../${html(frame.path)}" alt=""></div>`).join("")}</div>
+          ${cache.errors?.length ? `<div class="muted">${html(cache.errors.join("; "))}</div>` : ""}
+        `;
       }
 
       function recommendationHtml() {
@@ -711,6 +864,8 @@
           setNotice(`Clusters: ${(state.metadata.clusters || []).length} local narrative groups.`);
         } else if (state.mode === "agents") {
           setNotice(`Agents: ${(state.agents?.agents || []).length} local workers, ${state.agents?.execution_mode || "sequential"} execution.`);
+        } else if (state.mode === "queue") {
+          setNotice(state.mediaCache ? `Media cache: ${state.mediaCache?.status_counts?.cached || 0} cached, ${state.mediaCache?.status_counts?.error || 0} errors.` : "");
         } else if (state.mode === "exports") {
           setNotice(`Exports: ${state.exports?.count || 0} approved posts in local manifest.`);
         } else if (state.mode === "settings") {
@@ -806,6 +961,7 @@
             if (action === "start-watcher") await window.higherkey.startWatcher();
             if (action === "run-once") await window.higherkey.runPipelineOnce();
             if (action === "run-orchestrator") await window.higherkey.runOrchestratorOnce();
+            if (action === "build-media-cache") await window.higherkey.buildMediaCache();
             if (action === "notify-test") await window.higherkey.testNotification();
             setNotice(`Desktop action completed: ${action}`);
           };
@@ -828,6 +984,8 @@
           state.agentActivity = await optionalJson(PATHS.agentActivity, null);
           state.orchestrationGraph = await optionalJson(PATHS.orchestrationGraph, null);
           state.recommendations = await optionalJson(PATHS.recommendations, null);
+          state.mediaCache = await optionalJson(PATHS.mediaCache, null);
+          state.mediaCacheByClip = state.mediaCache?.clips || {};
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
           const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
           state.entries = await Promise.all(entries.map(async (entry) => ({
@@ -867,6 +1025,8 @@
           state.agentActivity = await optionalJson(PATHS.agentActivity, state.agentActivity);
           state.orchestrationGraph = await optionalJson(PATHS.orchestrationGraph, state.orchestrationGraph);
           state.recommendations = await optionalJson(PATHS.recommendations, state.recommendations);
+          state.mediaCache = await optionalJson(PATHS.mediaCache, state.mediaCache);
+          state.mediaCacheByClip = state.mediaCache?.clips || {};
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
           const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
           state.entries = await Promise.all(entries.map(async (entry) => ({

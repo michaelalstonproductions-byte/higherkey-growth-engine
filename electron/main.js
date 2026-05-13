@@ -214,7 +214,8 @@ function createMenu() {
         { label: "Start Watcher", click: () => startWatcher() },
         { label: "Stop Watcher", click: () => stopWatcher() },
         { label: "Run One Daemon Tick", click: () => runPython(["scripts/watch_daemon.py", "--once"]) },
-        { label: "Run Orchestrator Once", click: () => runPython(["scripts/run_orchestrator.py", "--once"]) }
+        { label: "Run Orchestrator Once", click: () => runPython(["scripts/run_orchestrator.py", "--once"]) },
+        { label: "Build Media Cache", click: () => runPython(["scripts/build_media_cache.py"]) }
       ]
     },
     {
@@ -373,6 +374,7 @@ function registerIpc() {
   ipcMain.handle("pipeline:status", () => ({ watcherRunning: Boolean(watcherProcess), watcherPid: watcherProcess?.pid || null }));
   ipcMain.handle("pipeline:runOnce", () => runPython(["scripts/watch_daemon.py", "--once"]));
   ipcMain.handle("orchestrator:runOnce", () => runPython(["scripts/run_orchestrator.py", "--once"]));
+  ipcMain.handle("media:buildCache", () => runPython(["scripts/build_media_cache.py"]));
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
   ipcMain.handle("notify:test", () => {
     notify("HigherKey notification test", "Local notifications are wired.");
