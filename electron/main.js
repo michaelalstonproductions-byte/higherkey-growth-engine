@@ -305,6 +305,7 @@ function createMenu() {
         { label: "Start Watcher", click: () => startWatcher() },
         { label: "Stop Watcher", click: () => stopWatcher() },
         { label: "Run One Daemon Tick", click: () => runPython(["scripts/watch_daemon.py", "--once"]) },
+        { label: "Run Full Media Prep", click: () => runFullMediaPrep() },
         { label: "Run Orchestrator Once", click: () => runPython(["scripts/run_orchestrator.py", "--once"]) },
         { label: "Build Media Cache", click: () => runPython(["scripts/build_media_cache.py"]) },
         { label: "Run Diagnostics", click: () => runPython(["scripts/run_diagnostics.py"]) },
@@ -514,6 +515,120 @@ async function runPipelineOnce() {
   return { ...result, status, parsed, contentInbox: profile.contentInbox, activeProjectRoot };
 }
 
+async function importFootage() {
+  await readSettings();
+  const inbox = path.join(activeProjectRoot, "content_inbox");
+  const selected = await dialog.showOpenDialog(mainWindow, {
+    title: "Import Footage",
+    buttonLabel: "Import Footage",
+    properties: ["openFile", "multiSelections"],
+    filters: [
+      { name: "Video files", extensions: ["mp4", "mov", "m4v"] }
+    ]
+  });
+  if (selected.canceled || !selected.filePaths.length) {
+    return {
+      imported: 0,
+      skipped: [],
+      errors: [],
+      inbox,
+      importedFiles: [],
+      canceled: true
+    };
+  }
+  const result = await ingestDroppedFilesToInbox(selected.filePaths, inbox);
+  return {
+    imported: result.copied.length,
+    skipped: result.skipped,
+    errors: result.errors,
+    inbox: result.inbox,
+    importedFiles: result.copied,
+    accepted_extensions: result.accepted_extensions,
+    canceled: false
+  };
+}
+
+async function runFullMediaPrep() {
+  const settings = await readSettings();
+  const profile = projectProfile(settings);
+  await fsp.mkdir(profile.contentInbox, { recursive: true });
+  const steps = [
+    { name: "Creating clips", stage: "creating_clips", args: ["scripts/run_pipeline.py"] },
+    { name: "Indexing metadata", stage: "indexing_metadata", args: ["scripts/rebuild_metadata_index.py"] },
+    { name: "Building thumbnails", stage: "building_thumbnails", args: ["scripts/build_media_cache.py"] },
+    { name: "Updating agents", stage: "updating_agents", args: ["scripts/run_orchestrator.py", "--once"] }
+  ];
+  const results = [];
+  for (const step of steps) {
+    await writePipelineLastRun({
+      code: null,
+      stdout: "",
+      stderr: "",
+      cwd: activeProjectRoot,
+      scriptPath: path.join(APP_ROOT, step.args[0]),
+      args: step.args.slice(1),
+      startedAt: new Date().toISOString(),
+      completedAt: null
+    }, { state_hint: "running", command: step.stage });
+    const result = await runPython(step.args);
+    results.push({ name: step.name, stage: step.stage, ...result });
+    await writePipelineLastRun(result, { command: step.stage });
+    if (result.code !== 0) {
+      return { code: result.code, steps: results, activeProjectRoot, contentInbox: profile.contentInbox };
+    }
+  }
+  return { code: 0, steps: results, activeProjectRoot, contentInbox: profile.contentInbox };
+}
+
+async function importAndProcessFootage() {
+  const imported = await importFootage();
+  if (imported.canceled || imported.imported === 0) {
+    return {
+      code: imported.errors.length ? 1 : 0,
+      imported,
+      prep: null,
+      activeProjectRoot
+    };
+  }
+  const prep = await runFullMediaPrep();
+  return {
+    code: prep.code,
+    imported,
+    prep,
+    activeProjectRoot
+  };
+}
+
+async function verifyImportBridge() {
+  await readSettings();
+  const inbox = path.join(activeProjectRoot, "content_inbox");
+  return {
+    ok: true,
+    activeProjectRoot,
+    inbox,
+    acceptedExtensions: [".mp4", ".mov", ".m4v"],
+    importFootage: "ready",
+    importAndProcessFootage: "ready"
+  };
+}
+
+async function verifyImportAndProcessBridge() {
+  const bridge = await verifyImportBridge();
+  return {
+    ...bridge,
+    fullMediaPrep: ["run_pipeline.py", "rebuild_metadata_index.py", "build_media_cache.py", "run_orchestrator.py --once"]
+  };
+}
+
+async function archiveTestMedia() {
+  const result = await runPython(["scripts/archive_test_media.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function exportSocialPacks(_event, options = {}) {
   const platforms = Array.isArray(options.platforms) && options.platforms.length ? options.platforms : [];
   const approvedIds = Array.isArray(options.approvedIds) ? options.approvedIds.filter(Boolean) : [];
@@ -710,8 +825,14 @@ function registerIpc() {
   ipcMain.handle("pipeline:stopWatcher", stopWatcher);
   ipcMain.handle("pipeline:status", () => ({ watcherRunning: Boolean(watcherProcess), watcherPid: watcherProcess?.pid || null }));
   ipcMain.handle("pipeline:runOnce", runPipelineOnce);
+  ipcMain.handle("pipeline:runFullMediaPrep", runFullMediaPrep);
+  ipcMain.handle("files:importFootage", importFootage);
+  ipcMain.handle("files:importAndProcessFootage", importAndProcessFootage);
+  ipcMain.handle("files:verifyImportBridge", verifyImportBridge);
+  ipcMain.handle("files:verifyImportAndProcessBridge", verifyImportAndProcessBridge);
   ipcMain.handle("orchestrator:runOnce", () => runPython(["scripts/run_orchestrator.py", "--once"]));
   ipcMain.handle("media:buildCache", () => runPython(["scripts/build_media_cache.py"]));
+  ipcMain.handle("media:archiveTestMedia", archiveTestMedia);
   ipcMain.handle("social:exportPacks", exportSocialPacks);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("qa:runFull", () => runPython(["scripts/run_full_qa.py"]));

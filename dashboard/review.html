@@ -196,6 +196,62 @@
       }
       .zero-queue-cta h3 { font-size: 13px; letter-spacing: .08em; margin: 0; text-transform: uppercase; }
       .zero-queue-cta p { color: #c0c8d5; font-size: 12px; line-height: 1.35; margin: 0; }
+      .onboarding-card {
+        display: grid;
+        gap: 16px;
+        width: 100%;
+        padding: 22px;
+        border: 1px solid rgba(239, 51, 71, 0.34);
+        border-radius: 14px;
+        background:
+          radial-gradient(circle at 80% 10%, rgba(239,51,71,.2), transparent 30%),
+          linear-gradient(135deg, rgba(20,24,32,.96), rgba(6,8,12,.96));
+      }
+      .onboarding-card .eyebrow {
+        color: #ff8b95;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+      }
+      .onboarding-card h2 { font-size: 30px; line-height: 1; margin: 7px 0 8px; }
+      .onboarding-card p { color: #b7c0cf; margin: 0; max-width: 660px; }
+      .onboarding-card ol {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(150px, 1fr));
+        gap: 8px 14px;
+        margin: 0;
+        padding-left: 18px;
+        color: #e4e9f2;
+      }
+      .static-commands {
+        display: grid;
+        gap: 6px;
+        color: #9aa4b3;
+      }
+      .static-commands code {
+        background: rgba(0,0,0,.38);
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        padding: 7px 9px;
+      }
+      .production-empty .onboarding-panel { padding: 14px; }
+      .cinematic-placeholder, .hero-placeholder {
+        background:
+          radial-gradient(circle at 62% 34%, rgba(239,51,71,.28), transparent 15%),
+          linear-gradient(145deg, #1d2634, #080b10 54%, #151b25);
+      }
+      .insight-stack {
+        display: grid;
+        gap: 12px;
+        padding: 16px;
+      }
+      .health-compact {
+        display: grid;
+        gap: 8px;
+      }
+      .health-compact strong { color: var(--good); font-size: 18px; }
+      .health-compact span { color: var(--muted); }
 
       .workspace {
         min-height: 0;
@@ -477,131 +533,301 @@
         .strip { height: auto; }
         .dashboard-grid { grid-template-columns: 1fr; }
       }
+
+      :root {
+        --bg:#05070a;
+        --bg2:#080b10;
+        --panel:#0b1017;
+        --panel2:#101722;
+        --panel3:#151d2a;
+        --line:#263241;
+        --line2:#364253;
+        --text:#f3f6fb;
+        --muted:#9aa7b7;
+        --dim:#657284;
+        --red:#f2353f;
+        --red2:#9b111c;
+        --green:#49d766;
+        --blue:#458cff;
+        --yellow:#f2b84b;
+        --radius:14px;
+        --shadow:0 18px 60px rgba(0,0,0,.48);
+      }
+      html,body{
+        width:100%;
+        height:100%;
+        margin:0;
+        overflow:hidden;
+        background:
+          radial-gradient(circle at 30% -10%,rgba(175,20,30,.18),transparent 36%),
+          radial-gradient(circle at 90% 0,rgba(255,255,255,.06),transparent 28%),
+          linear-gradient(180deg,#090b0f,#030406);
+        color:var(--text);
+        font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Inter","Segoe UI",sans-serif;
+      }
+      .app{
+        height:100vh;
+        display:grid;
+        grid-template-columns:280px minmax(680px,1fr) 388px;
+        grid-template-rows:86px 1fr 30px;
+        gap:12px;
+        padding:10px 10px 0;
+      }
+      .topbar{
+        grid-column:1 / 4;
+        display:grid;
+        grid-template-columns:280px 1fr auto;
+        align-items:center;
+        gap:16px;
+        border:1px solid var(--line);
+        background:
+          linear-gradient(180deg,rgba(20,25,34,.92),rgba(6,8,12,.96)),
+          radial-gradient(circle at 0 0,rgba(242,53,63,.16),transparent 36%);
+        border-radius:16px;
+        box-shadow:var(--shadow);
+        padding:0 16px;
+      }
+      .brand{display:flex;align-items:center;gap:14px;min-width:0}
+      .logo{width:44px;height:44px;filter:drop-shadow(0 0 16px rgba(242,53,63,.45))}
+      .logo svg{display:block;width:100%;height:100%}
+      .brand-title{line-height:1.05;letter-spacing:.08em;text-transform:uppercase;font-weight:800;font-size:17px}
+      .brand-title span{display:block;color:#d9dee8;font-weight:500;font-size:13px;letter-spacing:.16em;margin-top:3px}
+      .session-line{color:var(--muted);font-size:11px;margin-top:5px;white-space:nowrap}
+      .badge{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;border:1px solid #31506f;color:#9ed0ff;background:#0c1724;font-size:11px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
+      .project-line{display:grid;grid-template-columns:1fr 160px 126px;gap:20px;align-items:center;min-width:0}
+      .kicker{color:#cbd4e2;text-transform:uppercase;font-size:11px;letter-spacing:.1em;margin-bottom:6px}
+      .path{color:#eff4ff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .status-green{color:var(--green);font-weight:800;font-size:13px}
+      .actions{display:flex;align-items:center;gap:8px}
+      .btn,button.btn,select.select,input.search{
+        border:1px solid var(--line2);
+        background:linear-gradient(180deg,#121925,#0a0e15);
+        color:#eef3fb;
+        border-radius:8px;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+      }
+      .btn,button.btn{height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:.16s ease}
+      .btn:hover{border-color:#546276;transform:translateY(-1px)}
+      .btn.red,.btn.primary,button.primary{background:linear-gradient(180deg,#ec3743,#9e111e);border-color:#ff5862;color:#fff;box-shadow:0 0 22px rgba(242,53,63,.22)}
+      .btn.green{background:linear-gradient(180deg,#1c6d36,#103f22);border-color:#36a957}
+      .btn.danger,button.danger{border-color:#7c2630;color:#ffb8bd;background:linear-gradient(180deg,#231018,#12070a)}
+      .icon-btn{width:38px;padding:0}
+      .left{
+        grid-column:1;
+        grid-row:2;
+        display:grid;
+        grid-template-rows:auto 1fr auto;
+        border:1px solid var(--line);
+        border-radius:var(--radius);
+        background:
+          linear-gradient(180deg,rgba(14,21,31,.98),rgba(6,9,14,.98)),
+          radial-gradient(circle at 0 0,rgba(242,53,63,.12),transparent 30%);
+        overflow:hidden;
+      }
+      .nav{padding:14px;display:block}
+      .nav-item,.tab.nav-item{
+        width:100%;
+        height:48px;
+        border-radius:10px;
+        display:flex;
+        align-items:center;
+        gap:12px;
+        padding:0 14px;
+        color:#dce4ef;
+        cursor:pointer;
+        margin-bottom:7px;
+        border:1px solid transparent;
+        transition:.15s ease;
+        background:transparent;
+        justify-content:flex-start;
+        font-size:14px;
+      }
+      .tab.nav-item::before{content:attr(data-icon);width:22px;text-align:center;color:#f3f6fb;font-size:15px}
+      .nav-item:hover{background:#101824;border-color:#29384b}
+      .nav-item.active,.tab.active{
+        background:linear-gradient(90deg,rgba(242,53,63,.3),rgba(242,53,63,.06));
+        border-color:#7c2630;
+        color:#fff;
+        box-shadow:inset 3px 0 0 var(--red);
+      }
+      .system{margin:14px;border:1px solid var(--line);border-radius:12px;padding:14px;background:rgba(255,255,255,.025)}
+      .section-title{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#f4f7fc;font-weight:800;margin-bottom:10px}
+      .system-row{display:flex;justify-content:space-between;gap:12px;color:#b8c4d3;font-size:13px;margin:8px 0}
+      .system-row strong{color:var(--green);font-weight:700}
+      .operator-card{border-top:1px solid var(--line);padding:14px;display:flex;gap:12px;align-items:center}
+      .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(145deg,#f4f4f4,#777);color:#333;display:grid;place-items:center;font-weight:900}
+      .operator-meta{line-height:1.2}.operator-meta strong{display:block;font-size:13px}.operator-meta span{color:var(--muted);font-size:12px}
+      .main{grid-column:2;grid-row:2;display:grid;grid-template-rows:1.3fr 260px 210px;gap:12px;min-width:0}
+      .panel{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,rgba(15,20,29,.96),rgba(6,8,12,.96));box-shadow:0 12px 36px rgba(0,0,0,.25);overflow:hidden}
+      .panel-head{height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.06)}
+      .panel-title{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#eef4ff;font-weight:800}
+      .preview{position:relative;min-height:0}
+      .hero{position:absolute;inset:42px 0 92px;background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.68)),radial-gradient(circle at 60% 45%,rgba(255,212,137,.42),transparent 16%),linear-gradient(145deg,#182130 0%,#283447 30%,#0d121b 72%,#05070b 100%);overflow:hidden;border:0;border-radius:0;display:grid;place-items:center}
+      .hero:empty:before{content:"";position:absolute;inset:0;background:linear-gradient(160deg,transparent 0 35%,rgba(0,0,0,.5) 36% 42%,transparent 43%),linear-gradient(25deg,transparent 0 42%,rgba(0,0,0,.55) 43% 54%,transparent 55%),radial-gradient(circle at 48% 78%,rgba(242,53,63,.55),transparent 1.5%),linear-gradient(180deg,transparent 0 72%,rgba(0,0,0,.72) 73%);opacity:.9}
+      .viewer video{width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain;background:#02050a}
+      .file-chip{position:absolute;top:56px;left:16px;z-index:2;max-width:calc(100% - 32px);padding:7px 10px;border-radius:6px;background:rgba(6,8,12,.72);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(8px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+      .stats{position:absolute;left:68px;right:68px;bottom:104px;z-index:3;display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px}
+      .stat-card{border:1px solid rgba(255,255,255,.12);border-radius:10px;background:rgba(0,0,0,.48);backdrop-filter:blur(12px);text-align:center;padding:14px 10px}
+      .stat-card span{display:block;color:#c3cedc;text-transform:uppercase;font-size:11px;letter-spacing:.09em}.stat-card strong{display:block;font-size:28px;margin-top:5px}.stat-card em{display:block;color:var(--green);font-style:normal;font-size:12px;margin-top:4px}
+      .player{position:absolute;left:0;right:0;bottom:0;height:92px;padding:12px 18px;border-top:1px solid rgba(255,255,255,.08);background:linear-gradient(180deg,rgba(5,7,10,.66),rgba(5,7,10,.95))}
+      .progress{height:4px;background:#303847;border-radius:10px;overflow:hidden;margin-bottom:12px}.progress div{height:100%;width:44%;background:linear-gradient(90deg,var(--red),#ff6b73)}
+      .player-row{display:flex;align-items:center;justify-content:space-between;gap:14px}.controls{display:flex;gap:10px;align-items:center}.review-actions{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px;margin-top:10px}
+      .media{padding-bottom:12px}.filters{display:flex;gap:10px;align-items:center}.search{width:280px;height:36px;padding:0 12px}.select{height:36px;padding:0 12px}
+      .clip-grid{padding:12px 14px;display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:12px;overflow:auto}
+      .clip{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0b1018;cursor:pointer;position:relative;transition:.15s ease}.clip:hover,.clip.active{border-color:#69758a;transform:translateY(-2px)}
+      .clip .thumb{height:92px;width:100%;aspect-ratio:auto;position:relative;border:0;border-radius:0;background:radial-gradient(circle at 58% 30%,rgba(255,211,145,.55),transparent 16%),linear-gradient(145deg,#22314a,#0a111b 62%,#223923)}
+      .clip .thumb img{width:100%;height:100%;object-fit:cover}.score-badge{position:absolute;top:8px;left:8px;color:#6eff85;background:rgba(0,0,0,.62);border:1px solid rgba(110,255,133,.4);padding:3px 7px;border-radius:6px;font-weight:800}
+      .clip-body{padding:9px;font-size:12px}.clip-name{color:#e9eff8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.clip-meta{color:var(--muted);margin-top:5px}.clip-state{color:var(--green);margin-top:6px;font-size:11px}
+      .bottom-grid{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:12px;min-height:0}
+      .small-panel,.bottom-card{padding:13px 14px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,rgba(15,20,29,.96),rgba(6,8,12,.96));overflow:hidden}
+      .timeline-row{display:flex;gap:8px;color:#b9c3d1;font-size:12px;margin:8px 0}.dot{color:var(--green)}
+      .heatmap{height:104px;display:flex;align-items:end;gap:3px;padding-top:12px;margin:0}.heat,.bar{flex:1;min-width:3px;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#ff4b55,#65121a);opacity:.8;border:0}.heat.on{background:linear-gradient(180deg,#ff4b55,#65121a)}
+      .waveform{height:38px}.agent-row,.summary-row{display:flex;justify-content:space-between;gap:10px;color:#b9c3d1;font-size:12px;margin:8px 0;border:0;padding:0}.agent-row strong{color:var(--green)}.summary-row strong{color:#fff}
+      .right{grid-column:3;grid-row:2;display:grid;grid-template-columns:1fr 52px;border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#0e141d,#06080d);overflow:hidden}
+      .inspector{overflow:auto}.inspector-section,.card{padding:16px;border:0;border-bottom:1px solid rgba(255,255,255,.07);border-radius:0;background:transparent}.inspector h3,.card h3{margin:0 0 12px;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+      .hook-line{height:42px;position:relative;border-bottom:1px solid #28303e;margin-top:10px}.hook-line:before{content:"";position:absolute;left:0;right:0;top:20px;height:1px;background:#2a3342}.marker{position:absolute;top:8px;width:3px;height:28px;background:var(--red);box-shadow:0 0 14px rgba(242,53,63,.8)}.marker:after{content:"";position:absolute;left:-5px;top:10px;width:13px;height:13px;border-radius:50%;background:var(--red)}
+      .time-row{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}.pills,.chips{display:flex;flex-wrap:wrap;gap:7px}.pill,.chip{padding:5px 9px;background:#162130;border:1px solid #27374c;border-radius:999px;color:#dce7f5;font-size:11px}.pill.green{background:#12321c;border-color:#1f6e36;color:#b9ffc9}.copy,.caption{color:#d9e1ec;font-size:13px;line-height:1.45}
+      .side-icons{border-left:1px solid rgba(255,255,255,.07);background:#070a0e;display:flex;flex-direction:column;align-items:center;padding-top:18px;gap:22px;color:#d9e1ed}.side-icons div{width:32px;height:32px;display:grid;place-items:center;border-radius:8px}.side-icons div.active{color:var(--red);background:rgba(242,53,63,.12)}
+      .footer{grid-column:1 / 4;grid-row:3;border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;background:#080c12;display:flex;align-items:center;gap:28px;padding:0 14px;color:#9aa7b7;font-size:12px}.footer .ok{margin-left:auto;color:var(--green)}
+      .notice{position:fixed;left:300px;right:410px;top:104px;z-index:10;margin:0}.notice.visible{display:block}
+      .hidden{display:none!important}.muted{color:var(--muted)}
+      .mode-workspace{grid-template-rows:none;overflow:hidden}
+      .view{display:grid;gap:12px;min-height:0;height:100%;overflow:hidden}
+      .view-scroll{overflow:auto;min-height:0}
+      .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+      .kpi-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,rgba(15,20,29,.96),rgba(6,8,12,.96));padding:14px;min-height:104px}
+      .kpi-card span{display:block;color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800}.kpi-card strong{display:block;color:#fff;font-size:30px;margin-top:10px}.kpi-card p{color:var(--muted);font-size:12px;line-height:1.35;margin:6px 0 0}
+      .dashboard-view{grid-template-rows:auto 1fr 1fr}.dashboard-grid-main{display:grid;grid-template-columns:1.15fr .85fr;gap:12px;min-height:0}.dashboard-grid-secondary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-height:0}
+      .feature-preview{position:relative;min-height:260px}.feature-preview .hero{inset:42px 0 0}.feature-copy{position:absolute;left:18px;right:18px;bottom:18px;z-index:3}.feature-copy h2{font-size:28px;margin:0 0 8px}.feature-copy p{color:#c7d1df;margin:0}
+      .data-table{width:100%;border-collapse:collapse;font-size:12px}.data-table th{color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:10px;border-bottom:1px solid var(--line)}.data-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.06);color:#dce5f1;vertical-align:middle}.data-table tr{cursor:pointer}.data-table tr:hover,.data-table tr.active{background:rgba(242,53,63,.09)}
+      .table-thumb{width:58px;height:34px;border-radius:6px;background:#101824;overflow:hidden;border:1px solid var(--line)}.table-thumb img{width:100%;height:100%;object-fit:cover}
+      .queue-view{grid-template-rows:auto auto 1fr;grid-template-columns:1fr 360px}.queue-view .kpi-grid,.queue-toolbar{grid-column:1 / 3}.queue-table-panel{min-height:0}.queue-detail{min-height:0}
+      .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.toolbar-tabs{display:flex;gap:8px;margin-right:auto}.toolbar-tabs .btn.active{border-color:#ff5862;background:rgba(242,53,63,.18)}
+      .media-view{grid-template-rows:auto 320px 1fr}.media-library-head{display:flex;justify-content:space-between;align-items:center}.asset-preview{display:grid;grid-template-columns:minmax(320px,1fr) 360px;gap:12px;min-height:0}.asset-stage{position:relative;background:#02050a;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:grid;place-items:center}.asset-stage video{width:100%;height:100%;object-fit:contain}.asset-stage img{width:100%;height:100%;object-fit:cover}
+      .intelligence-view{grid-template-rows:auto 1fr 160px}.inner-tabs{display:flex;gap:8px;overflow:auto}.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}.chart-bars{height:160px;display:flex;align-items:end;gap:6px}.chart-bar{flex:1;background:linear-gradient(180deg,#ff4b55,#65121a);border-radius:5px 5px 0 0;min-height:8px}.breakdown-row{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center;margin:10px 0}.breakdown-track{height:8px;background:#253142;border-radius:999px;overflow:hidden}.breakdown-track div{height:100%;background:linear-gradient(90deg,var(--red),#ff7a82)}
+      .agents-view{grid-template-rows:auto 1fr 180px}.agent-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-height:0}.agent-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:14px}.graph-lane{display:flex;gap:10px;align-items:center;overflow:auto}.graph-step{min-width:150px;border:1px solid var(--line);border-radius:10px;padding:12px;background:#111a27}.graph-arrow{color:var(--dim)}
+      .analytics-view{grid-template-rows:auto 1fr 1fr}.analytics-charts{display:grid;grid-template-columns:1.2fr .8fr;gap:12px;min-height:0}.empty-state{display:grid;place-items:center;text-align:center;min-height:220px;color:var(--muted);padding:24px}.empty-state h2{color:#fff;margin:0 0 8px}
+      .social-view{grid-template-rows:auto 1fr 190px}.platform-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.platform-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:16px;display:grid;gap:10px}.platform-card h2{margin:0}.checklist{display:grid;gap:7px;color:#c9d4e3;font-size:13px}
+      .diagnostics-view{grid-template-rows:auto 1fr 190px}.diagnostics-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}.json-panel{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;color:#c7d1df;overflow:auto;max-height:100%;background:#05080d;border:1px solid var(--line);border-radius:10px;padding:12px}
+      .settings-view{grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr))}.settings-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:16px;overflow:auto}.settings-card h2{font-size:16px;margin:0 0 12px}.setting-row{display:flex;justify-content:space-between;gap:14px;color:#b9c4d2;border-top:1px solid rgba(255,255,255,.06);padding:10px 0}
+      .mini-strip{display:flex;gap:10px;overflow:auto}.mini-clip{min-width:120px;border:1px solid var(--line);border-radius:10px;background:#0b1018;overflow:hidden}.mini-clip .thumb{height:70px;width:100%}.mini-clip div:last-child{padding:8px;font-size:11px;color:#dce5f1}
+      @media(max-width:1300px){.app{grid-template-columns:230px minmax(600px,1fr) 330px}.clip-grid{grid-template-columns:repeat(3,1fr)}.project-line{grid-template-columns:1fr;gap:6px}.actions{flex-wrap:wrap;justify-content:flex-end}.topbar{grid-template-columns:240px 1fr auto}}
     </style>
   </head>
   <body>
     <div class="app">
-      <header>
-        <div class="topbar">
-          <div class="brand">
-            <span class="brand-mark" aria-label="HigherKey logo">
-              <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
-                <defs>
-                  <linearGradient id="higherkeyMarkGradient" x1="16" y1="18" x2="78" y2="86" gradientUnits="userSpaceOnUse">
-                    <stop offset="0" stop-color="#ff6a72"></stop>
-                    <stop offset="0.48" stop-color="#ef3347"></stop>
-                    <stop offset="1" stop-color="#8e101c"></stop>
-                  </linearGradient>
-                  <mask id="higherkeyMarkCutout">
-                    <rect width="100" height="100" fill="#fff"></rect>
-                    <circle cx="50" cy="48" r="15" fill="#000"></circle>
-                  </mask>
-                </defs>
-                <path d="M8 18 L92 18 L70 73 L56 57 L50 78 L44 57 L30 73 Z" fill="url(#higherkeyMarkGradient)" mask="url(#higherkeyMarkCutout)"></path>
-              </svg>
-            </span>
-            <div>
-              <h1>HigherKey<br>Operator OS <span class="version-badge" id="versionBadge">V2.8 RC</span></h1>
-              <div id="sessionLine">Loading local session</div>
-            </div>
+      <header class="topbar">
+        <div class="brand">
+          <div class="logo" aria-label="HigherKey logo">
+            <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+              <defs>
+                <linearGradient id="hkRed" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0" stop-color="#ff5964"></stop>
+                  <stop offset=".55" stop-color="#f12432"></stop>
+                  <stop offset="1" stop-color="#8d0913"></stop>
+                </linearGradient>
+              </defs>
+              <path d="M10 18 L84 8 L63 35 L93 45 L28 91 L43 58 Z" fill="url(#hkRed)"></path>
+              <path d="M28 27 L66 19 L50 39 L72 45 L36 70 L44 52 Z" fill="#0a0d12" opacity=".75"></path>
+            </svg>
           </div>
-          <div class="tools header-tools">
-            <span class="command-stat"><strong>Active Project</strong> <span id="headerProjectPath">Loading</span></span>
-            <span class="command-stat"><strong>Pipeline</strong> <span id="headerPipelineState">Idle</span></span>
-            <span class="command-stat"><strong>Health</strong> <span id="headerHealthState">Unknown</span></span>
-            <button id="openInbox">Open Inbox</button>
-            <button id="selectProject">Select Project Folder</button>
-            <button id="useRepoProject">Use Current Repo</button>
-            <button id="runFirstPipeline" class="primary">Run Pipeline</button>
-            <button id="exportApproved" class="primary">Export Approved</button>
-            <button id="aboutApp">Build Info</button>
+          <div>
+            <div class="brand-title">HigherKey <span>Operator OS</span></div>
+            <div id="sessionLine" class="session-line">Loading local session</div>
+          </div>
+          <span class="badge" id="versionBadge">V2.8 RC</span>
+        </div>
+
+        <div class="project-line">
+          <div>
+            <div class="kicker">Active Project</div>
+            <div class="path" id="headerProjectPath">Loading</div>
+          </div>
+          <div>
+            <div class="kicker">Pipeline Status</div>
+            <div class="status-green" id="headerPipelineState">Idle</div>
+          </div>
+          <div>
+            <div class="kicker">Health</div>
+            <div class="status-green" id="headerHealthState">Unknown</div>
           </div>
         </div>
-        <div class="statusbar" id="systemStatus"></div>
-        <div class="statusbar" id="projectStatus"></div>
-        <div class="notice" id="notice"></div>
+
+        <div class="actions">
+          <button class="btn red" id="importFootage">Import Footage</button>
+          <button class="btn red" id="importAndProcess">Import & Process</button>
+          <button class="btn" id="runFullMediaPrep">Run Full Media Prep</button>
+          <button class="btn" id="exportApproved">Export Approved</button>
+          <button class="btn" id="selectProject">Select Project</button>
+          <button class="btn icon-btn" id="aboutApp">More</button>
+          <button class="hidden" id="openInbox">Open Inbox Folder</button>
+          <button class="hidden" id="useRepoProject">Use Repo Project</button>
+          <button class="hidden" id="runFirstPipeline">Run First Pipeline</button>
+        </div>
       </header>
 
-      <div class="app-main">
-        <aside class="navrail">
-          <div class="nav-title">Command Center</div>
-          <div class="tabs" id="modeTabs">
-            <button class="tab active" data-icon="⌘" data-mode="dashboard">Dashboard</button>
-            <button class="tab" data-icon="☷" data-mode="queue">Queue</button>
-            <button class="tab" data-icon="▣" data-mode="media">Media</button>
-            <button class="tab" data-icon="✣" data-mode="search">Intelligence</button>
-            <button class="tab" data-icon="◇" data-mode="agents">Agents</button>
-            <button class="tab" data-icon="▥" data-mode="analytics">Analytics</button>
-            <button class="tab" data-icon="◎" data-mode="social">Social Exports</button>
-            <button class="tab" data-icon="◈" data-mode="diagnostics">Diagnostics</button>
-            <button class="tab" data-icon="⚙" data-mode="settings">Settings</button>
+      <aside class="left">
+        <nav class="nav tabs" id="modeTabs">
+          <button class="tab nav-item active" data-icon="⌘" data-mode="dashboard">Dashboard</button>
+          <button class="tab nav-item" data-icon="☷" data-mode="queue">Queue</button>
+          <button class="tab nav-item" data-icon="▣" data-mode="media">Media</button>
+          <button class="tab nav-item" data-icon="✺" data-mode="search">Intelligence</button>
+          <button class="tab nav-item" data-icon="♙" data-mode="agents">Agents</button>
+          <button class="tab nav-item" data-icon="♬" data-mode="analytics">Analytics</button>
+          <button class="tab nav-item" data-icon="◎" data-mode="social">Social Exports</button>
+          <button class="tab nav-item" data-icon="▤" data-mode="diagnostics">Diagnostics</button>
+          <button class="tab nav-item" data-icon="⚙" data-mode="settings">Settings</button>
+        </nav>
+        <div></div>
+        <div>
+          <div class="system">
+            <div class="section-title">System Status</div>
+            <div id="systemStatus"></div>
+            <button class="btn" data-desktop-action="run-diagnostics" style="width:100%;margin-top:12px;justify-content:center;">View Diagnostics</button>
           </div>
-        </aside>
-
-      <main class="workspace">
-        <aside class="dock media-bin">
-          <div class="dock-head">
-            <p class="dock-title">Media Bin</p>
-            <div class="dock-sub">Batch select, prioritize, and navigate clips</div>
-            <div class="tools" style="margin-top:10px">
-              <input id="searchInput" type="search" placeholder="Search clips, tags, labels">
-              <select id="statusFilter">
-                <option value="all">All</option>
-                <option value="pending">Pending</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
-              </select>
+          <div class="operator-card">
+            <div class="avatar">HK</div>
+            <div class="operator-meta">
+              <strong>HigherKey OS</strong>
+              <span>Operator</span>
             </div>
+            <div style="margin-left:auto;color:#9aa7b7;">›</div>
           </div>
-          <div class="dock-body">
-            <div id="binList" class="bin-list"></div>
-          </div>
-        </aside>
-
-        <section class="monitor">
-          <div class="tools" style="justify-content:space-between; margin-bottom:10px">
-            <div class="tools">
-              <button id="prevClip">Previous</button>
-              <button id="playPause">Play/Pause</button>
-              <button id="nextClip">Next</button>
-            </div>
-            <div class="tools">
-              <button id="approveClip" class="primary">Approve</button>
-              <button id="rejectClip" class="danger">Reject</button>
-              <select id="prioritySelect">
-                <option value="high">High priority</option>
-                <option value="normal">Normal priority</option>
-                <option value="low">Low priority</option>
-              </select>
-            </div>
-          </div>
-          <div class="viewer" id="viewer"></div>
-          <div class="monitor-info">
-            <h2 class="monitor-title" id="monitorTitle">No clip selected</h2>
-            <p class="caption" id="monitorCaption">Drop videos into the inbox or run the pipeline to populate the queue.</p>
-            <div class="chips" id="monitorChips"></div>
-          </div>
-        </section>
-
-        <aside class="dock inspector">
-          <div class="dock-head">
-            <p class="dock-title">Intelligence Inspector</p>
-            <div class="dock-sub">Score, hooks, metadata, analytics, and desktop controls</div>
-          </div>
-          <div class="dock-body">
-            <div id="inspector" class="inspector-grid"></div>
-          </div>
-        </aside>
-      </main>
-      </div>
-
-      <footer class="strip">
-        <div style="width:260px">
-          <p class="dock-title">Processing Timeline</p>
-          <div class="dock-sub" id="pipelineLine">Status unavailable</div>
         </div>
-        <div class="timeline" id="timeline"></div>
+      </aside>
+
+      <main class="main mode-workspace" id="mainContent"></main>
+
+      <aside class="right">
+        <div class="inspector">
+          <div class="panel-head">
+            <div class="panel-title">Clip Intelligence</div>
+          </div>
+          <div id="inspector"></div>
+        </div>
+        <div class="side-icons">
+          <div class="active">⌘</div>
+          <div>💬</div>
+          <div>🏷</div>
+          <div>☷</div>
+          <div>📄</div>
+          <div>⇧</div>
+        </div>
+      </aside>
+
+      <footer class="footer" id="bottomTelemetry">
+        <span>HigherKey Operator OS</span>
+        <span id="footerVersion">V2.8 RC</span>
+        <span id="footerProject">Project: loading</span>
+        <span>Mode: Local</span>
+        <span id="pipelineLine">Pipeline status unavailable</span>
+        <span class="ok" id="footerHealth">● System Healthy</span>
       </footer>
+
+      <div class="notice" id="notice"></div>
+      <div class="hidden" id="projectStatus"></div>
+      <button class="hidden" id="batchReject"></button>
+      <button class="hidden" id="recoverSession"></button>
     </div>
 
     <div class="overlay visible" id="startupOverlay">
@@ -642,6 +868,7 @@
       const REVIEW_KEY = "higherkey.review_status.v1";
       const PRIORITY_KEY = "higherkey.queue_priority.v21";
       const WORKSPACE_KEY = "higherkey.workspace.v21";
+      const PRODUCTION_KEY = "higherkey.production_mode.v29";
 
       const state = {
         mode: "dashboard",
@@ -651,6 +878,7 @@
         review: readLocal(REVIEW_KEY, {}),
         priority: readLocal(PRIORITY_KEY, {}),
         workspace: readLocal(WORKSPACE_KEY, { density: "normal", lastActiveId: null, mode: "dashboard" }),
+        production: readLocal(PRODUCTION_KEY, { creativeMode: true, hideTestMedia: true }),
         metadata: { items: [], clusters: [] },
         metadataByClip: {},
         queue: { entries: [] },
@@ -699,11 +927,20 @@
       function statusOf(entry) { return ["approved","rejected","pending"].includes(state.review[entry.id]) ? state.review[entry.id] : "pending"; }
       function priorityOf(entry) { return state.priority[entry.id] || "normal"; }
       function score(entry) { return Number(entry.score || entry.package?.score || 0); }
-      function activeEntry() { return state.entries.find((entry) => entry.id === state.activeId) || state.entries[0] || null; }
+      function activeEntry() {
+        const entries = productionEntries();
+        return entries.find((entry) => entry.id === state.activeId) || entries[0] || state.entries.find((entry) => entry.id === state.activeId) || state.entries[0] || null;
+      }
       function cacheFor(entry) { return state.mediaCacheByClip[entry?.clip_id || ""] || null; }
       function tags(entry) { return entry.metadata?.semantic_tags || []; }
       function labels(entry) { return entry.metadata?.scene_labels || entry.package?.scene_labels || entry.scene_labels || []; }
       function title(entry) { return entry.metadata?.optimized_title || entry.package?.suggested_title || entry.package?.hook || entry.clip_id; }
+      function formatTime(seconds) {
+        const total = Math.max(0, Math.round(Number(seconds || 0)));
+        const minutes = Math.floor(total / 60);
+        const secs = total % 60;
+        return `00:${String(minutes).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+      }
       function releaseInfo() { return state.appInfo || state.release || { version: "V2.7", build_status: "release-candidate" }; }
       function versionLabel() {
         const release = releaseInfo();
@@ -721,9 +958,65 @@
           };
         });
       }
+      function staticModeMessage() {
+        return "Static browser mode: import buttons are disabled. Launch the desktop app with npm run app:open-latest to import footage.";
+      }
       function chips(values, strong = false) {
         if (!Array.isArray(values) || values.length === 0) return "";
         return values.slice(0, 10).map((value) => `<span class="chip${strong ? " strong" : ""}">${html(value)}</span>`).join("");
+      }
+
+      function mediaText(entry) {
+        const cache = cacheFor(entry) || {};
+        return [
+          entry?.id,
+          entry?.clip_id,
+          entry?.source_path,
+          entry?.clip_path,
+          entry?.package_path,
+          entry?.caption_path,
+          entry?.metadata?.source_path,
+          entry?.metadata?.generator,
+          entry?.package?.source,
+          entry?.package?.generator,
+          cache.thumbnail_path,
+          ...(cache.strip_thumbnails || []).map((frame) => frame.path)
+        ].filter(Boolean).join(" ").toLowerCase();
+      }
+
+      function isTestEntry(entry) {
+        const text = mediaText(entry);
+        return [
+          "smoke_sample",
+          "smoke-test",
+          "smoke_test",
+          "smoketest",
+          "testsrc",
+          "colorbar",
+          "color_bar",
+          "color-bars",
+          "smptebars",
+          "fixture",
+          "/test/",
+          "_test.",
+          "-test."
+        ].some((needle) => text.includes(needle)) || /\btest\b/.test(text);
+      }
+
+      function realEntries() { return state.entries.filter((entry) => !isTestEntry(entry)); }
+      function testEntries() { return state.entries.filter((entry) => isTestEntry(entry)); }
+      function productionEntries() { return state.production.hideTestMedia ? realEntries() : state.entries; }
+      function bestEntry(entries = productionEntries()) { return entries.slice().sort((a, b) => score(b) - score(a))[0] || null; }
+      function hiddenTestCount() { return state.production.hideTestMedia ? testEntries().length : 0; }
+      function setHideTestMedia(value) {
+        state.production.hideTestMedia = Boolean(value);
+        writeLocal(PRODUCTION_KEY, state.production);
+        if (state.activeId && state.production.hideTestMedia && isTestEntry(state.entries.find((entry) => entry.id === state.activeId))) {
+          state.activeId = bestEntry(realEntries())?.id || null;
+          persistWorkspace();
+        }
+        render();
+        setNotice(state.production.hideTestMedia ? "Test/generated media hidden from Production Mode." : "Test/generated media visible for diagnostics and QA review.");
       }
 
       function zeroQueueCtaHtml() {
@@ -733,21 +1026,23 @@
         return `
           <div class="zero-queue-cta">
             <h3>Connect a local project</h3>
-            <p>The active project has no queue entries. Select the repo project with existing outputs, open the inbox, or add videos and run the local pipeline.</p>
+            <p>The active project has no review clips yet. Import footage, process media, then review the generated clips.</p>
             <div class="tools">
+              <button data-desktop-action="import-footage" class="primary">Import Footage</button>
+              <button data-desktop-action="import-and-process" class="primary">Import & Process</button>
               <button data-desktop-action="pick-project">Select Project Folder</button>
               ${repoButton}
-              <button data-desktop-action="open-inbox">Open Inbox</button>
-              <button data-desktop-action="run-once" class="primary">Run Pipeline</button>
+              <button data-desktop-action="open-inbox">Open Inbox Folder</button>
+              <button data-desktop-action="run-full-media-prep">Process Media</button>
             </div>
           </div>
         `;
       }
 
       function filteredEntries() {
-        const query = $("searchInput").value.trim().toLowerCase();
-        const status = $("statusFilter").value;
-        return state.entries
+        const query = ($("searchInput")?.value || "").trim().toLowerCase();
+        const status = $("statusFilter")?.value || "all";
+        return productionEntries()
           .filter((entry) => state.mode !== "analytics" || true)
           .filter((entry) => status === "all" || statusOf(entry) === status)
           .filter((entry) => {
@@ -761,62 +1056,364 @@
           });
       }
 
+      function modeEntry() { return activeEntry() || bestEntry(); }
+      function approvedCount(entries = productionEntries()) { return entries.filter((entry) => statusOf(entry) === "approved").length; }
+      function agentCount() { return (state.agents?.agents || []).filter((agent) => agent.state !== "disabled").length; }
+      function healthStatus() { return state.diagnostics?.status || state.qaReport?.status || "unknown"; }
+      function lastPipelineLabel() { return (state.status?.updated_at || state.appInfo?.lastPipeline?.completed_at || "not run").slice(0, 16).replace("T", " "); }
+      function kpiCards(items) {
+        return `<div class="kpi-grid">${items.map(([label, value, note]) => `
+          <div class="kpi-card"><span>${html(label)}</span><strong>${html(value)}</strong><p>${html(note || "")}</p></div>
+        `).join("")}</div>`;
+      }
+      function clipThumb(entry, className = "thumb") {
+        const cache = cacheFor(entry);
+        if (cache?.thumbnail_path) return `<div class="${className}"><img src="../${html(cache.thumbnail_path)}" alt=""></div>`;
+        return `<div class="${className} cinematic-placeholder"></div>`;
+      }
+      function compactClipGrid(entries = filteredEntries().slice(0, 10)) {
+        return `<div class="clip-grid">${entries.map((entry) => `
+          <div class="clip ${entry.id === state.activeId ? "active" : ""}" data-entry-id="${html(entry.id)}">
+            ${clipThumb(entry)}
+            <div class="score-badge">${html(score(entry))}</div>
+            <div class="clip-body">
+              <div class="clip-name">${html(entry.clip_id || title(entry))}</div>
+              <div class="clip-meta">${html(labels(entry)[0] || "local clip")} · ${html(priorityOf(entry))}</div>
+              <div class="clip-state">${html(statusOf(entry))}</div>
+            </div>
+          </div>
+        `).join("") || zeroQueueCtaHtml()}</div>`;
+      }
+      function previewCard(entry = modeEntry()) {
+        if (!entry) return `<section class="panel feature-preview"><div class="panel-head"><div class="panel-title">Featured Preview</div></div><div class="empty-state">${realFootageOnboardingHtml()}</div></section>`;
+        const hook = (entry.package?.hook_moments || entry.hook_moments || [])[0]?.timestamp || 0;
+        const cache = cacheFor(entry);
+        const poster = cache?.thumbnail_path ? ` poster="../${html(cache.thumbnail_path)}"` : "";
+        return `
+          <section class="panel feature-preview">
+            <div class="panel-head"><div class="panel-title">Featured Preview</div><div>${html(entry.clip_id)}</div></div>
+            <div class="hero">${entry.clip_path ? `<video src="../${html(entry.clip_path)}"${poster} preload="metadata" muted playsinline></video>` : clipThumb(entry, "hero-placeholder")}</div>
+            <div class="stats">
+              <div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>${score(entry) >= 80 ? "Excellent" : "Local Score"}</em></div>
+              <div class="stat-card"><span>Hook Moment</span><strong>${html(formatTime(hook))}</strong><em>${hook ? "Strong Hook Detected" : "Pending"}</em></div>
+              <div class="stat-card"><span>Status</span><strong>${html(statusOf(entry))}</strong><em>${html(priorityOf(entry))}</em></div>
+            </div>
+          </section>
+        `;
+      }
+      function realFootageOnboardingHtml() {
+        const staticCommands = window.higherkey ? "" : `
+          <div class="static-commands">
+            <code>open content_inbox</code>
+            <code>python3 scripts/run_pipeline.py</code>
+            <code>python3 scripts/build_media_cache.py</code>
+          </div>
+        `;
+        return `
+          <div class="onboarding-card">
+            <div>
+              <span class="eyebrow">Production Mode</span>
+              <h2>Import real footage to begin</h2>
+            <p>Choose MP4, MOV, or M4V files. HigherKey will generate clips, captions, thumbnails, intelligence, and social export packs.</p>
+            </div>
+            <ol>
+              <li>Open Content Inbox</li>
+              <li>Drop in MP4/MOV/M4V footage</li>
+              <li>Run Pipeline</li>
+              <li>Build Media Cache</li>
+              <li>Review Clips</li>
+              <li>Export Social Packs</li>
+            </ol>
+            <div class="tools">
+              <button class="btn red" data-desktop-action="import-footage">Import Footage</button>
+              <button class="btn red" data-desktop-action="import-and-process">Import & Process</button>
+              <button class="btn" data-desktop-action="pick-project">Select Project</button>
+              <button class="btn" data-desktop-action="open-inbox">Open Inbox Folder</button>
+              <button class="btn" data-desktop-action="show-test-media">Show Test Media</button>
+              ${testEntries().length ? `<button class="btn" data-desktop-action="archive-test-media">Archive Test Media</button>` : ""}
+            </div>
+            ${staticCommands}
+          </div>
+        `;
+      }
+      function dashboardMediaInsightsHtml(entry) {
+        if (!entry) return `<div class="empty-state">${realFootageOnboardingHtml()}</div>`;
+        const hook = (entry.package?.hook_moments || entry.hook_moments || [])[0];
+        const recommendation = state.recommendations?.recommendations?.find((item) => item.clip_id === entry.clip_id) || state.recommendations?.recommendations?.[0];
+        return `
+          <div class="insight-stack">
+            <div class="metric"><span>Hook score</span><strong>${html(score(entry))}</strong></div>
+            <div class="metric"><span>Hook moment</span><strong>${html(hook ? formatTime(hook.timestamp || 0) : "pending")}</strong></div>
+            <div class="pills">${chips(labels(entry), true)}${chips(tags(entry))}</div>
+            <p class="copy">${html(recommendation?.reason || entry.package?.caption || entry.caption?.caption || "Review this clip to build stronger recommendations.")}</p>
+          </div>
+        `;
+      }
+      function renderDashboardView() {
+        const entries = productionEntries();
+        const approved = approvedCount(entries);
+        const best = bestEntry(entries);
+        if (!entries.length) {
+          return `
+            <div class="view dashboard-view production-empty">
+              ${kpiCards([
+                ["Total Clips", state.entries.length, hiddenTestCount() ? `${hiddenTestCount()} test/generated hidden` : "No real clips yet"],
+                ["Approved", approved, "Operator decisions"],
+                ["Ready for Social", state.socialManifest?.count || approved, "Manual upload packs"],
+                ["Best Clip", 0, "Import real footage"],
+                ["Active Agents", agentCount(), state.agents?.execution_mode || "sequential"],
+                ["Last Pipeline Run", lastPipelineLabel(), state.status?.state || "idle"],
+                ["Health", compactHealthLabel(), "Diagnostics available"]
+              ])}
+              <section class="panel onboarding-panel">${realFootageOnboardingHtml()}</section>
+              <div class="dashboard-grid-secondary">
+                <section class="small-panel"><div class="panel-title">Quick Actions</div>${quickActionsHtml()}</section>
+                <section class="small-panel"><div class="panel-title">Pipeline Activity</div>${activityRows(5)}</section>
+                <section class="small-panel"><div class="panel-title">Agent Activity</div>${agentRows(5)}</section>
+                <section class="small-panel"><div class="panel-title">Health</div>${compactHealthHtml()}</section>
+              </div>
+            </div>
+          `;
+        }
+        return `
+          <div class="view dashboard-view">
+            ${kpiCards([
+              ["Total Clips", entries.length, hiddenTestCount() ? `${hiddenTestCount()} test/generated hidden` : "Real clips ready for review"],
+              ["Approved", approved, "Operator-approved clips"],
+              ["Ready for Social", state.socialManifest?.count || approved, "Manual upload packs"],
+              ["Best Clip", best ? score(best) : 0, best ? title(best) : "No ranked clips yet"],
+              ["Active Agents", agentCount(), state.agents?.execution_mode || "sequential"],
+              ["Last Pipeline Run", lastPipelineLabel(), state.status?.state || "idle"],
+              ["Health", compactHealthLabel(), "Diagnostics available"]
+            ])}
+            <div class="dashboard-grid-main">
+              ${previewCard(best)}
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Media Insights</div></div>${dashboardMediaInsightsHtml(best)}</section>
+            </div>
+            <div class="dashboard-grid-secondary">
+              <section class="small-panel"><div class="panel-title">Recent Activity</div>${activityRows(5)}</section>
+              <section class="small-panel"><div class="panel-title">Hook Heatmap</div>${best ? heatmap(best) : emptyHeatmap()}</section>
+              <section class="small-panel"><div class="panel-title">Agent Activity</div>${agentRows(5)}</section>
+              <section class="small-panel"><div class="panel-title">Quick Actions</div>${quickActionsHtml()}</section>
+            </div>
+          </div>
+        `;
+      }
+      function renderQueueView() {
+        const entries = filteredEntries();
+        const active = modeEntry();
+        return `
+          <div class="view queue-view">
+            ${kpiCards([["Queued", productionEntries().length, state.production.hideTestMedia ? "Production media" : "All local entries"], ["Approved", approvedCount(), "Ready decisions"], ["Rejected", productionEntries().filter((e) => statusOf(e) === "rejected").length, "Filtered out"], ["High Priority", productionEntries().filter((e) => priorityOf(e) === "high").length, "Fast lane"]])}
+            <div class="toolbar queue-toolbar">
+              <div class="toolbar-tabs"><button class="btn active">Review Queue</button><button class="btn">Approved</button><button class="btn">Rejected</button><button class="btn">Archived</button></div>
+              <input class="search" id="searchInput" type="search" placeholder="Search queue" value="${html($("searchInput")?.value || "")}">
+              <select class="select" id="statusFilter"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
+              <select class="select"><option>All Scores</option></select><select class="select"><option>All Priorities</option></select><select class="select"><option>Score Desc</option></select>
+            </div>
+            <section class="panel queue-table-panel view-scroll"><div class="panel-head"><div class="panel-title">Review Queue</div></div>${queueTable(entries)}</section>
+            <section class="panel queue-detail view-scroll"><div class="panel-head"><div class="panel-title">Selected Clip</div></div>${selectedClipDetail(active)}</section>
+          </div>
+        `;
+      }
+      function renderMediaView() {
+        const active = modeEntry();
+        return `
+          <div class="view media-view">
+            <div class="media-library-head"><div><div class="panel-title">Media Library</div><p class="muted">Cached thumbnails, local clips, metadata, and review state.</p></div><div class="toolbar"><input class="search" id="searchInput" type="search" placeholder="Search media"><select class="select" id="statusFilter"><option value="all">All Clips</option><option value="approved">Approved</option><option value="pending">Pending</option></select><button class="btn" data-desktop-action="build-media-cache">Re-cache Media</button></div></div>
+            <div class="asset-preview">
+              <section class="asset-stage">${active ? `<video src="../${html(active.clip_path)}" controls preload="metadata" playsinline></video>` : realFootageOnboardingHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Media Inspector</div></div>${active ? mediaCacheHtml(active) + metadataPanel(active) : `<div class="empty-state">No asset selected.</div>`}</section>
+            </div>
+            ${compactClipGrid(filteredEntries())}
+          </div>
+        `;
+      }
+      function renderIntelligenceView() {
+        const entry = modeEntry();
+        return `
+          <div class="view intelligence-view">
+            <div class="inner-tabs">${["AI Insights","Clip Scoring","Hook Analysis","Scene Labels","Semantic Tags","Captions","Recommendations"].map((x, i) => `<button class="btn ${i === 0 ? "active" : ""}">${x}</button>`).join("")}</div>
+            <div class="analysis-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">AI Summary</div></div>${entry ? intelligenceSummary(entry) : zeroQueueCtaHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Score Breakdown</div></div>${entry ? scoreBreakdownHtml(entry) : `<div class="empty-state">No scoring data.</div>`}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Hook Timeline</div></div>${entry ? hookTimelineHtml(entry) : ""}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Recommendations</div></div>${recommendationHtml()}</section>
+            </div>
+            <section class="panel"><div class="panel-head"><div class="panel-title">Compare Clips</div></div><div class="mini-strip">${miniClipStrip(productionEntries().slice(0, 12))}</div></section>
+          </div>
+        `;
+      }
+      function renderAgentsView() {
+        const agents = state.agents?.agents || [];
+        const running = agents.filter((a) => ["assigned","running"].includes(a.state)).length;
+        const failed = agents.filter((a) => a.state === "failed").length;
+        return `
+          <div class="view agents-view">
+            ${kpiCards([["Active Agents", agentCount(), "Local workers"], ["Queued Tasks", state.agentActivity?.queued || 0, "Sequential V2.8"], ["Running Tasks", running, "Current load"], ["Completed Today", agents.filter((a) => a.state === "completed").length, "Agent states"], ["Failed Tasks", failed, "Needs attention"], ["Avg Task Time", state.agentActivity?.average_task_time || "n/a", "Local runs"]])}
+            <div class="agent-card-grid">${agentCardsHtml(agents)}</div>
+            <div class="dashboard-grid-main"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Orchestration Graph</div></div>${orchestrationGraphVisual()}</section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Agent Activity Log</div></div>${activityRows(8)}</section></div>
+          </div>
+        `;
+      }
+      function renderAnalyticsView() {
+        const hasMetrics = Boolean(state.learning?.record_count || state.patterns?.patterns?.length);
+        if (!hasMetrics) {
+          return `<div class="view analytics-view"><div class="empty-state panel"><div><h2>Add local performance metrics to activate analytics.</h2><p>Place local performance JSON/CSV files in analytics, then run npm run qa:full or the learning scripts. Everything remains local.</p></div></div></div>`;
+        }
+        return `<div class="view analytics-view" data-note="manual upload">${kpiCards([["Total Views","local", "Import required"],["Engagement Rate", state.learning?.avg_learning_delta || 0, "Learning delta"],["Total Engagements","local", "Import required"],["Avg Watch Time","local", "Import required"],["Clip Completion","local", "Import required"],["New Followers","local", "Import required"]])}<div class="analytics-charts"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Performance Over Time</div></div><div class="chart-bars">${chartBars([12,30,18,55,42,70,61,84,58,74,68,90])}</div></section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Top Content Patterns</div></div>${patternsHtml()}</section></div><div class="dashboard-grid-secondary"><section class="small-panel"><div class="panel-title">Learning Deltas</div>${diagnosticRows(state.learning || {})}</section><section class="small-panel"><div class="panel-title">Top Clips</div>${miniClipStrip(productionEntries().slice(0,5))}</section><section class="small-panel"><div class="panel-title">Export Performance</div>${socialExportsSummaryHtml()}</section><section class="small-panel"><div class="panel-title">Audience Growth</div><div class="muted">Awaiting imported metrics.</div></section></div></div>`;
+      }
+      function renderSocialExportsView() {
+        const manifest = state.socialManifest || {};
+        return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Export Assets / Packages</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Prep Checklist</div></div><div class="checklist"><span>✓ Review generated caption.txt</span><span>✓ Confirm hashtags.txt and title.txt</span><span>✓ Check thumbnail.jpg when available</span><span>✓ Upload manually from local files.</span></div></section></div>`;
+      }
+      function renderDiagnosticsView() {
+        return `<div class="view diagnostics-view">${kpiCards([["Diagnostics", state.diagnostics?.status || "not run", "analytics/diagnostics.json"],["Full QA", state.qaReport?.status || "not run", "analytics/qa_report.json"],["Build Guard", state.appInfo?.buildWarnings?.length ? "warning" : "aligned", "Version checks"],["Test Media", testEntries().length, state.production.hideTestMedia ? "Hidden in Production" : "Visible"]])}<div class="diagnostics-grid"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Health Checks</div></div>${diagnosticsHtml()}${productionModeControlsHtml()}</section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Diagnostics JSON</div></div><pre class="json-panel">${html(JSON.stringify(state.diagnostics || {}, null, 2))}</pre></section></div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">QA Report Summary</div></div><pre class="json-panel">${html(JSON.stringify(state.qaReport || {}, null, 2))}</pre></section></div>`;
+      }
+      function renderSettingsView() {
+        const info = state.appInfo || {};
+        return `<div class="view settings-view">${settingsCard("Project Preferences", [["Active Project", info.activeProjectRoot || info.projectRoot || "static"],["Content Inbox", info.contentInbox || "content_inbox"],["Export Folder", info.exportDirectory || "out/approved_posts"]])}${settingsCard("Runtime Folders", [["Analytics", info.analyticsDirectory || "analytics"],["App Root", info.appRoot || "static browser"],["Mode", info.packaged ? "packaged" : window.higherkey ? "dev electron" : "static"]])}${settingsCard("Theme & Appearance", [["Theme", "Red / black / graphite"],["Density", "Cinematic desktop"],["Logo", "Inline HigherKey mark"]])}${settingsCard("Startup & Launch", [["Launcher", "npm run app:open-latest"],["Version", versionLabel()],["Build", info.build?.buildStatus || "release-candidate"]])}${settingsCard("Production Mode", [["Hide Test Media", state.production.hideTestMedia ? "on" : "off"],["Detected Test Media", testEntries().length],["Real Clips", realEntries().length]])}${settingsCard("Watcher & Pipeline", [["Pipeline", state.status?.state || "idle"],["Last CWD", info.lastPipeline?.cwd || "not run"],["Watcher", "manual"]])}<section class="settings-card"><h2>Advanced</h2>${desktopBridgeHtml()}</section></div>`;
+      }
+      function renderMainWorkspace() {
+        const mode = state.mode || "dashboard";
+        const views = { dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, search: renderIntelligenceView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
+        $("mainContent").innerHTML = (views[mode] || renderDashboardView)();
+      }
+
+      function queueTable(entries) {
+        return `<table class="data-table"><thead><tr><th></th><th>Clip</th><th>Score</th><th>Status</th><th>Priority</th><th>Source</th><th>Duration</th><th>Ready</th></tr></thead><tbody>${entries.map((entry) => `
+          <tr data-entry-id="${html(entry.id)}" class="${entry.id === state.activeId ? "active" : ""}">
+            <td><input type="checkbox" data-select-id="${html(entry.id)}" ${state.selected.has(entry.id) ? "checked" : ""}></td>
+            <td><div class="row">${clipThumb(entry, "table-thumb")}<span>${html(entry.clip_id || title(entry))}</span></div></td>
+            <td>${html(score(entry))}</td><td>${html(statusOf(entry))}</td><td>${html(priorityOf(entry))}</td>
+            <td>${html(entry.source_path || "local")}</td><td>${html(formatTime(entry.duration || entry.package?.duration || 0))}</td><td>${cacheFor(entry)?.status === "cached" ? "ready" : "pending"}</td>
+          </tr>
+        `).join("") || `<tr><td colspan="8">${zeroQueueCtaHtml()}</td></tr>`}</tbody></table>`;
+      }
+      function selectedClipDetail(entry) {
+        if (!entry) return `<div class="empty-state">${zeroQueueCtaHtml()}</div>`;
+        return `<div style="padding:14px;display:grid;gap:12px">${clipThumb(entry, "asset-stage")}<h2>${html(title(entry))}</h2><div class="summary-row"><span>Score</span><strong>${html(score(entry))}</strong></div><div class="summary-row"><span>Status</span><strong>${html(statusOf(entry))}</strong></div><div class="summary-row"><span>Priority</span><strong>${html(priorityOf(entry))}</strong></div><div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div><p class="copy">${html(entry.package?.caption || entry.caption?.caption || "No caption loaded.")}</p></div>`;
+      }
+      function metadataPanel(entry) {
+        return `<section class="inspector-section"><h3>Properties</h3><div class="summary-row"><span>Clip</span><strong>${html(entry.clip_id)}</strong></div><div class="summary-row"><span>Status</span><strong>${html(statusOf(entry))}</strong></div><div class="summary-row"><span>Score</span><strong>${html(score(entry))}</strong></div></section><section class="inspector-section"><h3>Metadata</h3><div class="pills">${chips(labels(entry), true)}${chips(tags(entry))}</div></section><section class="inspector-section"><h3>History</h3><div class="muted">${html(entry.package_path || "No package path")}</div></section>`;
+      }
+      function intelligenceSummary(entry) {
+        return `<section class="inspector-section"><h3>AI Insights</h3><p class="copy">${html(entry.package?.caption || entry.caption?.caption || "Local intelligence package pending.")}</p></section><section class="inspector-section"><h3>Scene Labels</h3><div class="pills">${chips(labels(entry), true)}</div></section><section class="inspector-section"><h3>Semantic Tags</h3><div class="pills">${chips(tags(entry))}</div></section>`;
+      }
+      function scoreBreakdownHtml(entry) {
+        const details = entry.score_details || entry.package?.score_details || {};
+        const rows = Object.entries(details.weights || { hook: score(entry), clarity: Math.max(10, score(entry) - 12), platform: Math.max(10, score(entry) - 20) });
+        return rows.map(([label, value]) => {
+          const amount = Math.max(0, Math.min(100, Number(value || 0)));
+          return `<div class="breakdown-row"><span>${html(label)}</span><div class="breakdown-track"><div style="width:${amount}%"></div></div><strong>${html(amount)}</strong></div>`;
+        }).join("") || `<div class="empty-state">No score breakdown available.</div>`;
+      }
+      function hookTimelineHtml(entry) {
+        const moments = entry.package?.hook_moments || entry.hook_moments || [];
+        return moments.map((moment) => `<div class="timeline-row"><span class="dot">●</span><span>${html(formatTime(moment.timestamp || 0))}</span><span>${html((moment.reasons || ["hook"]).join(", "))}</span></div>`).join("") || `<div class="muted">No hook moments recorded.</div>`;
+      }
+      function miniClipStrip(entries) {
+        return entries.map((entry) => `<div class="mini-clip" data-entry-id="${html(entry.id)}">${clipThumb(entry)}<div>${html(entry.clip_id || title(entry))}</div></div>`).join("") || `<div class="muted">No clips available.</div>`;
+      }
+      function agentCardsHtml(agents) {
+        const fallback = ["Ingest Agent","Clip Generation Agent","Content Intelligence Agent","Metadata Indexing Agent","Analytics Agent","Recommendation / Export Agent"].map((name, index) => ({ id: `agent_${index}`, name, state: "idle", role: "local worker" }));
+        return (agents.length ? agents : fallback).map((agent) => `<div class="agent-card"><h2>${html(agent.name || agent.id)}</h2><p class="muted">${html(agent.role || "local deterministic worker")}</p><div class="summary-row"><span>State</span><strong>${html(agent.state || "idle")}</strong></div><div class="summary-row"><span>Task</span><strong>${html(agent.current_task || "none")}</strong></div></div>`).join("");
+      }
+      function orchestrationGraphVisual() {
+        const nodes = state.orchestrationGraph?.nodes || [];
+        const list = nodes.length ? nodes : (state.agents?.agents || []).map((agent) => ({ label: agent.name || agent.id, role: agent.role || "" }));
+        return `<div class="graph-lane">${list.map((node, index) => `<div class="graph-step"><strong>${html(node.label || node.id)}</strong><div class="muted">${html(node.role || "sequential")}</div></div>${index < list.length - 1 ? `<div class="graph-arrow">→</div>` : ""}`).join("") || `<div class="muted">Run orchestrator to populate graph.</div>`}</div>`;
+      }
+      function chartBars(values) { return values.map((value) => `<div class="chart-bar" style="height:${Math.max(8, Math.min(100, value))}%"></div>`).join(""); }
+      function patternsHtml() {
+        const patterns = state.patterns?.patterns || state.patterns?.top_patterns || [];
+        return patterns.slice(0, 8).map((item) => `<div class="summary-row"><span>${html(item.pattern || item.label || item.name || "pattern")}</span><strong>${html(item.score || item.count || "")}</strong></div>`).join("") || `<div class="muted">No local pattern data yet.</div>`;
+      }
+      function diagnosticRows(obj) {
+        return Object.entries(obj).slice(0, 6).map(([key, value]) => `<div class="summary-row"><span>${html(key)}</span><strong>${html(typeof value === "object" ? JSON.stringify(value).slice(0, 24) : value)}</strong></div>`).join("") || `<div class="muted">No data.</div>`;
+      }
+      function platformCard(key, label, manifest) {
+        const count = (manifest.exports || []).filter((item) => item.platform === key || (item.platforms || []).includes(key)).length || manifest.count || 0;
+        return `<div class="platform-card" data-note="manual upload"><h2>${html(label)}</h2><div class="summary-row"><span>Ready count</span><strong>${html(count)}</strong></div><div class="checklist"><span>✓ Format optimized</span><span>✓ Captions</span><span>✓ Thumbnail</span><span>✓ Hashtags</span><span>✓ Manifest</span></div><button class="btn" data-social-export="${html(key)}">Prepare More</button><button class="btn">View Exports</button></div>`;
+      }
+      function settingsCard(titleText, rows) {
+        return `<section class="settings-card"><h2>${html(titleText)}</h2>${rows.map(([label, value]) => `<div class="setting-row"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join("")}</section>`;
+      }
+      function activityRows(limit) {
+        const events = (state.activity?.events || []).slice(-limit).reverse();
+        return events.map((event) => `<div class="timeline-row"><span class="dot">✓</span><span>${html((event.at || "").slice(11, 19) || "--:--")}</span><span>${html(event.message || event.event || "")}</span></div>`).join("") || `<div class="muted">No activity yet.</div>`;
+      }
+      function agentRows(limit) {
+        return (state.agents?.agents || []).slice(0, limit).map((agent) => `<div class="agent-row"><span>${html(agent.name || agent.id)}</span><strong>${html(agent.state || "idle")}</strong></div>`).join("") || `<div class="muted">No agent status yet.</div>`;
+      }
+      function quickActionsHtml() {
+        return `<div class="toolbar" data-note="manual upload"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button><button class="btn" data-desktop-action="go-queue">Review Queue</button><button class="btn" data-desktop-action="go-social">Export Social Packs</button><button class="btn" data-desktop-action="open-inbox">Open Inbox Folder</button></div>`;
+      }
+      function emptyHeatmap() { return `<div class="heatmap">${Array.from({ length: 24 }, () => `<span class="heat"></span>`).join("")}</div>`; }
+      function compactHealthLabel() {
+        const status = healthStatus();
+        if (["pass", "healthy", "ok"].includes(String(status).toLowerCase())) return "System Healthy";
+        if (["warn", "warning", "unknown", "not run"].includes(String(status).toLowerCase())) return "Diagnostics Available";
+        return "Needs Attention";
+      }
+      function compactHealthHtml() {
+        return `
+          <div class="health-compact">
+            <strong>${html(compactHealthLabel())}</strong>
+            <span>${html(state.diagnostics?.status || state.qaReport?.status || "not run")}</span>
+            <button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button>
+          </div>
+        `;
+      }
+
       function renderStatus() {
-        const approved = state.entries.filter((entry) => statusOf(entry) === "approved").length;
+        const visible = productionEntries();
+        const approved = visible.filter((entry) => statusOf(entry) === "approved").length;
         const exported = state.exports?.count || 0;
         const indexed = state.metadata?.count || state.metadata?.items?.length || 0;
         const runningAgents = (state.agents?.agents || []).filter((agent) => ["assigned", "running"].includes(agent.state)).length;
         const cached = state.mediaCache?.status_counts?.cached || 0;
         const health = state.diagnostics?.status || state.qaReport?.status || "unknown";
         $("systemStatus").innerHTML = [
-          ["Version", versionLabel()],
-          ["Queue", state.entries.length],
+          ["Engine", state.status?.state || "idle"],
+          ["Queue", visible.length],
           ["Approved", approved],
-          ["Ready Social", state.socialManifest?.count || approved],
           ["Indexed", indexed],
-          ["Cache", `${cached}/${state.entries.length}`],
-          ["Agents", runningAgents ? `${runningAgents} running` : (state.agents?.execution_mode || "idle")]
-        ].map(([label, value]) => `<span class="stat"><strong>${html(value)}</strong> ${html(label)}</span>`).join("");
+          ["Cache", `${cached}/${visible.length || state.entries.length}`],
+          ["Agents", runningAgents ? `${runningAgents} active` : (state.agents?.execution_mode || "idle")]
+        ].map(([label, value]) => `<div class="system-row"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join("");
         $("versionBadge").textContent = versionLabel();
+        if ($("footerVersion")) $("footerVersion").textContent = versionLabel();
         const project = state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static project root";
         const inbox = state.appInfo?.contentInbox || "content_inbox";
-        $("sessionLine").textContent = `${window.higherkey ? "Electron bridge online" : "Static browser mode"} · ${state.entries.length} local clips`;
+        $("sessionLine").textContent = `${window.higherkey ? "Electron bridge online" : "Static browser mode"} · ${visible.length} production clips${hiddenTestCount() ? ` · ${hiddenTestCount()} hidden` : ""}`;
         $("headerProjectPath").textContent = project;
         $("headerPipelineState").textContent = state.status?.state || "idle";
         $("headerHealthState").textContent = health;
+        if ($("footerProject")) $("footerProject").textContent = `Project: ${project.split("/").filter(Boolean).pop() || project}`;
+        if ($("footerHealth")) $("footerHealth").textContent = `● ${health === "pass" ? "System Healthy" : health}`;
         $("projectStatus").innerHTML = [
           ...(state.appInfo?.buildWarnings?.length ? [["Build Warning", state.appInfo.buildWarnings.join(" ")]] : []),
           ["Content Inbox", inbox],
-          ["Last Pipeline CWD", state.appInfo?.lastPipeline?.cwd || state.status?.last_run?.cwd || "not run"]
+          ["Production Mode", state.production.hideTestMedia ? "Hide Test Media On" : "Showing Test Media"]
         ].map(([label, value]) => `<span class="stat ${label === "Build Warning" ? "build-warning" : ""}"><strong>${html(label)}</strong> ${html(value)}</span>`).join("");
         $("useRepoProject").style.display = window.higherkey && state.appInfo?.devMode ? "" : "none";
       }
 
       function renderBin() {
-        if (state.mode === "dashboard") {
-          $("binList").innerHTML = dashboardQueueHtml();
-          document.querySelectorAll("[data-entry-id]").forEach((node) => node.addEventListener("click", () => {
-            state.mode = "queue";
-            document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.mode === "queue"));
-            setActive(node.dataset.entryId);
-          }));
-          return;
-        }
-        const entries = filteredEntries();
+        const entries = (state.mode === "dashboard" ? state.entries.slice().sort((a, b) => score(b) - score(a)).slice(0, 10) : filteredEntries());
         $("binList").innerHTML = entries.map((entry) => `
-          <div class="bin-item ${entry.id === state.activeId ? "active" : ""} ${state.selected.has(entry.id) ? "selected" : ""}" data-entry-id="${html(entry.id)}" title="Hover markers show hook intensity">
-            <div class="row">
-              <input type="checkbox" data-select-id="${html(entry.id)}" ${state.selected.has(entry.id) ? "checked" : ""}>
-              ${thumbnailHtml(entry)}
-              <div style="flex:1">
-                <div class="bin-title">${html(title(entry))}</div>
-                <div class="bin-meta">${cacheStatusHtml(entry)}${html(entry.clip_id)} · ${html(statusOf(entry))} · <span class="priority-${priorityOf(entry)}">${html(priorityOf(entry))}</span> · ${score(entry)}</div>
-                ${heatmap(entry)}
-                ${scrubHtml(entry)}
-              </div>
+          <div class="clip ${entry.id === state.activeId ? "active" : ""} ${state.selected.has(entry.id) ? "selected" : ""}" data-entry-id="${html(entry.id)}" title="Hover to scrub cached thumbnails">
+            ${thumbnailHtml(entry).replace("<div class=\"thumb\">", "<div class=\"thumb\">") || `<div class="thumb"></div>`}
+            <div class="score-badge">${html(score(entry))}</div>
+            <div class="clip-body">
+              <div class="clip-name">${html(entry.clip_id || title(entry))}</div>
+              <div class="clip-meta">${cacheStatusHtml(entry)}${html(priorityOf(entry))} · ${html(labels(entry)[0] || "local clip")}</div>
+              <div class="clip-state">${statusOf(entry) === "approved" ? "↟ Approved" : statusOf(entry) === "rejected" ? "× Rejected" : "★ Review"}</div>
+              ${scrubHtml(entry)}
             </div>
           </div>
-        `).join("") || `<div class="card"><h3>No clips yet</h3><div class="muted">Open the content inbox, add local video files, then run the first pipeline pass. Static browser mode can review clips once local JSON files exist.</div></div>`;
+        `).join("") || zeroQueueCtaHtml();
         document.querySelectorAll("[data-entry-id]").forEach((node) => node.addEventListener("click", (event) => {
           if (event.target.matches("input")) return;
           setActive(node.dataset.entryId);
@@ -831,88 +1428,92 @@
 
       function renderMonitor() {
         snapshotPlayback();
-        if (state.mode === "dashboard") {
-          $("viewer").innerHTML = dashboardHomeHtml();
-          $("monitorTitle").textContent = "AI-Native Media Command Center";
-          $("monitorCaption").textContent = "Local review, intelligence, agents, exports, and pipeline activity in one production workspace.";
-          $("monitorChips").innerHTML = "";
-          return;
-        }
         const entry = activeEntry();
         if (!entry) {
           $("viewer").innerHTML = `<div class="viewer-empty"><h2>No media queued</h2><p>Use Open Inbox to add local videos, then Run First Pipeline. In static browser mode, place videos in content_inbox and run python3 scripts/run_pipeline.py.</p>${zeroQueueCtaHtml()}</div>`;
           $("monitorTitle").textContent = "No clip selected";
           $("monitorCaption").textContent = "Waiting for local queue data from queue/review_queue.json.";
           $("monitorChips").innerHTML = "";
+          $("previewScore").textContent = "0";
+          $("previewScoreLabel").textContent = "Waiting";
+          $("previewHook").textContent = "--:--";
+          $("previewHookLabel").textContent = "No hook loaded";
+          $("previewDuration").textContent = "--:--";
+          $("previewDurationLabel").textContent = "Local clip";
+          $("previewProgress").style.width = "0%";
           return;
         }
         state.activeId = entry.id;
         $("viewer").innerHTML = `<video id="reviewVideo" src="../${html(entry.clip_path)}" controls preload="metadata" playsinline></video>`;
         restorePlayback(entry);
-        $("monitorTitle").textContent = title(entry);
-        $("monitorCaption").textContent = entry.package?.caption || entry.caption?.caption || "";
+        const hookMoment = (entry.package?.hook_moments || entry.hook_moments || [])[0];
+        const hookTime = Number(hookMoment?.timestamp || 0);
+        const duration = Number(entry.duration || entry.package?.duration || entry.metadata?.duration || 0);
+        $("monitorTitle").textContent = entry.clip_id || title(entry);
+        $("monitorCaption").textContent = `${formatTime(hookTime)} / ${duration ? formatTime(duration) : "--:--"}`;
+        $("previewScore").textContent = score(entry);
+        $("previewScoreLabel").textContent = score(entry) >= 80 ? "Excellent" : score(entry) >= 60 ? "Strong" : "Local Score";
+        $("previewHook").textContent = hookTime ? formatTime(hookTime) : "--:--";
+        $("previewHookLabel").textContent = hookTime ? "Strong Hook Detected" : "Hook pending";
+        $("previewDuration").textContent = duration ? formatTime(duration) : "--:--";
+        $("previewDurationLabel").textContent = "Vertical short-form";
+        $("previewProgress").style.width = duration && hookTime ? `${Math.max(3, Math.min(100, (hookTime / duration) * 100))}%` : "44%";
         const moments = (entry.package?.hook_moments || entry.hook_moments || []).slice(0, 3).map((moment) => `${moment.timestamp || 0}s ${(moment.reasons || ["hook"]).join("+")}`);
-        $("monitorChips").innerHTML = mediaTimelineHtml(entry) + chips([`score ${score(entry)}`, statusOf(entry), priorityOf(entry), `cache ${cacheFor(entry)?.status || "missing"}`], true) + chips(moments, true) + chips(labels(entry), true) + chips(tags(entry));
+        $("monitorChips").innerHTML = chips([statusOf(entry), priorityOf(entry), `cache ${cacheFor(entry)?.status || "missing"}`], true) + chips(moments, true);
         $("prioritySelect").value = priorityOf(entry);
       }
 
       function renderInspector() {
         const entry = activeEntry();
-        const events = state.activity?.events || [];
-        const jobs = state.history?.jobs || [];
-        if (state.mode === "dashboard") {
-          $("inspector").innerHTML = `
-            <div class="card"><h3>Command Status</h3>${projectRuntimeHtml()}</div>
-            <div class="card"><h3>Agent Activity</h3>${agentHealthHtml()}</div>
-            <div class="card"><h3>Diagnostics</h3>${diagnosticsHtml()}</div>
-            <div class="card"><h3>Export Package</h3>${socialExportsSummaryHtml()}</div>
-          `;
-          return;
-        }
         if (state.mode === "social") {
           $("inspector").innerHTML = socialExportsHtml();
           wireSocialExportActions();
           return;
         }
-        if (!entry) {
+        if (state.mode === "diagnostics" || state.mode === "settings") {
           $("inspector").innerHTML = `
-            <div class="card"><h3>Project Runtime</h3>${projectRuntimeHtml()}</div>
-            <div class="card"><h3>Desktop Bridge</h3>${desktopBridgeHtml()}</div>
-            <div class="card"><h3>Inspector</h3><div class="muted">No active clip. Select the repo project or open the active inbox, then run the first pipeline.</div></div>
+            <section class="inspector-section"><h3>Project Runtime</h3>${projectRuntimeHtml()}</section>
+            <section class="inspector-section"><h3>Diagnostics</h3>${diagnosticsHtml()}</section>
+            <section class="inspector-section"><h3>Desktop Bridge</h3>${desktopBridgeHtml()}</section>
           `;
           wireDesktopActions();
           return;
         }
-        const analytics = state.learning || {};
-        const cluster = entry.metadata?.cluster_id || "unclustered";
+        if (state.mode === "agents") {
+          $("inspector").innerHTML = `
+            <section class="inspector-section"><h3>Agent Activity</h3>${agentHealthHtml()}</section>
+            <section class="inspector-section"><h3>Orchestration Graph</h3>${orchestrationGraphHtml()}</section>
+          `;
+          return;
+        }
+        if (!entry) {
+          $("inspector").innerHTML = `
+            <section class="inspector-section"><h3>Project Runtime</h3>${projectRuntimeHtml()}</section>
+            <section class="inspector-section"><h3>Desktop Bridge</h3>${desktopBridgeHtml()}</section>
+            <section class="inspector-section"><h3>Inspector</h3><div class="muted">No active clip. Select the repo project or open the active inbox, then run the first pipeline.</div></section>
+          `;
+          wireDesktopActions();
+          return;
+        }
         const platformNotes = entry.package?.platform_notes || {};
+        const hookMoments = (entry.package?.hook_moments || entry.hook_moments || []).slice(0, 4);
+        const duration = Number(entry.duration || entry.package?.duration || entry.metadata?.duration || 47);
         $("inspector").innerHTML = `
-          <div class="card"><h3>Clip Intelligence</h3>
-            <div class="metric"><span>Hook score</span><strong>${html(score(entry))}</strong></div>
-            <div class="metric"><span>Cluster</span><strong>${html(cluster)}</strong></div>
-            <div class="metric"><span>Subtitle</span><strong>${html(entry.package?.subtitle_status || entry.subtitle_status || "unknown")}</strong></div>
-          </div>
-          <div class="card"><h3>Hook Moments</h3>${chips((entry.package?.hook_moments || entry.hook_moments || []).map((moment) => `${moment.timestamp || 0}s ${(moment.reasons || ["hook"]).join("+")}`), true) || `<div class="muted">No hook moments recorded.</div>`}</div>
-          <div class="card"><h3>Scene Labels</h3><div class="chips">${chips(labels(entry), true) || `<span class="muted">No labels</span>`}</div></div>
-          <div class="card"><h3>Semantic Tags</h3><div class="chips">${chips(tags(entry)) || `<span class="muted">No tags</span>`}</div></div>
-          <div class="card"><h3>Captions</h3>
-            <p class="caption">${html(entry.package?.caption || entry.caption?.caption || "No caption package loaded.")}</p>
-          </div>
-          <div class="card"><h3>Platform Notes</h3>
-            <div class="muted">${html(Object.entries(platformNotes).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(" ") : value}`).join(" · ") || "No platform notes yet.")}</div>
-          </div>
-          <div class="card"><h3>Export Package</h3>
-            <div class="metric"><span>Status</span><strong>${html(state.socialManifest?.exports?.some((item) => item.clip_id === entry.clip_id) ? "platform-ready" : "not exported")}</strong></div>
-            <div class="metric"><span>Approved lane</span><strong>${html(statusOf(entry))}</strong></div>
-            <div class="tools"><button data-desktop-action="open-inbox">Open Inbox</button></div>
-          </div>
-          <div class="card"><h3>Metadata</h3>
-            <div class="metric"><span>Clip</span><strong>${html(entry.clip_id)}</strong></div>
-            <div class="metric"><span>Package</span><strong>${html(entry.package_path || "none")}</strong></div>
-            <div class="metric"><span>Source</span><strong>${html(entry.source_path)}</strong></div>
-          </div>
-          <div class="card"><h3>Diagnostics</h3>${diagnosticsHtml()}</div>
-          <div class="card"><h3>Compare Selected</h3>${comparisonHtml()}</div>
+          <section class="inspector-section"><h3>Hook Moments</h3>
+            <div class="hook-line">
+              ${hookMoments.map((moment) => `<div class="marker" style="left:${Math.max(2, Math.min(96, (Number(moment.timestamp || 0) / Math.max(duration, 1)) * 100))}%;"></div>`).join("")}
+            </div>
+            <div class="time-row"><span>00:00:00</span><span style="color:var(--red);">${html(formatTime(hookMoments[0]?.timestamp || 0))}</span><span>${html(formatTime(duration * .65))}</span><span>${html(formatTime(duration))}</span></div>
+          </section>
+          <section class="inspector-section"><h3>Scene Labels</h3><div class="pills">${labels(entry).slice(0, 8).map((label, index) => `<span class="pill ${index < 2 ? "green" : ""}">${html(label)}</span>`).join("") || `<span class="muted">No labels</span>`}</div></section>
+          <section class="inspector-section"><h3>Semantic Tags</h3><div class="pills">${tags(entry).slice(0, 10).map((tag) => `<span class="pill">${html(tag)}</span>`).join("") || `<span class="muted">No tags</span>`}</div></section>
+          <section class="inspector-section"><h3>Captions AI Generated</h3><div class="copy">${html(entry.package?.caption || entry.caption?.caption || "No caption package loaded.")}</div></section>
+          <section class="inspector-section"><h3>Platform Notes</h3><div class="copy">${html(Object.entries(platformNotes).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(" ") : value}`).join(" · ") || "Manual upload workflow. No direct posting integrations configured.")}</div></section>
+          <section class="inspector-section"><h3>Export Package</h3>
+            <div class="copy" style="margin-bottom:12px;">${html(state.socialManifest?.exports?.some((item) => item.clip_id === entry.clip_id) ? "Ready for social export pack." : "Approve clip to prepare export package.")}</div>
+            <button class="btn" data-desktop-action="pick-export">Open Export Folder</button>
+          </section>
+          <section class="inspector-section"><h3>Diagnostics</h3>${diagnosticsHtml()}</section>
         `;
         wireDesktopActions();
       }
@@ -1028,7 +1629,7 @@
             <div class="metric"><span>Agent score</span><strong>${html(agentRecommendation.score)}</strong></div>
           `;
         }
-        const pending = state.entries.filter((entry) => statusOf(entry) !== "rejected");
+        const pending = productionEntries().filter((entry) => statusOf(entry) !== "rejected");
         const top = pending.slice().sort((a, b) => score(b) - score(a))[0];
         const bestLabel = mostCommon(pending.flatMap(labels));
         const exportBatch = pending.filter((entry) => statusOf(entry) === "approved").slice(0, 5);
@@ -1091,8 +1692,8 @@
         `).join("")}</div>`;
       }
 
-      function bestEntry() {
-        return state.entries.slice().sort((a, b) => score(b) - score(a))[0] || null;
+      function bestVisibleEntry() {
+        return bestEntry(productionEntries());
       }
 
       function dashboardHomeHtml() {
@@ -1100,7 +1701,7 @@
         const ready = state.socialManifest?.count || approved;
         const agents = (state.agents?.agents || []).filter((agent) => agent.state !== "disabled").length;
         const health = state.diagnostics?.status || state.qaReport?.status || "unknown";
-        const best = bestEntry();
+        const best = bestVisibleEntry();
         const lastRun = state.appInfo?.lastPipeline?.completed_at || state.status?.updated_at || "not run";
         const cards = [
           ["Total Clips", state.entries.length, "Local queue entries available for review."],
@@ -1122,7 +1723,7 @@
       }
 
       function dashboardQueueHtml() {
-        const top = state.entries.slice().sort((a, b) => score(b) - score(a)).slice(0, 6);
+        const top = productionEntries().slice().sort((a, b) => score(b) - score(a)).slice(0, 6);
         return top.map((entry) => `
           <div class="bin-item ${statusOf(entry) === "approved" ? "selected" : ""}" data-entry-id="${html(entry.id)}">
             <div class="row">
@@ -1145,7 +1746,7 @@
       ];
 
       function approvedEntries() {
-        return state.entries.filter((entry) => statusOf(entry) === "approved");
+        return productionEntries().filter((entry) => statusOf(entry) === "approved");
       }
 
       function socialExportsHtml() {
@@ -1205,13 +1806,16 @@
       function desktopBridgeHtml() {
         return `
           <div class="tools">
+            <button data-desktop-action="import-footage">Import Footage</button>
+            <button data-desktop-action="import-and-process">Import & Process</button>
             <button data-desktop-action="pick-project">Select Project</button>
             ${state.appInfo?.devMode ? `<button data-desktop-action="use-current-repo">Use Current Repo</button>` : ""}
-            <button data-desktop-action="open-inbox">Open Inbox</button>
+            <button data-desktop-action="open-inbox">Open Inbox Folder</button>
             <button data-desktop-action="pick-export">Export</button>
             <button data-desktop-action="first-run-setup">Setup</button>
             <button data-desktop-action="start-watcher">Start Watcher</button>
-            <button data-desktop-action="run-once">Run First Pipeline</button>
+            <button data-desktop-action="run-once">Process Media</button>
+            <button data-desktop-action="run-full-media-prep">Run Full Media Prep</button>
             <button data-desktop-action="run-orchestrator">Run Agents</button>
             <button data-desktop-action="build-media-cache">Re-cache Media</button>
             <button data-desktop-action="run-diagnostics">Diagnostics</button>
@@ -1228,24 +1832,150 @@
         const entry = activeEntry() || bestEntry();
         const agents = (state.agents?.agents || []).slice(0, 6);
         $("timeline").innerHTML = `
-          <div class="bottom-card">
-            <h3>Pipeline Activity</h3>
-            <div class="activity-list">${events.slice(0, 6).map((event) => `
-              <div class="activity-row"><span>${html((event.at || "").slice(11, 19) || "--:--")}</span><strong>${html(event.message || event.event || event.source_path || "")}</strong></div>
-            `).join("") || `<div class="muted">No activity yet. Run the watcher daemon to populate the strip.</div>`}</div>
+          <div class="small-panel">
+            <div class="panel-title">Pipeline Activity</div>
+            ${events.slice(0, 6).map((event) => `
+              <div class="timeline-row"><span class="dot">✓</span><span>${html((event.at || "").slice(11, 19) || "--:--")}</span><span>${html(event.message || event.event || event.source_path || "")}</span></div>
+            `).join("") || `<div class="muted">No activity yet. Run the watcher daemon to populate the processing strip.</div>`}
           </div>
-          <div class="bottom-card">
-            <h3>Hook Heatmap</h3>
+          <div class="small-panel">
+            <div class="panel-title">Hook Heatmap</div>
             ${entry ? heatmap(entry) : `<div class="heatmap">${Array.from({ length: 12 }, () => `<span class="heat"></span>`).join("")}</div>`}
-            ${entry ? waveformHtml(cacheFor(entry)) : waveformHtml(null)}
           </div>
-          <div class="bottom-card">
-            <h3>Agent Activity</h3>
-            <div class="activity-list">${agents.map((agent) => `
-              <div class="activity-row"><span>${html(agent.state || "idle")}</span><strong>${html(agent.name || agent.id)}</strong></div>
-            `).join("") || `<div class="muted">No agent status yet.</div>`}</div>
+          <div class="small-panel">
+            <div class="panel-title">Agent Activity</div>
+            ${agents.map((agent) => `
+              <div class="agent-row"><span>${html(agent.name || agent.id)}</span><strong>${html(agent.state || "idle")}</strong></div>
+            `).join("") || `<div class="muted">No agent status yet.</div>`}
+          </div>
+          <div class="small-panel">
+            <div class="panel-title">Project Summary</div>
+            <div class="summary-row"><span>Total Clips</span><strong>${html(state.entries.length)}</strong></div>
+            <div class="summary-row"><span>Approved</span><strong>${html(approvedEntries().length)}</strong></div>
+            <div class="summary-row"><span>Ready for Social</span><strong>${html(state.socialManifest?.count || approvedEntries().length)}</strong></div>
+            <div class="summary-row"><span>High Priority</span><strong>${html(state.entries.filter((item) => priorityOf(item) === "high").length)}</strong></div>
+            <div class="summary-row"><span>Last Pipeline Run</span><strong>${html((state.status?.updated_at || "").slice(11, 16) || "not run")}</strong></div>
           </div>
         `;
+      }
+
+      function renderBottomTelemetry(mode) {
+        const project = state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static project";
+        const health = healthStatus();
+        const labelsByMode = {
+          dashboard: "Dashboard command center",
+          queue: "Queue review lane",
+          media: "Media library",
+          search: "AI intelligence cockpit",
+          agents: "Agent orchestration",
+          analytics: "Analytics learning",
+          social: "Manual social exports",
+          diagnostics: "Diagnostics and QA",
+          settings: "Local settings"
+        };
+        $("bottomTelemetry").innerHTML = `
+          <span>HigherKey Operator OS</span>
+          <span>${html(versionLabel())}</span>
+          <span>Project: ${html(project.split("/").filter(Boolean).pop() || project)}</span>
+          <span>Mode: ${html(labelsByMode[mode] || mode)}</span>
+          <span>Pipeline: ${html(state.status?.state || "idle")}</span>
+          <span>Agents: ${html(agentCount())} Active</span>
+          <span class="ok">● ${html(health === "pass" ? "System Healthy" : health)}</span>
+        `;
+      }
+
+      function renderRightInspector(mode) {
+        const entry = modeEntry();
+        if (mode === "dashboard") {
+          $("inspector").innerHTML = dashboardProductionInspectorHtml();
+        } else if (mode === "queue") {
+          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Selected Clip</h3>${metadataPanel(entry)}</section><section class="inspector-section"><h3>Approval Controls</h3><div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div></section><section class="inspector-section"><h3>Caption / Package</h3><div class="copy">${html(entry.package?.caption || entry.caption?.caption || "No caption package loaded.")}</div></section>` : `<section class="inspector-section"><h3>Queue Inspector</h3>${realFootageOnboardingHtml()}</section>`;
+        } else if (mode === "media") {
+          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Properties</h3>${metadataPanel(entry)}</section><section class="inspector-section"><h3>Analysis</h3>${mediaCacheHtml(entry)}</section>` : `<section class="inspector-section"><h3>Media Inspector</h3><div class="muted">No media selected.</div></section>`;
+        } else if (mode === "search") {
+          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section><section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div></section>`;
+        } else if (mode === "agents") {
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Selected Agent Details</h3>${agentHealthHtml()}</section><section class="inspector-section"><h3>Performance</h3>${orchestrationGraphHtml()}</section><section class="inspector-section"><h3>Diagnostics</h3>${diagnosticsHtml()}</section>`;
+        } else if (mode === "social") {
+          $("inspector").innerHTML = socialExportsHtml();
+          wireSocialExportActions();
+        } else if (mode === "diagnostics") {
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Build Guard</h3>${diagnosticsHtml()}</section><section class="inspector-section"><h3>Runtime Info</h3>${projectRuntimeHtml()}</section><section class="inspector-section"><h3>Quick Actions</h3><div class="toolbar"><button class="btn" data-desktop-action="run-diagnostics">Re-run Diagnostics</button><button class="btn" data-desktop-action="run-full-qa">Full QA</button><button class="btn" data-desktop-action="pick-export">Export Report</button></div></section>`;
+        } else if (mode === "settings") {
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Build Information</h3><div class="summary-row"><span>Package</span><strong>${html(state.appInfo?.packageVersion || "unknown")}</strong></div><div class="summary-row"><span>Runtime</span><strong>${html(state.appInfo?.runtimeVersion || "unknown")}</strong></div><div class="summary-row"><span>Release</span><strong>${html(state.appInfo?.releaseVersion || state.release?.version || "unknown")}</strong></div></section><section class="inspector-section"><h3>Runtime Environment</h3>${projectRuntimeHtml()}</section><section class="inspector-section"><h3>Production Mode</h3>${productionModeControlsHtml()}</section><section class="inspector-section"><h3>Help</h3><div class="copy">Use app:open-latest for development testing. Runtime outputs stay in writable local project paths.</div></section>`;
+        } else {
+          $("inspector").innerHTML = dashboardProductionInspectorHtml();
+        }
+        wireDesktopActions();
+      }
+
+      function dashboardProductionInspectorHtml() {
+        const entries = productionEntries();
+        const best = bestEntry(entries);
+        const approved = approvedCount(entries);
+        const hidden = hiddenTestCount();
+        const nextAction = !entries.length ? "Import real footage" : approved ? "Prepare social export packs" : "Review highest-scoring clips";
+        return `
+          <section class="inspector-section"><h3>Command Status</h3>
+            <div class="metric"><span>Mode</span><strong>Production</strong></div>
+            <div class="metric"><span>Visible clips</span><strong>${html(entries.length)}</strong></div>
+            ${hidden ? `<div class="metric"><span>Test/generated hidden</span><strong>${html(hidden)}</strong></div>` : ""}
+          </section>
+          <section class="inspector-section"><h3>Best Clip Recommendation</h3>
+            ${best ? `<div class="metric"><span>Clip</span><strong>${html(best.clip_id || title(best))}</strong></div><div class="metric"><span>Score</span><strong>${html(score(best))}</strong></div><div class="copy">${html((state.recommendations?.recommendations?.[0]?.reason || best.package?.caption || "Highest local score among visible production clips.").slice(0, 220))}</div>` : `<div class="muted">No real clip selected.</div>`}
+          </section>
+          <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(nextAction)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button></div></section>
+          <section class="inspector-section"><h3>Social Readiness</h3>${socialExportsSummaryHtml()}</section>
+          <section class="inspector-section"><h3>Compact Health</h3>${compactHealthHtml()}</section>
+        `;
+      }
+
+      function productionModeControlsHtml() {
+        return `
+          <div class="metric"><span>Hide test/generated media</span><strong>${state.production.hideTestMedia ? "on" : "off"}</strong></div>
+          <div class="metric"><span>Detected test/generated clips</span><strong>${html(testEntries().length)}</strong></div>
+          <div class="toolbar" style="margin-top:10px">
+            <button class="btn" data-desktop-action="hide-test-media">Hide Test Media</button>
+            <button class="btn" data-desktop-action="show-test-media">Show Test Media</button>
+            <button class="btn" data-desktop-action="archive-test-media">Archive Test Media</button>
+          </div>
+        `;
+      }
+
+      function wireDynamicControls() {
+        document.querySelectorAll("[data-entry-id]").forEach((node) => {
+          node.onclick = (event) => {
+            if (event.target.matches("input")) return;
+            setActive(node.dataset.entryId);
+          };
+        });
+        document.querySelectorAll("[data-select-id]").forEach((node) => {
+          node.onchange = (event) => {
+            const id = event.currentTarget.dataset.selectId;
+            event.currentTarget.checked ? state.selected.add(id) : state.selected.delete(id);
+            persistWorkspace();
+            render();
+          };
+        });
+        const search = $("searchInput");
+        if (search) search.oninput = render;
+        const status = $("statusFilter");
+        if (status) status.onchange = render;
+        const priority = $("prioritySelect");
+        if (priority) {
+          priority.value = activeEntry() ? priorityOf(activeEntry()) : priority.value;
+          priority.onchange = (event) => setPriority(event.target.value);
+        }
+        $("prevClip")?.addEventListener("click", () => nextClip(-1), { once: true });
+        $("nextClip")?.addEventListener("click", () => nextClip(1), { once: true });
+        $("playPause")?.addEventListener("click", () => {
+          const video = $("reviewVideo");
+          if (video) video.paused ? video.play() : video.pause();
+        }, { once: true });
+        $("approveClip")?.addEventListener("click", () => setReview("approved"), { once: true });
+        $("rejectClip")?.addEventListener("click", () => setReview("rejected"), { once: true });
+        $("batchApprove")?.addEventListener("click", () => batchReview("approved"), { once: true });
+        wireSocialExportActions();
       }
 
       function snapshotPlayback() {
@@ -1277,7 +2007,7 @@
         } else if (state.mode === "social") {
           setNotice(`Social Exports: ${state.socialManifest?.count || 0} manual-upload packs, ${approvedEntries().length} approved clips available.`);
         } else if (state.mode === "dashboard") {
-          setNotice("");
+          setNotice(window.higherkey ? "" : staticModeMessage());
         } else if (state.mode === "queue") {
           setNotice(state.mediaCache ? `Media cache: ${state.mediaCache?.status_counts?.cached || 0} cached, ${state.mediaCache?.status_counts?.error || 0} errors.` : "");
         } else if (state.mode === "exports") {
@@ -1294,12 +2024,12 @@
       function render() {
         document.querySelectorAll(".tab").forEach((node) => node.classList.toggle("active", node.dataset.mode === state.mode));
         renderStatus();
-        renderBin();
-        renderMonitor();
-        renderInspector();
-        renderTimeline();
+        renderMainWorkspace();
+        renderRightInspector(state.mode);
+        renderBottomTelemetry(state.mode);
         renderModeDetails();
         wireDesktopActions();
+        wireDynamicControls();
       }
 
       function setActive(id) {
@@ -1367,11 +2097,11 @@
       }
 
       async function openInbox() {
-        if (!window.higherkey) return setNotice("Static mode: open content_inbox from the project folder and add local videos.");
+        if (!window.higherkey) return setNotice(staticModeMessage());
         const result = await window.higherkey.openContentInbox();
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
         renderStatus();
-        setNotice(`Content inbox opened: ${result.path}`);
+        setNotice("Inbox folder opened. You can also use Import Footage to select videos directly.");
       }
 
       async function selectProjectFolder() {
@@ -1389,6 +2119,74 @@
         state.appInfo = result;
         setNotice(result.changed ? `Active project set to current repo: ${result.activeProjectRoot}` : (result.reason || "Project unchanged."));
         await refreshLiveData();
+      }
+
+      async function archiveTestMedia() {
+        if (!window.higherkey?.archiveTestMedia) {
+          return setNotice("Archive Test Media requires the Electron bridge. Static mode can run python3 scripts/archive_test_media.py manually.");
+        }
+        setNotice("Archiving detected test/generated media into out/archived_test_media...");
+        const result = await window.higherkey.archiveTestMedia();
+        await refreshLiveData();
+        const parsed = result.parsed || {};
+        if (result.code === 0) {
+          setNotice(`Archived ${parsed.moved_count ?? 0} test/generated files to ${parsed.archive_root || "out/archived_test_media"}.`);
+        } else {
+          setNotice(`Archive Test Media failed: ${(result.stderr || result.stdout || "unknown error").slice(-700)}`);
+        }
+      }
+
+      function summarizeImport(result) {
+        if (!result) return "No import result returned.";
+        if (result.canceled) return "Import cancelled.";
+        const errors = result.errors || [];
+        const skipped = result.skipped || [];
+        if (result.imported) return `${result.imported} video${result.imported === 1 ? "" : "s"} imported. Ready to process.`;
+        const reason = [...errors, ...skipped].map((item) => `${item.name || item.path || "file"}: ${item.reason}`).join("; ");
+        return reason ? `Import failed: ${reason}` : "No supported video files were imported.";
+      }
+
+      async function importFootage() {
+        if (!window.higherkey?.importFootage) {
+          return setNotice(staticModeMessage());
+        }
+        setNotice("Importing footage...");
+        const result = await window.higherkey.importFootage();
+        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        await refreshLiveData();
+        setNotice(summarizeImport(result));
+        return result;
+      }
+
+      async function importAndProcessFootage() {
+        if (!window.higherkey?.importAndProcessFootage) {
+          return setNotice(staticModeMessage());
+        }
+        setNotice("Importing footage...");
+        const result = await window.higherkey.importAndProcessFootage();
+        const imported = result.imported || {};
+        if (imported.canceled) {
+          setNotice("Import cancelled.");
+          return result;
+        }
+        if ((imported.imported || 0) === 0) {
+          setNotice(summarizeImport(imported));
+          return result;
+        }
+        setNotice("Creating clips...");
+        setNotice("Scoring clips...");
+        setNotice("Building thumbnails...");
+        setNotice("Indexing metadata...");
+        setNotice("Updating agents...");
+        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        await refreshLiveData();
+        if (result.code === 0) {
+          setNotice(`${imported.imported} video${imported.imported === 1 ? "" : "s"} imported and processed. Ready for review.`);
+        } else {
+          const failed = (result.prep?.steps || []).find((step) => step.code !== 0);
+          setNotice(`Import completed, but processing failed at ${failed?.name || "media prep"}: ${(failed?.stderr || failed?.stdout || "unknown error").slice(-700)}`);
+        }
+        return result;
       }
 
       async function ingestDroppedFiles(files) {
@@ -1415,19 +2213,45 @@
       }
 
       async function runFirstPipeline() {
-        if (!window.higherkey) return setNotice("Static mode: run python3 scripts/run_pipeline.py from the project root.");
+        if (!window.higherkey) return setNotice(staticModeMessage());
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
-        setNotice(`Pipeline started. cwd=${state.appInfo?.activeProjectRoot || "unknown"} inbox=${state.appInfo?.contentInbox || "unknown"}`);
-        setNotice(`Pipeline running. cwd=${state.appInfo?.activeProjectRoot || "unknown"}`);
+        setNotice("Processing media...");
         const result = await window.higherkey.runPipelineOnce();
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
         const parsed = result.parsed || {};
         await refreshLiveData();
         if (result.code === 0) {
-          setNotice(`Pipeline completed. cwd=${result.cwd} queue=${parsed.queue_entries ?? "unknown"} processed=${parsed.processed ?? "unknown"} skipped=${parsed.skipped ?? "unknown"}`);
+          setNotice(`Processing complete. ${parsed.queue_entries ?? "New"} clips are ready for review.`);
         } else {
-          const detail = result.stderr || result.stdout || "Unknown pipeline error";
-          setNotice(`Pipeline failed. cwd=${result.cwd} error=${detail.slice(-800)}`);
+          const detail = result.stderr || result.stdout || "Unknown processing error";
+          setNotice(`Processing failed: ${detail.slice(-500)}`);
+        }
+      }
+
+      async function runFullMediaPrep() {
+        if (!window.higherkey) {
+          return setNotice(staticModeMessage());
+        }
+        setNotice("Creating clips...");
+        let result = null;
+        if (window.higherkey.runFullMediaPrep) {
+          result = await window.higherkey.runFullMediaPrep();
+        } else {
+          await window.higherkey.runPipelineOnce();
+          setNotice("Scoring clips...");
+          await window.higherkey.runOrchestratorOnce();
+          setNotice("Building thumbnails...");
+          await window.higherkey.buildMediaCache();
+          result = { code: 0, steps: [] };
+        }
+        setNotice("Indexing metadata...");
+        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        await refreshLiveData();
+        if (result.code === 0) {
+          setNotice("Ready for review. Pipeline, metadata, thumbnails, and local agents completed.");
+        } else {
+          const failed = (result.steps || []).find((step) => step.code !== 0);
+          setNotice(`Full media prep failed at ${failed?.name || "unknown step"}: ${(failed?.stderr || failed?.stdout || "unknown error").slice(-700)}`);
         }
       }
 
@@ -1466,10 +2290,17 @@
 
       function wireDesktopActions() {
         document.querySelectorAll("[data-desktop-action]").forEach((button) => {
-          button.disabled = !window.higherkey;
           button.onclick = async () => {
-            if (!window.higherkey) return setNotice("Desktop actions require Electron. Static mode remains fully usable for review.");
             const action = button.dataset.desktopAction;
+            if (action === "hide-test-media") return setHideTestMedia(true);
+            if (action === "show-test-media") return setHideTestMedia(false);
+            if (action === "go-queue") { state.mode = "queue"; persistWorkspace(); return render(); }
+            if (action === "go-social") { state.mode = "social"; persistWorkspace(); return render(); }
+            if (action === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); return render(); }
+            if (action === "import-footage") return importFootage();
+            if (action === "import-and-process") return importAndProcessFootage();
+            if (action === "run-full-media-prep") return runFullMediaPrep();
+            if (!window.higherkey) return setNotice(staticModeMessage());
             if (action === "pick-project") await selectProjectFolder();
             if (action === "use-current-repo") await useCurrentRepoProject();
             if (action === "pick-content") await window.higherkey.pickDirectory("contentInbox");
@@ -1479,11 +2310,17 @@
             if (action === "start-watcher") await window.higherkey.startWatcher();
             if (action === "run-once") await runFirstPipeline();
             if (action === "run-orchestrator") await window.higherkey.runOrchestratorOnce();
-            if (action === "build-media-cache") await window.higherkey.buildMediaCache();
+            if (action === "build-media-cache") {
+              setNotice("Building thumbnails and waveform previews...");
+              await window.higherkey.buildMediaCache();
+              await refreshLiveData();
+              setNotice("Media cache ready.");
+            }
+            if (action === "archive-test-media") await archiveTestMedia();
             if (action === "run-diagnostics") await window.higherkey.runDiagnostics();
             if (action === "run-full-qa") await window.higherkey.runFullQa();
             if (action === "notify-test") await window.higherkey.testNotification();
-            if (!["pick-project", "use-current-repo", "run-once"].includes(action)) setNotice(`Desktop action completed: ${action}`);
+            if (!["pick-project", "use-current-repo", "run-once", "archive-test-media", "build-media-cache"].includes(action)) setNotice(`Desktop action completed: ${action}`);
           };
         });
       }
@@ -1522,9 +2359,12 @@
             metadata: state.metadataByClip[entry.clip_id] || null
           })));
           state.selected = new Set(state.workspace.selected || []);
-          state.mode = state.workspace.mode || "queue";
+          state.mode = state.workspace.mode || "dashboard";
           state.activeId = state.workspace.lastActiveId || state.entries[0]?.id || null;
           if (!state.entries.find((entry) => entry.id === state.activeId)) state.activeId = state.entries[0]?.id || null;
+          if (state.production.hideTestMedia && state.activeId && isTestEntry(state.entries.find((entry) => entry.id === state.activeId))) {
+            state.activeId = bestEntry(realEntries())?.id || null;
+          }
           $("startupText").textContent = state.activeId ? "Recovered local workspace session." : "No queue items found yet.";
           render();
         } catch (error) {
@@ -1600,20 +2440,23 @@
         persistWorkspace();
         render();
       }));
-      $("statusFilter").addEventListener("change", render);
-      $("searchInput").addEventListener("input", render);
-      $("prevClip").addEventListener("click", () => nextClip(-1));
-      $("nextClip").addEventListener("click", () => nextClip(1));
-      $("playPause").addEventListener("click", () => {
+      $("statusFilter")?.addEventListener("change", render);
+      $("searchInput")?.addEventListener("input", render);
+      $("prevClip")?.addEventListener("click", () => nextClip(-1));
+      $("nextClip")?.addEventListener("click", () => nextClip(1));
+      $("playPause")?.addEventListener("click", () => {
         const video = $("reviewVideo");
         if (video) video.paused ? video.play() : video.pause();
       });
-      $("approveClip").addEventListener("click", () => setReview("approved"));
-      $("rejectClip").addEventListener("click", () => setReview("rejected"));
-      $("prioritySelect").addEventListener("change", (event) => setPriority(event.target.value));
+      $("approveClip")?.addEventListener("click", () => setReview("approved"));
+      $("rejectClip")?.addEventListener("click", () => setReview("rejected"));
+      $("prioritySelect")?.addEventListener("change", (event) => setPriority(event.target.value));
       $("batchApprove")?.addEventListener("click", () => batchReview("approved"));
       $("batchReject")?.addEventListener("click", () => batchReview("rejected"));
       $("exportApproved").addEventListener("click", exportApprovedReviews);
+      $("importFootage").addEventListener("click", importFootage);
+      $("importAndProcess").addEventListener("click", importAndProcessFootage);
+      $("runFullMediaPrep").addEventListener("click", runFullMediaPrep);
       $("openInbox").addEventListener("click", openInbox);
       $("selectProject").addEventListener("click", selectProjectFolder);
       $("useRepoProject").addEventListener("click", useCurrentRepoProject);
