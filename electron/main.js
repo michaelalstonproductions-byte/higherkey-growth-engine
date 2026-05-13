@@ -215,7 +215,9 @@ function createMenu() {
         { label: "Stop Watcher", click: () => stopWatcher() },
         { label: "Run One Daemon Tick", click: () => runPython(["scripts/watch_daemon.py", "--once"]) },
         { label: "Run Orchestrator Once", click: () => runPython(["scripts/run_orchestrator.py", "--once"]) },
-        { label: "Build Media Cache", click: () => runPython(["scripts/build_media_cache.py"]) }
+        { label: "Build Media Cache", click: () => runPython(["scripts/build_media_cache.py"]) },
+        { label: "Run Diagnostics", click: () => runPython(["scripts/run_diagnostics.py"]) },
+        { label: "Run Full QA", click: () => runPython(["scripts/run_full_qa.py"]) }
       ]
     },
     {
@@ -354,7 +356,7 @@ async function pickDirectory(kind) {
 
 async function ingestDroppedFiles(filePaths) {
   const settings = await readSettings();
-  const inbox = settings.profiles.default.contentInbox || path.join(PROJECT_ROOT, "content_inbox");
+  const inbox = settings.profiles.default.contentInbox || path.join(activeProjectRoot, "content_inbox");
   await fsp.mkdir(inbox, { recursive: true });
   const copied = [];
   for (const filePath of filePaths) {
@@ -375,6 +377,8 @@ function registerIpc() {
   ipcMain.handle("pipeline:runOnce", () => runPython(["scripts/watch_daemon.py", "--once"]));
   ipcMain.handle("orchestrator:runOnce", () => runPython(["scripts/run_orchestrator.py", "--once"]));
   ipcMain.handle("media:buildCache", () => runPython(["scripts/build_media_cache.py"]));
+  ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
+  ipcMain.handle("qa:runFull", () => runPython(["scripts/run_full_qa.py"]));
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
   ipcMain.handle("notify:test", () => {
     notify("HigherKey notification test", "Local notifications are wired.");

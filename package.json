@@ -11,7 +11,8 @@
     "electron:verify": "HK_ELECTRON_SMOKE=1 electron .",
     "dist:dir": "electron-builder --mac dir",
     "dist:unsigned": "electron-builder --mac dmg -c.mac.identity=null",
-    "clean:dist": "rm -rf dist"
+    "clean:dist": "rm -rf dist",
+    "qa:full": "python3 scripts/run_full_qa.py"
   },
   "build": {
     "appId": "com.higherkey.operatoros",

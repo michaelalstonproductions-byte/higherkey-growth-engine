@@ -1,25 +1,22 @@
 from __future__ import annotations
 
-import json
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
 from .index import relative_path, utc_now
+from .json_store import load_json_file, save_json_file
 
 
 METRIC_KEYS = ("views", "likes", "comments", "shares", "saves", "watch_time", "retention_percent")
 
 
 def load_json(path: Path, default: dict[str, Any] | None = None) -> dict[str, Any]:
-    if not path.exists():
-        return default or {}
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_json_file(path, default)
 
 
 def save_json(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    save_json_file(path, payload)
 
 
 def _number(value: Any) -> float:

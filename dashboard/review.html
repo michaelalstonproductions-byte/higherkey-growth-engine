@@ -321,6 +321,12 @@
       .graph-node { border: 1px solid var(--line); border-radius: 8px; background: #101a27; padding: 8px; position: relative; }
       .graph-node::after { content: ""; display: block; width: 1px; height: 9px; background: var(--line); position: absolute; left: 16px; bottom: -10px; }
       .graph-node:last-child::after { display: none; }
+      .diagnostic-list { display: grid; gap: 6px; }
+      .diagnostic-row { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding: 7px 0; }
+      .diagnostic-row:first-child { border-top: 0; padding-top: 0; }
+      .status-pass { color: var(--good); }
+      .status-warn { color: var(--warn); }
+      .status-fail { color: var(--bad); }
 
       .overlay {
         position: fixed;
@@ -378,6 +384,7 @@
           <button class="tab" data-mode="search">Search</button>
           <button class="tab" data-mode="clusters">Clusters</button>
           <button class="tab" data-mode="agents">Agents</button>
+          <button class="tab" data-mode="diagnostics">Diagnostics</button>
           <button class="tab" data-mode="exports">Exports</button>
           <button class="tab" data-mode="settings">Settings</button>
         </div>
@@ -476,7 +483,9 @@
         agentActivity: "../analytics/agent_activity.json",
         orchestrationGraph: "../analytics/orchestration_graph.json",
         recommendations: "../analytics/recommendations.json",
-        mediaCache: "../analytics/media_cache.json"
+        mediaCache: "../analytics/media_cache.json",
+        diagnostics: "../analytics/diagnostics.json",
+        qaReport: "../analytics/qa_report.json"
       };
       const REVIEW_KEY = "higherkey.review_status.v1";
       const PRIORITY_KEY = "higherkey.queue_priority.v21";
@@ -506,6 +515,8 @@
         recommendations: null,
         mediaCache: null,
         mediaCacheByClip: {},
+        diagnostics: null,
+        qaReport: null,
         live: { refreshing: false, intervalMs: 4000, lastRefresh: null },
         playback: { clipId: null, time: 0, paused: true }
       };
@@ -568,6 +579,7 @@
         const indexed = state.metadata?.count || state.metadata?.items?.length || 0;
         const runningAgents = (state.agents?.agents || []).filter((agent) => ["assigned", "running"].includes(agent.state)).length;
         const cached = state.mediaCache?.status_counts?.cached || 0;
+        const health = state.diagnostics?.status || state.qaReport?.status || "unknown";
         $("systemStatus").innerHTML = [
           ["Queue", state.entries.length],
           ["Selected", state.selected.size],
@@ -575,6 +587,7 @@
           ["Exported", exported],
           ["Indexed", indexed],
           ["Cache", `${cached}/${state.entries.length}`],
+          ["Health", health],
           ["Pipeline", state.status?.state || "idle"],
           ["Agents", runningAgents ? `${runningAgents} running` : (state.agents?.execution_mode || "idle")]
         ].map(([label, value]) => `<span class="stat"><strong>${html(value)}</strong> ${html(label)}</span>`).join("");
@@ -641,6 +654,7 @@
         const cluster = entry.metadata?.cluster_id || "unclustered";
         $("inspector").innerHTML = `
           <div class="card"><h3>Recommendation</h3>${recommendationHtml()}</div>
+          <div class="card"><h3>Diagnostics</h3>${diagnosticsHtml()}</div>
           <div class="card"><h3>Media Cache</h3>${mediaCacheHtml(entry)}</div>
           <div class="card"><h3>Agent Health</h3>${agentHealthHtml()}</div>
           <div class="card"><h3>Orchestration Graph</h3>${orchestrationGraphHtml()}</div>
@@ -668,6 +682,8 @@
               <button data-desktop-action="run-once">Run Once</button>
               <button data-desktop-action="run-orchestrator">Run Agents</button>
               <button data-desktop-action="build-media-cache">Re-cache Media</button>
+              <button data-desktop-action="run-diagnostics">Diagnostics</button>
+              <button data-desktop-action="run-full-qa">Full QA</button>
               <button data-desktop-action="notify-test">Notify</button>
             </div>
             <div class="muted">${window.higherkey ? "Available" : "Static browser mode"}</div>
@@ -753,6 +769,30 @@
           <div class="metric"><span>Hooks</span><strong>${html((cache.hook_overlays || []).length)}</strong></div>
           <div class="thumb-grid">${frames.slice(0, 6).map((frame) => `<div class="strip-frame"><img src="../${html(frame.path)}" alt=""></div>`).join("")}</div>
           ${cache.errors?.length ? `<div class="muted">${html(cache.errors.join("; "))}</div>` : ""}
+        `;
+      }
+
+      function statusClass(status) {
+        return `status-${["pass", "warn", "fail"].includes(status) ? status : "warn"}`;
+      }
+
+      function diagnosticsHtml() {
+        const diagnostics = state.diagnostics;
+        const qa = state.qaReport;
+        if (!diagnostics && !qa) {
+          return `<div class="muted">Run Diagnostics or Full QA to populate local health checks.</div>`;
+        }
+        const groups = diagnostics ? ["tools", "folders", "json_files", "runtime", "packaging"].map((name) => ({
+          name,
+          status: diagnostics[name]?.status || "unknown"
+        })) : [];
+        return `
+          ${diagnostics ? `<div class="metric"><span>Diagnostics</span><strong class="${statusClass(diagnostics.status)}">${html(diagnostics.status)}</strong></div>` : ""}
+          ${qa ? `<div class="metric"><span>Full QA</span><strong class="${statusClass(qa.status)}">${html(qa.status)}</strong></div>` : ""}
+          <div class="diagnostic-list">${groups.map((item) => `
+            <div class="diagnostic-row"><span>${html(item.name.replace("_", " "))}</span><strong class="${statusClass(item.status)}">${html(item.status)}</strong></div>
+          `).join("")}</div>
+          ${diagnostics?.json_files?.corrupt_copies?.length ? `<div class="muted">${html(diagnostics.json_files.corrupt_copies.length)} corrupt JSON backup(s) detected.</div>` : ""}
         `;
       }
 
@@ -864,6 +904,8 @@
           setNotice(`Clusters: ${(state.metadata.clusters || []).length} local narrative groups.`);
         } else if (state.mode === "agents") {
           setNotice(`Agents: ${(state.agents?.agents || []).length} local workers, ${state.agents?.execution_mode || "sequential"} execution.`);
+        } else if (state.mode === "diagnostics") {
+          setNotice(`Diagnostics: ${state.diagnostics?.status || "not run"} · Full QA: ${state.qaReport?.status || "not run"}.`);
         } else if (state.mode === "queue") {
           setNotice(state.mediaCache ? `Media cache: ${state.mediaCache?.status_counts?.cached || 0} cached, ${state.mediaCache?.status_counts?.error || 0} errors.` : "");
         } else if (state.mode === "exports") {
@@ -962,6 +1004,8 @@
             if (action === "run-once") await window.higherkey.runPipelineOnce();
             if (action === "run-orchestrator") await window.higherkey.runOrchestratorOnce();
             if (action === "build-media-cache") await window.higherkey.buildMediaCache();
+            if (action === "run-diagnostics") await window.higherkey.runDiagnostics();
+            if (action === "run-full-qa") await window.higherkey.runFullQa();
             if (action === "notify-test") await window.higherkey.testNotification();
             setNotice(`Desktop action completed: ${action}`);
           };
@@ -971,7 +1015,7 @@
       async function loadDashboard() {
         try {
           $("startupText").textContent = "Reading queue, metadata, analytics, and live pipeline files.";
-          state.queue = await readJson(PATHS.queue);
+          state.queue = await optionalJson(PATHS.queue, { entries: [] });
           state.learning = await optionalJson(PATHS.learning, null);
           state.patterns = await optionalJson(PATHS.patterns, null);
           state.metadata = await optionalJson(PATHS.metadata, { items: [], clusters: [] });
@@ -986,6 +1030,8 @@
           state.recommendations = await optionalJson(PATHS.recommendations, null);
           state.mediaCache = await optionalJson(PATHS.mediaCache, null);
           state.mediaCacheByClip = state.mediaCache?.clips || {};
+          state.diagnostics = await optionalJson(PATHS.diagnostics, null);
+          state.qaReport = await optionalJson(PATHS.qaReport, null);
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
           const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
           state.entries = await Promise.all(entries.map(async (entry) => ({
@@ -1027,6 +1073,8 @@
           state.recommendations = await optionalJson(PATHS.recommendations, state.recommendations);
           state.mediaCache = await optionalJson(PATHS.mediaCache, state.mediaCache);
           state.mediaCacheByClip = state.mediaCache?.clips || {};
+          state.diagnostics = await optionalJson(PATHS.diagnostics, state.diagnostics);
+          state.qaReport = await optionalJson(PATHS.qaReport, state.qaReport);
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
           const entries = Array.isArray(state.queue.entries) ? state.queue.entries : [];
           state.entries = await Promise.all(entries.map(async (entry) => ({

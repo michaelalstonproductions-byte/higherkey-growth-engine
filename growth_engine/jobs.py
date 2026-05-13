@@ -8,6 +8,7 @@ from typing import Any
 from .config import AppConfig, ensure_directories
 from .index import file_fingerprint, relative_path, utc_now
 from .ingest import discover_videos
+from .json_store import load_json_file
 from .pipeline import process_once
 
 
@@ -15,9 +16,7 @@ JOB_STATES = {"queued", "processing", "completed", "failed", "retrying"}
 
 
 def _read(path: Path, default: dict[str, Any]) -> dict[str, Any]:
-    if not path.exists():
-        return default
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_json_file(path, default)
 
 
 def _write(path: Path, payload: dict[str, Any]) -> None:

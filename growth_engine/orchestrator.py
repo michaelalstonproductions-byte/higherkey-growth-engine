@@ -11,6 +11,7 @@ from .exporter import export_approved_posts
 from .index import utc_now
 from .ingest import discover_videos
 from .jobs import enqueue_new_videos, process_next_job
+from .json_store import load_json_file
 from .local_ai import build_metadata_index
 from .pipeline import process_once
 
@@ -47,9 +48,7 @@ def orchestration_paths(config: AppConfig) -> dict[str, Path]:
 
 
 def _read(path: Path, default: dict[str, Any]) -> dict[str, Any]:
-    if not path.exists():
-        return default
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_json_file(path, default)
 
 
 def _base_agent(spec: AgentSpec, state: str = "idle") -> dict[str, Any]:

@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from .json_store import load_json_file
+
 
 INDEX_VERSION = 1
 
@@ -31,9 +33,7 @@ def file_fingerprint(path: Path) -> str:
 
 
 def load_index(path: Path) -> dict[str, Any]:
-    if not path.exists():
-        return {"version": INDEX_VERSION, "videos": {}}
-    return json.loads(path.read_text(encoding="utf-8"))
+    return load_json_file(path, {"version": INDEX_VERSION, "videos": {}})
 
 
 def save_index(path: Path, index: dict[str, Any]) -> None:

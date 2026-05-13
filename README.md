@@ -320,6 +320,34 @@ The Operator UI reads the cache manifest to show thumbnail grids, hover scrub pr
 
 All preview generation is local and FFmpeg-based. Generated cache outputs stay in the selected writable project folder, not in packaged app resources or `app.asar`. No cloud APIs or social APIs are used.
 
+## Diagnostics And Full QA
+
+V2.6 adds local diagnostics and a one-command QA flow for stable demos and testing:
+
+```bash
+python3 scripts/run_diagnostics.py
+python3 scripts/run_full_qa.py
+```
+
+The diagnostics system validates required tools (`python3`, `ffmpeg`, `ffprobe`, `node`, and `npm`), required writable folders, key JSON files, runtime path safety, and packaged app resources when a packaged build exists. It writes:
+
+- `analytics/diagnostics.json`
+- `analytics/qa_report.json`
+
+JSON reads through the shared runtime helpers are hardened for corrupt or partial files. When malformed JSON is encountered, HigherKey copies the bad file to a timestamped `.corrupt-*` sibling and returns the caller's existing default shape so the app can continue running without destructive recovery.
+
+The Operator UI includes a Diagnostics panel and Electron controls for `Diagnostics` and `Full QA`. Static browser mode remains compatible and reads the latest local diagnostics JSON files.
+
+Packaged app QA checklist:
+
+- Run `npm run dist:dir`.
+- Confirm `dist/mac-arm64/HigherKey Operator OS.app` exists.
+- Run `python3 scripts/run_full_qa.py`.
+- Run `npm run electron:verify` separately for the desktop smoke path.
+- Launch the packaged app and confirm the writable project folder contains `HIGHERKEY_OPERATOR_OS_SETUP.md` and `config/desktop_runtime.json`.
+- Confirm generated files appear in the selected project folder, not app resources or `app.asar`.
+- Confirm `analytics/diagnostics.json` and `analytics/qa_report.json` report `pass` or only expected warnings.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.
