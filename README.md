@@ -404,6 +404,22 @@ Platform guidance lives in `config/social_platform_presets.json`. The Operator U
 
 This is manual upload workflow prep only. No direct posting APIs, cloud APIs, or social APIs are configured.
 
+## Latest Local App Launch
+
+During development and testing, launch the newest local app build from the repo root:
+
+```bash
+npm run app:open-latest
+```
+
+For path/version verification without launching the app:
+
+```bash
+npm run app:open-latest -- --dry-run
+```
+
+The launcher opens `dist/mac-arm64/HigherKey Operator OS.app`, prints the app path, and verifies `package.json` and `config/release.json` versions match. If testing from a DMG, use the newest `dist/HigherKey Operator OS-<version>-arm64.dmg`.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

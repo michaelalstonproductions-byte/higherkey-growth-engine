@@ -50,6 +50,61 @@ function releaseInfo() {
   return releaseInfoCache;
 }
 
+function normalizeVersion(value) {
+  const text = String(value || "").trim().replace(/^v/i, "");
+  const match = text.match(/(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+  if (!match) return text || "unknown";
+  return [match[1], match[2] || "0", match[3] || "0"].join(".");
+}
+
+function packageInfo() {
+  const candidates = [
+    path.join(app.getAppPath(), "package.json"),
+    path.join(APP_ROOT, "package.json"),
+    path.resolve(__dirname, "..", "package.json")
+  ];
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(fs.readFileSync(candidate, "utf8"));
+    } catch {}
+  }
+  return { version: app.getVersion(), productName: "HigherKey Operator OS" };
+}
+
+function buildInfo() {
+  const release = releaseInfo();
+  const pkg = packageInfo();
+  const packageVersion = normalizeVersion(pkg.version);
+  const releaseVersion = normalizeVersion(release.version);
+  const runtimeVersion = normalizeVersion(app.getVersion());
+  const warnings = [];
+  if (packageVersion !== releaseVersion) {
+    warnings.push(`Package version ${packageVersion} does not match release version ${release.version || "unknown"}.`);
+  }
+  if (runtimeVersion !== packageVersion) {
+    warnings.push(`Runtime app version ${runtimeVersion} does not match package version ${packageVersion}.`);
+  }
+  const appPath = app.getAppPath();
+  const launchPaths = [appPath, process.resourcesPath, process.execPath].filter(Boolean);
+  if (launchPaths.some((item) => item.startsWith("/Volumes/"))) {
+    warnings.push("App appears to be running from a mounted DMG volume. Copy or launch the newest local build instead.");
+  }
+  return {
+    packageVersion,
+    releaseVersion,
+    releaseVersionRaw: release.version || "unknown",
+    runtimeVersion,
+    buildStatus: release.build_status || "unknown",
+    productName: pkg.productName || release.product_name || "HigherKey Operator OS",
+    appPath,
+    execPath: process.execPath,
+    resourcesPath: process.resourcesPath,
+    appRoot: APP_ROOT,
+    warnings,
+    ok: warnings.length === 0
+  };
+}
+
 function settingsPath() {
   return path.join(app.getPath("userData"), SETTINGS_NAME);
 }
@@ -276,6 +331,7 @@ function createMenu() {
     {
       label: "Help",
       submenu: [
+        { label: "Show Build Info", click: () => showBuildInfoPanel() },
         { label: "About HigherKey Operator OS", click: () => showAboutPanel() }
       ]
     }
@@ -322,6 +378,7 @@ async function createWindow(url) {
 
 async function showAboutPanel() {
   const info = releaseInfo();
+  const build = buildInfo();
   let diagnosticsStatus = "not run";
   let qaStatus = "not run";
   try {
@@ -339,8 +396,33 @@ async function showAboutPanel() {
       `App ID: ${info.app_id}`,
       `Diagnostics: ${diagnosticsStatus}`,
       `Full QA: ${qaStatus}`,
+      `Runtime version: ${build.runtimeVersion}`,
+      `Package version: ${build.packageVersion}`,
+      `Release version: ${build.releaseVersionRaw}`,
+      build.warnings.length ? `Build warning: ${build.warnings.join(" ")}` : "Build versions aligned.",
       "",
       info.local_first_statement
+    ].join("\n")
+  });
+}
+
+async function showBuildInfoPanel() {
+  const build = buildInfo();
+  return dialog.showMessageBox(mainWindow, {
+    type: build.ok ? "info" : "warning",
+    message: `${build.productName} Build Info`,
+    detail: [
+      `Runtime version: ${build.runtimeVersion}`,
+      `Package version: ${build.packageVersion}`,
+      `Release version: ${build.releaseVersionRaw} (${build.releaseVersion})`,
+      `Build status: ${build.buildStatus}`,
+      `Packaged: ${app.isPackaged}`,
+      `App path: ${build.appPath}`,
+      `Resources path: ${build.resourcesPath}`,
+      `Asset root: ${build.appRoot}`,
+      `Active project: ${activeProjectRoot}`,
+      "",
+      build.warnings.length ? `Warnings:\n- ${build.warnings.join("\n- ")}` : "Versions aligned. This appears to be the current local build."
     ].join("\n")
   });
 }
@@ -583,6 +665,7 @@ async function ingestDroppedFiles(filePaths) {
 async function appInfo() {
   const settings = await readSettings();
   const profile = projectProfile(settings);
+  const build = buildInfo();
   let lastPipeline = null;
   try {
     lastPipeline = JSON.parse(await fsp.readFile(path.join(profile.projectRoot, "analytics", "pipeline_status.json"), "utf8")).last_run || null;
@@ -597,7 +680,12 @@ async function appInfo() {
     contentInbox: profile.contentInbox,
     analyticsDirectory: profile.analyticsDirectory,
     exportDirectory: profile.exportDirectory,
-    lastPipeline
+    lastPipeline,
+    build,
+    buildWarnings: build.warnings,
+    packageVersion: build.packageVersion,
+    runtimeVersion: build.runtimeVersion,
+    releaseVersion: build.releaseVersionRaw
   };
 }
 

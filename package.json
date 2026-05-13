@@ -13,7 +13,8 @@
     "dist:unsigned": "electron-builder --mac dmg -c.mac.identity=null",
     "clean:dist": "rm -rf dist",
     "qa:full": "python3 scripts/run_full_qa.py",
-    "release:notes": "python3 scripts/generate_release_notes.py"
+    "release:notes": "python3 scripts/generate_release_notes.py",
+    "app:open-latest": "bash scripts/open_latest_app.sh"
   },
   "build": {
     "appId": "com.higherkey.operatoros",

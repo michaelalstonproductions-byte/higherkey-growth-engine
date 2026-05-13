@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="HigherKey logo mark">
+  <rect width="256" height="256" fill="#020304"/>
+  <path d="M128 51 45 176l63-41 20 16 20-16 63 41L128 51Z" fill="#ef3347"/>
+  <circle cx="128" cy="111" r="25" fill="#020304"/>
+  <path d="M128 51 45 176l63-41 20 16 20-16 63 41L128 51Z" fill="none" stroke="#ff6675" stroke-opacity=".35" stroke-width="3"/>
+</svg>

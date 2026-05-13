@@ -7,34 +7,39 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #080b10;
-        --dock: #101722;
-        --panel: #121b28;
-        --panel-2: #172231;
-        --ink: #eef4ff;
-        --muted: #8fa1b8;
-        --line: #273548;
-        --accent: #65a8ff;
-        --good: #36d17c;
-        --warn: #f7b84b;
-        --bad: #ff6470;
+        --bg: #050506;
+        --dock: #0a0c10;
+        --panel: #101318;
+        --panel-2: #151a21;
+        --ink: #f4f4f2;
+        --muted: #8e96a3;
+        --line: #2a2f38;
+        --accent: #ef3347;
+        --accent-2: #b9192a;
+        --good: #54e078;
+        --warn: #f6c14b;
+        --bad: #ff4658;
         --violet: #a78bfa;
-        --shadow: 0 22px 60px rgba(0, 0, 0, 0.42);
+        --graphite: #1b2028;
+        --metal: linear-gradient(135deg, #f8f6ef 0%, #8e96a3 45%, #f1efe7 100%);
+        --shadow: 0 30px 90px rgba(0, 0, 0, 0.55);
       }
 
       * { box-sizing: border-box; }
 
       body {
         margin: 0;
-        background: radial-gradient(circle at 30% -20%, #1b2a40 0, transparent 34%), var(--bg);
+        background:
+          radial-gradient(circle at 18% -12%, rgba(239, 51, 71, 0.18) 0, transparent 32%),
+          linear-gradient(135deg, #050506 0%, #090b0e 42%, #030304 100%);
         color: var(--ink);
         font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       }
 
       button, input, select {
-        background: #0d1420;
+        background: #0a0d12;
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: 7px;
         color: var(--ink);
         font: inherit;
         min-height: 34px;
@@ -42,9 +47,9 @@
       }
 
       button { cursor: pointer; transition: border-color 160ms ease, transform 160ms ease, background 160ms ease; }
-      button:hover { border-color: var(--accent); transform: translateY(-1px); }
-      button.primary { background: #1d4f8f; border-color: #2f7ed7; }
-      button.danger { border-color: #74313a; color: #ffb7bd; }
+      button:hover { border-color: rgba(239, 51, 71, 0.75); transform: translateY(-1px); }
+      button.primary { background: linear-gradient(180deg, #ef3347, #9f1524); border-color: #ff5b6a; color: #fff; }
+      button.danger { border-color: #74313a; color: #ffb7bd; background: #1a080c; }
       button:disabled { cursor: not-allowed; opacity: 0.45; transform: none; }
       input[type="search"] { min-width: 210px; }
 
@@ -56,47 +61,111 @@
       }
 
       header {
-        background: rgba(10, 15, 23, 0.92);
+        background: rgba(5, 6, 8, 0.92);
         border-bottom: 1px solid var(--line);
         backdrop-filter: blur(18px);
-        padding: 12px 16px;
+        padding: 10px 14px 8px;
       }
 
-      .topbar, .statusbar, .tools, .workspace, .strip, .row, .chips, .tabs {
+      .topbar, .statusbar, .tools, .workspace, .strip, .row, .chips, .tabs, .app-main {
         display: flex;
         gap: 10px;
       }
 
       .topbar { align-items: center; justify-content: space-between; }
-      .brand h1 { align-items: center; display: flex; flex-wrap: wrap; font-size: 20px; gap: 8px; line-height: 1; margin: 0; letter-spacing: 0; }
-      .brand div { color: var(--muted); font-size: 12px; margin-top: 4px; }
+      .brand { align-items: center; display: flex; gap: 11px; min-width: 250px; }
+      .brand-mark {
+        align-items: center;
+        background: #040405;
+        border: 1px solid rgba(239, 51, 71, 0.24);
+        border-radius: 9px;
+        box-shadow: 0 0 24px rgba(239, 51, 71, 0.22);
+        display: grid;
+        height: 40px;
+        place-items: center;
+        width: 40px;
+      }
+      .brand-mark svg { display: block; height: 32px; width: 32px; }
+      .brand h1 {
+        align-items: center;
+        background: var(--metal);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        display: flex;
+        flex-wrap: wrap;
+        font-size: 14px;
+        font-weight: 900;
+        gap: 8px;
+        letter-spacing: .12em;
+        line-height: 1.05;
+        margin: 0;
+        text-transform: uppercase;
+      }
+      .brand div { color: var(--muted); font-size: 11px; margin-top: 2px; }
       .version-badge {
-        border: 1px solid rgba(101, 168, 255, 0.45);
+        border: 1px solid rgba(239, 51, 71, 0.55);
         border-radius: 999px;
-        color: var(--accent);
+        color: #ff8b95;
         font-size: 11px;
         font-weight: 800;
         padding: 4px 7px;
       }
       .tools, .statusbar, .chips { align-items: center; flex-wrap: wrap; }
-      .statusbar { margin-top: 12px; }
+      .tools.header-tools { flex: 1; justify-content: flex-end; }
+      .statusbar { margin-top: 7px; }
 
-      .stat, .pill {
+      .stat, .pill, .command-stat {
         border: 1px solid var(--line);
         border-radius: 999px;
         color: var(--muted);
         font-size: 12px;
         padding: 6px 9px;
       }
+      .command-stat {
+        background: rgba(10, 13, 18, 0.72);
+        max-width: 430px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .command-stat strong { color: #dfe3ea; font-size: 10px; letter-spacing: .08em; margin-right: 5px; text-transform: uppercase; }
       .stat strong { color: var(--ink); font-size: 13px; }
       .pill.good { color: var(--good); border-color: rgba(54, 209, 124, 0.35); }
       .pill.warn { color: var(--warn); border-color: rgba(247, 184, 75, 0.35); }
       .pill.bad { color: var(--bad); border-color: rgba(255, 100, 112, 0.35); }
       .pill.accent { color: var(--accent); border-color: rgba(101, 168, 255, 0.35); }
 
-      .tabs { margin-top: 12px; overflow-x: auto; }
-      .tab { color: var(--muted); flex: 0 0 auto; }
-      .tab.active { background: #16263a; border-color: var(--accent); color: var(--ink); }
+      .app-main { min-height: 0; overflow: hidden; }
+      .navrail {
+        background: linear-gradient(180deg, rgba(12,14,18,0.98), rgba(5,6,8,0.98));
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex: 0 0 222px;
+        flex-direction: column;
+        min-height: 0;
+        padding: 14px 12px;
+      }
+      .nav-title { color: #6f7886; font-size: 10px; font-weight: 900; letter-spacing: .14em; margin: 4px 0 12px; text-transform: uppercase; }
+      .tabs { flex-direction: column; gap: 7px; margin-top: 0; overflow: visible; }
+      .tab {
+        align-items: center;
+        border-color: transparent;
+        color: #c6cbd3;
+        display: flex;
+        flex: 0 0 auto;
+        gap: 10px;
+        justify-content: flex-start;
+        min-height: 44px;
+        padding: 0 12px;
+      }
+      .tab::before { color: #7d8794; content: attr(data-icon); font-size: 15px; width: 18px; }
+      .tab.active {
+        background: linear-gradient(90deg, rgba(239,51,71,0.27), rgba(239,51,71,0.05));
+        border-color: rgba(239, 51, 71, 0.45);
+        color: #fff;
+        box-shadow: inset 3px 0 0 var(--accent);
+      }
 
       .notice {
         display: none;
@@ -111,20 +180,37 @@
       .notice.visible { display: block; }
       .notice .notice-actions { display: inline-flex; gap: 8px; margin-left: 10px; vertical-align: middle; }
       .notice .notice-actions button { min-height: 28px; }
+      .build-warning {
+        border-color: rgba(255, 70, 88, 0.55);
+        color: #ff9aa4;
+        background: rgba(255, 70, 88, 0.1);
+      }
+      .zero-queue-cta {
+        background: linear-gradient(135deg, rgba(239,51,71,.16), rgba(12,15,20,.96));
+        border: 1px solid rgba(239, 51, 71, 0.4);
+        border-radius: 10px;
+        display: grid;
+        gap: 10px;
+        margin-top: 9px;
+        padding: 12px;
+      }
+      .zero-queue-cta h3 { font-size: 13px; letter-spacing: .08em; margin: 0; text-transform: uppercase; }
+      .zero-queue-cta p { color: #c0c8d5; font-size: 12px; line-height: 1.35; margin: 0; }
 
       .workspace {
         min-height: 0;
+        flex: 1;
         padding: 12px;
         display: grid;
-        grid-template-columns: minmax(260px, 320px) minmax(420px, 1fr) minmax(300px, 380px);
+        grid-template-columns: minmax(270px, 350px) minmax(460px, 1fr) minmax(320px, 420px);
         gap: 12px;
       }
 
       .dock {
         min-height: 0;
-        background: linear-gradient(180deg, rgba(23,34,49,0.96), rgba(16,23,34,0.96));
+        background: linear-gradient(180deg, rgba(18,21,27,0.96), rgba(8,10,14,0.96));
         border: 1px solid var(--line);
-        border-radius: 14px;
+        border-radius: 10px;
         box-shadow: var(--shadow);
         display: flex;
         flex-direction: column;
@@ -133,28 +219,28 @@
 
       .dock-head {
         border-bottom: 1px solid var(--line);
-        padding: 12px;
+        padding: 10px 12px;
       }
-      .dock-title { font-size: 13px; font-weight: 800; margin: 0; text-transform: uppercase; letter-spacing: .08em; }
+      .dock-title { font-size: 12px; font-weight: 850; margin: 0; text-transform: uppercase; letter-spacing: .11em; }
       .dock-sub { color: var(--muted); font-size: 12px; margin-top: 4px; }
-      .dock-body { min-height: 0; overflow: auto; padding: 10px; }
+      .dock-body { min-height: 0; overflow: auto; padding: 9px; }
 
       .bin-list { display: grid; gap: 8px; }
       .bin-item {
-        background: #0d1420;
+        background: linear-gradient(180deg, #11161d, #090c11);
         border: 1px solid var(--line);
-        border-radius: 10px;
+        border-radius: 8px;
         cursor: pointer;
         padding: 9px;
         transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
       }
-      .bin-item:hover, .bin-item.active { background: #162235; border-color: var(--accent); transform: translateX(2px); }
+      .bin-item:hover, .bin-item.active { background: #151922; border-color: rgba(239, 51, 71, 0.62); transform: translateX(2px); }
       .bin-item.selected { box-shadow: inset 3px 0 0 var(--violet); }
       .bin-title { font-size: 12px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere; }
       .bin-meta { color: var(--muted); font-size: 11px; margin-top: 5px; }
       .thumb {
-        width: 48px;
-        aspect-ratio: 9 / 16;
+        width: 72px;
+        aspect-ratio: 16 / 9;
         border: 1px solid var(--line);
         border-radius: 6px;
         background: #05080d;
@@ -196,8 +282,8 @@
       .viewer {
         min-height: 0;
         background: #02050a;
-        border: 1px solid #1f2b3c;
-        border-radius: 16px;
+        border: 1px solid #2c333e;
+        border-radius: 10px;
         display: grid;
         place-items: center;
         overflow: hidden;
@@ -210,14 +296,16 @@
         height: 100%;
         display: block;
       }
-      .viewer-empty { color: var(--muted); text-align: center; padding: 28px; }
-      .monitor-info { padding: 12px 2px 0; }
-      .monitor-title { font-size: 22px; font-weight: 850; line-height: 1.15; margin: 0 0 8px; }
+      .viewer-empty { color: var(--muted); text-align: center; padding: 18px; }
+      .viewer-empty h2 { font-size: 22px; margin: 0 0 8px; }
+      .viewer-empty p { margin: 0 auto; max-width: 470px; }
+      .monitor-info { padding: 10px 2px 0; }
+      .monitor-title { font-size: 20px; font-weight: 850; line-height: 1.15; margin: 0 0 7px; }
       .caption { color: #c9d5e6; font-size: 14px; line-height: 1.45; margin: 0; }
       .media-timeline {
         border: 1px solid var(--line);
         border-radius: 10px;
-        background: #0d1420;
+        background: #090b0f;
         margin: 10px 0;
         padding: 8px;
         width: 100%;
@@ -252,7 +340,7 @@
         margin-top: 7px;
       }
       .wavebar {
-        background: linear-gradient(180deg, var(--accent), #23476f);
+        background: linear-gradient(180deg, #ff6a76, #7f1320);
         border-radius: 999px 999px 0 0;
         min-height: 2px;
       }
@@ -261,14 +349,19 @@
 
       .inspector-grid { display: grid; gap: 10px; }
       .card {
-        background: #0d1420;
+        background: linear-gradient(180deg, rgba(18,22,29,.96), rgba(8,10,14,.96));
         border: 1px solid var(--line);
-        border-radius: 10px;
-        padding: 10px;
+        border-radius: 8px;
+        padding: 12px;
       }
-      .card h3 { font-size: 13px; margin: 0 0 8px; text-transform: uppercase; letter-spacing: .08em; }
+      .card h3 { color: #f5f1ea; font-size: 12px; margin: 0 0 9px; text-transform: uppercase; letter-spacing: .1em; }
       .metric { display: grid; grid-template-columns: 1fr auto; gap: 10px; color: var(--muted); font-size: 12px; padding: 4px 0; }
       .metric strong { color: var(--ink); }
+      .dashboard-grid { display: grid; gap: 10px; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 14px; width: 100%; }
+      .dashboard-card { background: linear-gradient(180deg, rgba(23,27,35,.86), rgba(8,10,14,.9)); border: 1px solid var(--line); border-radius: 8px; min-height: 108px; padding: 13px; }
+      .dashboard-card span { color: var(--muted); display: block; font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+      .dashboard-card strong { color: #fff; display: block; font-size: 28px; margin-top: 10px; }
+      .dashboard-card p { color: var(--muted); font-size: 12px; line-height: 1.4; margin: 8px 0 0; }
 
       .chips { gap: 6px; }
       .chip {
@@ -278,28 +371,33 @@
         font-size: 11px;
         padding: 5px 7px;
       }
-      .chip.strong { color: var(--ink); border-color: rgba(101,168,255,.45); }
+      .chip.strong { color: var(--ink); border-color: rgba(239,51,71,.45); }
       .priority-high { color: var(--bad); }
       .priority-normal { color: var(--accent); }
       .priority-low { color: var(--muted); }
 
       .strip {
-        height: 138px;
-        background: rgba(10, 15, 23, 0.96);
+        height: 136px;
+        background: rgba(5, 6, 8, 0.97);
         border-top: 1px solid var(--line);
         padding: 10px 12px;
         min-width: 0;
       }
-      .timeline { flex: 1; overflow: auto; display: flex; gap: 8px; }
+      .timeline { flex: 1; overflow: auto; display: grid; grid-template-columns: minmax(240px, 1.1fr) minmax(260px, 1.2fr) minmax(240px, 1fr); gap: 8px; }
       .event {
-        min-width: 190px;
-        background: #0d1420;
+        min-width: 0;
+        background: #0a0d12;
         border: 1px solid var(--line);
         border-radius: 10px;
         padding: 8px;
       }
       .event strong { display: block; font-size: 12px; }
       .event span { color: var(--muted); display: block; font-size: 11px; margin-top: 4px; }
+      .bottom-card { background: #0a0d12; border: 1px solid var(--line); border-radius: 10px; min-width: 0; overflow: hidden; padding: 9px; }
+      .bottom-card h3 { font-size: 11px; letter-spacing: .1em; margin: 0 0 8px; text-transform: uppercase; }
+      .activity-list { display: grid; gap: 5px; max-height: 86px; overflow: auto; }
+      .activity-row { color: var(--muted); display: grid; font-size: 11px; gap: 8px; grid-template-columns: 58px 1fr; }
+      .activity-row strong { color: #dbe1ea; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
       .heatmap {
         display: grid;
@@ -313,7 +411,7 @@
         background: #1b2838;
         border: 1px solid #26384d;
       }
-      .heat.on { background: linear-gradient(90deg, var(--warn), var(--bad)); border-color: rgba(255,255,255,.18); }
+      .heat.on { background: linear-gradient(90deg, #ff394d, #f6c14b); border-color: rgba(255,255,255,.18); }
       .compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
       .mini-preview { background:#05080d; border:1px solid var(--line); border-radius:8px; aspect-ratio:9/16; overflow:hidden; display:grid; place-items:center; }
       .mini-preview video { width:100%; height:100%; object-fit:contain; }
@@ -361,14 +459,23 @@
       .hidden { display: none !important; }
 
       @media (max-width: 1100px) {
+        .navrail { flex-basis: 78px; }
+        .tab { font-size: 0; justify-content: center; padding: 0; }
+        .tab::before { font-size: 17px; width: auto; }
+        .nav-title { display: none; }
         .workspace { grid-template-columns: 280px minmax(360px,1fr); }
         .inspector { display: none; }
       }
       @media (max-width: 780px) {
         .app { height: auto; min-height: 100vh; overflow: auto; }
+        .app-main { display: block; overflow: visible; }
+        .navrail { border-bottom: 1px solid var(--line); border-right: 0; flex-basis: auto; }
+        .tabs { flex-direction: row; overflow-x: auto; }
+        .tab { font-size: 12px; min-width: 92px; }
         .workspace { display: block; overflow: visible; }
         .dock, .monitor { margin-bottom: 12px; min-height: 360px; }
         .strip { height: auto; }
+        .dashboard-grid { grid-template-columns: 1fr; }
       }
     </style>
   </head>
@@ -377,36 +484,59 @@
       <header>
         <div class="topbar">
           <div class="brand">
-            <h1>HigherKey Operator <span class="version-badge" id="versionBadge">V2.7 RC</span></h1>
-            <div id="sessionLine">Loading local session</div>
+            <span class="brand-mark" aria-label="HigherKey logo">
+              <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
+                <defs>
+                  <linearGradient id="higherkeyMarkGradient" x1="16" y1="18" x2="78" y2="86" gradientUnits="userSpaceOnUse">
+                    <stop offset="0" stop-color="#ff6a72"></stop>
+                    <stop offset="0.48" stop-color="#ef3347"></stop>
+                    <stop offset="1" stop-color="#8e101c"></stop>
+                  </linearGradient>
+                  <mask id="higherkeyMarkCutout">
+                    <rect width="100" height="100" fill="#fff"></rect>
+                    <circle cx="50" cy="48" r="15" fill="#000"></circle>
+                  </mask>
+                </defs>
+                <path d="M8 18 L92 18 L70 73 L56 57 L50 78 L44 57 L30 73 Z" fill="url(#higherkeyMarkGradient)" mask="url(#higherkeyMarkCutout)"></path>
+              </svg>
+            </span>
+            <div>
+              <h1>HigherKey<br>Operator OS <span class="version-badge" id="versionBadge">V2.8 RC</span></h1>
+              <div id="sessionLine">Loading local session</div>
+            </div>
           </div>
-          <div class="tools">
+          <div class="tools header-tools">
+            <span class="command-stat"><strong>Active Project</strong> <span id="headerProjectPath">Loading</span></span>
+            <span class="command-stat"><strong>Pipeline</strong> <span id="headerPipelineState">Idle</span></span>
+            <span class="command-stat"><strong>Health</strong> <span id="headerHealthState">Unknown</span></span>
             <button id="openInbox">Open Inbox</button>
             <button id="selectProject">Select Project Folder</button>
             <button id="useRepoProject">Use Current Repo</button>
-            <button id="runFirstPipeline">Run First Pipeline</button>
-            <button id="aboutApp">About</button>
-            <button id="batchApprove">Approve Selected</button>
-            <button id="batchReject" class="danger">Reject Selected</button>
+            <button id="runFirstPipeline" class="primary">Run Pipeline</button>
             <button id="exportApproved" class="primary">Export Approved</button>
-            <button id="recoverSession">Recover Session</button>
+            <button id="aboutApp">Build Info</button>
           </div>
         </div>
         <div class="statusbar" id="systemStatus"></div>
         <div class="statusbar" id="projectStatus"></div>
-        <div class="tabs" id="modeTabs">
-          <button class="tab active" data-mode="queue">Queue</button>
-          <button class="tab" data-mode="analytics">Analytics</button>
-          <button class="tab" data-mode="search">Search</button>
-          <button class="tab" data-mode="clusters">Clusters</button>
-          <button class="tab" data-mode="agents">Agents</button>
-          <button class="tab" data-mode="diagnostics">Diagnostics</button>
-          <button class="tab" data-mode="social">Social Exports</button>
-          <button class="tab" data-mode="exports">Exports</button>
-          <button class="tab" data-mode="settings">Settings</button>
-        </div>
         <div class="notice" id="notice"></div>
       </header>
+
+      <div class="app-main">
+        <aside class="navrail">
+          <div class="nav-title">Command Center</div>
+          <div class="tabs" id="modeTabs">
+            <button class="tab active" data-icon="⌘" data-mode="dashboard">Dashboard</button>
+            <button class="tab" data-icon="☷" data-mode="queue">Queue</button>
+            <button class="tab" data-icon="▣" data-mode="media">Media</button>
+            <button class="tab" data-icon="✣" data-mode="search">Intelligence</button>
+            <button class="tab" data-icon="◇" data-mode="agents">Agents</button>
+            <button class="tab" data-icon="▥" data-mode="analytics">Analytics</button>
+            <button class="tab" data-icon="◎" data-mode="social">Social Exports</button>
+            <button class="tab" data-icon="◈" data-mode="diagnostics">Diagnostics</button>
+            <button class="tab" data-icon="⚙" data-mode="settings">Settings</button>
+          </div>
+        </aside>
 
       <main class="workspace">
         <aside class="dock media-bin">
@@ -463,6 +593,7 @@
           </div>
         </aside>
       </main>
+      </div>
 
       <footer class="strip">
         <div style="width:260px">
@@ -513,13 +644,13 @@
       const WORKSPACE_KEY = "higherkey.workspace.v21";
 
       const state = {
-        mode: "queue",
+        mode: "dashboard",
         entries: [],
         activeId: null,
         selected: new Set(),
         review: readLocal(REVIEW_KEY, {}),
         priority: readLocal(PRIORITY_KEY, {}),
-        workspace: readLocal(WORKSPACE_KEY, { density: "normal", lastActiveId: null }),
+        workspace: readLocal(WORKSPACE_KEY, { density: "normal", lastActiveId: null, mode: "dashboard" }),
         metadata: { items: [], clusters: [] },
         metadataByClip: {},
         queue: { entries: [] },
@@ -576,6 +707,8 @@
       function releaseInfo() { return state.appInfo || state.release || { version: "V2.7", build_status: "release-candidate" }; }
       function versionLabel() {
         const release = releaseInfo();
+        const build = state.appInfo?.build;
+        if (build?.packageVersion) return `V${build.packageVersion.replace(/\.0$/, "")} RC`;
         const status = String(release.build_status || "").toLowerCase().includes("release") ? "RC" : (release.build_status || "local");
         return `${release.version || "V2.7"} ${status}`;
       }
@@ -591,6 +724,24 @@
       function chips(values, strong = false) {
         if (!Array.isArray(values) || values.length === 0) return "";
         return values.slice(0, 10).map((value) => `<span class="chip${strong ? " strong" : ""}">${html(value)}</span>`).join("");
+      }
+
+      function zeroQueueCtaHtml() {
+        const repoButton = window.higherkey && state.appInfo?.devMode
+          ? `<button data-desktop-action="use-current-repo">Use Repo Project</button>`
+          : "";
+        return `
+          <div class="zero-queue-cta">
+            <h3>Connect a local project</h3>
+            <p>The active project has no queue entries. Select the repo project with existing outputs, open the inbox, or add videos and run the local pipeline.</p>
+            <div class="tools">
+              <button data-desktop-action="pick-project">Select Project Folder</button>
+              ${repoButton}
+              <button data-desktop-action="open-inbox">Open Inbox</button>
+              <button data-desktop-action="run-once" class="primary">Run Pipeline</button>
+            </div>
+          </div>
+        `;
       }
 
       function filteredEntries() {
@@ -620,28 +771,37 @@
         $("systemStatus").innerHTML = [
           ["Version", versionLabel()],
           ["Queue", state.entries.length],
-          ["Selected", state.selected.size],
           ["Approved", approved],
-          ["Exported", exported],
+          ["Ready Social", state.socialManifest?.count || approved],
           ["Indexed", indexed],
           ["Cache", `${cached}/${state.entries.length}`],
-          ["Health", health],
-          ["Pipeline", state.status?.state || "idle"],
           ["Agents", runningAgents ? `${runningAgents} running` : (state.agents?.execution_mode || "idle")]
         ].map(([label, value]) => `<span class="stat"><strong>${html(value)}</strong> ${html(label)}</span>`).join("");
         $("versionBadge").textContent = versionLabel();
         const project = state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static project root";
         const inbox = state.appInfo?.contentInbox || "content_inbox";
         $("sessionLine").textContent = `${window.higherkey ? "Electron bridge online" : "Static browser mode"} · ${state.entries.length} local clips`;
+        $("headerProjectPath").textContent = project;
+        $("headerPipelineState").textContent = state.status?.state || "idle";
+        $("headerHealthState").textContent = health;
         $("projectStatus").innerHTML = [
-          ["Active Project", project],
+          ...(state.appInfo?.buildWarnings?.length ? [["Build Warning", state.appInfo.buildWarnings.join(" ")]] : []),
           ["Content Inbox", inbox],
           ["Last Pipeline CWD", state.appInfo?.lastPipeline?.cwd || state.status?.last_run?.cwd || "not run"]
-        ].map(([label, value]) => `<span class="stat"><strong>${html(label)}</strong> ${html(value)}</span>`).join("");
+        ].map(([label, value]) => `<span class="stat ${label === "Build Warning" ? "build-warning" : ""}"><strong>${html(label)}</strong> ${html(value)}</span>`).join("");
         $("useRepoProject").style.display = window.higherkey && state.appInfo?.devMode ? "" : "none";
       }
 
       function renderBin() {
+        if (state.mode === "dashboard") {
+          $("binList").innerHTML = dashboardQueueHtml();
+          document.querySelectorAll("[data-entry-id]").forEach((node) => node.addEventListener("click", () => {
+            state.mode = "queue";
+            document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.mode === "queue"));
+            setActive(node.dataset.entryId);
+          }));
+          return;
+        }
         const entries = filteredEntries();
         $("binList").innerHTML = entries.map((entry) => `
           <div class="bin-item ${entry.id === state.activeId ? "active" : ""} ${state.selected.has(entry.id) ? "selected" : ""}" data-entry-id="${html(entry.id)}" title="Hover markers show hook intensity">
@@ -671,9 +831,16 @@
 
       function renderMonitor() {
         snapshotPlayback();
+        if (state.mode === "dashboard") {
+          $("viewer").innerHTML = dashboardHomeHtml();
+          $("monitorTitle").textContent = "AI-Native Media Command Center";
+          $("monitorCaption").textContent = "Local review, intelligence, agents, exports, and pipeline activity in one production workspace.";
+          $("monitorChips").innerHTML = "";
+          return;
+        }
         const entry = activeEntry();
         if (!entry) {
-          $("viewer").innerHTML = `<div class="viewer-empty"><h2>No media queued</h2><p>Use Open Inbox to add local videos, then Run First Pipeline. In static browser mode, place videos in content_inbox and run python3 scripts/run_pipeline.py.</p></div>`;
+          $("viewer").innerHTML = `<div class="viewer-empty"><h2>No media queued</h2><p>Use Open Inbox to add local videos, then Run First Pipeline. In static browser mode, place videos in content_inbox and run python3 scripts/run_pipeline.py.</p>${zeroQueueCtaHtml()}</div>`;
           $("monitorTitle").textContent = "No clip selected";
           $("monitorCaption").textContent = "Waiting for local queue data from queue/review_queue.json.";
           $("monitorChips").innerHTML = "";
@@ -693,6 +860,15 @@
         const entry = activeEntry();
         const events = state.activity?.events || [];
         const jobs = state.history?.jobs || [];
+        if (state.mode === "dashboard") {
+          $("inspector").innerHTML = `
+            <div class="card"><h3>Command Status</h3>${projectRuntimeHtml()}</div>
+            <div class="card"><h3>Agent Activity</h3>${agentHealthHtml()}</div>
+            <div class="card"><h3>Diagnostics</h3>${diagnosticsHtml()}</div>
+            <div class="card"><h3>Export Package</h3>${socialExportsSummaryHtml()}</div>
+          `;
+          return;
+        }
         if (state.mode === "social") {
           $("inspector").innerHTML = socialExportsHtml();
           wireSocialExportActions();
@@ -709,38 +885,34 @@
         }
         const analytics = state.learning || {};
         const cluster = entry.metadata?.cluster_id || "unclustered";
+        const platformNotes = entry.package?.platform_notes || {};
         $("inspector").innerHTML = `
-          <div class="card"><h3>Recommendation</h3>${recommendationHtml()}</div>
-          <div class="card"><h3>Diagnostics</h3>${diagnosticsHtml()}</div>
-          <div class="card"><h3>Media Cache</h3>${mediaCacheHtml(entry)}</div>
-          <div class="card"><h3>Agent Health</h3>${agentHealthHtml()}</div>
-          <div class="card"><h3>Orchestration Graph</h3>${orchestrationGraphHtml()}</div>
-          <div class="card"><h3>Compare Selected</h3>${comparisonHtml()}</div>
           <div class="card"><h3>Clip Intelligence</h3>
             <div class="metric"><span>Hook score</span><strong>${html(score(entry))}</strong></div>
             <div class="metric"><span>Cluster</span><strong>${html(cluster)}</strong></div>
             <div class="metric"><span>Subtitle</span><strong>${html(entry.package?.subtitle_status || entry.subtitle_status || "unknown")}</strong></div>
-            <div class="chips">${chips(labels(entry), true)}${chips(tags(entry))}</div>
+          </div>
+          <div class="card"><h3>Hook Moments</h3>${chips((entry.package?.hook_moments || entry.hook_moments || []).map((moment) => `${moment.timestamp || 0}s ${(moment.reasons || ["hook"]).join("+")}`), true) || `<div class="muted">No hook moments recorded.</div>`}</div>
+          <div class="card"><h3>Scene Labels</h3><div class="chips">${chips(labels(entry), true) || `<span class="muted">No labels</span>`}</div></div>
+          <div class="card"><h3>Semantic Tags</h3><div class="chips">${chips(tags(entry)) || `<span class="muted">No tags</span>`}</div></div>
+          <div class="card"><h3>Captions</h3>
+            <p class="caption">${html(entry.package?.caption || entry.caption?.caption || "No caption package loaded.")}</p>
+          </div>
+          <div class="card"><h3>Platform Notes</h3>
+            <div class="muted">${html(Object.entries(platformNotes).map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(" ") : value}`).join(" · ") || "No platform notes yet.")}</div>
+          </div>
+          <div class="card"><h3>Export Package</h3>
+            <div class="metric"><span>Status</span><strong>${html(state.socialManifest?.exports?.some((item) => item.clip_id === entry.clip_id) ? "platform-ready" : "not exported")}</strong></div>
+            <div class="metric"><span>Approved lane</span><strong>${html(statusOf(entry))}</strong></div>
+            <div class="tools"><button data-desktop-action="open-inbox">Open Inbox</button></div>
           </div>
           <div class="card"><h3>Metadata</h3>
             <div class="metric"><span>Clip</span><strong>${html(entry.clip_id)}</strong></div>
             <div class="metric"><span>Package</span><strong>${html(entry.package_path || "none")}</strong></div>
             <div class="metric"><span>Source</span><strong>${html(entry.source_path)}</strong></div>
           </div>
-          <div class="card"><h3>Analytics</h3>
-            <div class="metric"><span>Records</span><strong>${html(analytics.record_count || 0)}</strong></div>
-            <div class="metric"><span>Avg delta</span><strong>${html(analytics.avg_learning_delta || 0)}</strong></div>
-          </div>
-          <div class="card"><h3>Desktop Bridge</h3>
-            ${desktopBridgeHtml()}
-          </div>
-          <div class="card"><h3>Project Runtime</h3>
-            ${projectRuntimeHtml()}
-          </div>
-          <div class="card"><h3>Session</h3>
-            <div class="metric"><span>History jobs</span><strong>${html(jobs.length)}</strong></div>
-            <div class="metric"><span>Activity events</span><strong>${html(events.length)}</strong></div>
-          </div>
+          <div class="card"><h3>Diagnostics</h3>${diagnosticsHtml()}</div>
+          <div class="card"><h3>Compare Selected</h3>${comparisonHtml()}</div>
         `;
         wireDesktopActions();
       }
@@ -828,7 +1000,8 @@
       function diagnosticsHtml() {
         const diagnostics = state.diagnostics;
         const qa = state.qaReport;
-        if (!diagnostics && !qa) {
+        const buildWarnings = state.appInfo?.buildWarnings || [];
+        if (!diagnostics && !qa && !buildWarnings.length) {
           return `<div class="muted">Run Diagnostics or Full QA to populate local health checks.</div>`;
         }
         const groups = diagnostics ? ["tools", "folders", "json_files", "runtime", "packaging"].map((name) => ({
@@ -836,6 +1009,7 @@
           status: diagnostics[name]?.status || "unknown"
         })) : [];
         return `
+          ${buildWarnings.length ? `<div class="metric"><span>Build Guard</span><strong class="status-fail">warning</strong></div><div class="muted">${html(buildWarnings.join(" "))}</div>` : `<div class="metric"><span>Build Guard</span><strong class="status-pass">aligned</strong></div>`}
           ${diagnostics ? `<div class="metric"><span>Diagnostics</span><strong class="${statusClass(diagnostics.status)}">${html(diagnostics.status)}</strong></div>` : ""}
           ${qa ? `<div class="metric"><span>Full QA</span><strong class="${statusClass(qa.status)}">${html(qa.status)}</strong></div>` : ""}
           <div class="diagnostic-list">${groups.map((item) => `
@@ -917,6 +1091,52 @@
         `).join("")}</div>`;
       }
 
+      function bestEntry() {
+        return state.entries.slice().sort((a, b) => score(b) - score(a))[0] || null;
+      }
+
+      function dashboardHomeHtml() {
+        const approved = approvedEntries().length;
+        const ready = state.socialManifest?.count || approved;
+        const agents = (state.agents?.agents || []).filter((agent) => agent.state !== "disabled").length;
+        const health = state.diagnostics?.status || state.qaReport?.status || "unknown";
+        const best = bestEntry();
+        const lastRun = state.appInfo?.lastPipeline?.completed_at || state.status?.updated_at || "not run";
+        const cards = [
+          ["Total Clips", state.entries.length, "Local queue entries available for review."],
+          ["Approved", approved, "Clips marked ready by the operator."],
+          ["Ready For Social", ready, "Manual upload packs or approved candidates."],
+          ["Best Clip Today", best ? score(best) : 0, best ? title(best) : "No ranked clips yet."],
+          ["Active Agents", agents, "Local deterministic workers configured."],
+          ["Last Pipeline Run", lastRun, "Latest local processing pass."],
+          ["Health Status", health, "Diagnostics and QA status."],
+          ["Social Export Packs", state.socialManifest?.count || 0, "Generated under out/social_exports."]
+        ];
+        return `<div style="width:100%"><div class="dashboard-grid">${cards.map(([label, value, note]) => `
+          <div class="dashboard-card">
+            <span>${html(label)}</span>
+            <strong>${html(value)}</strong>
+            <p>${html(note)}</p>
+          </div>
+        `).join("")}</div>${state.entries.length ? "" : zeroQueueCtaHtml()}</div>`;
+      }
+
+      function dashboardQueueHtml() {
+        const top = state.entries.slice().sort((a, b) => score(b) - score(a)).slice(0, 6);
+        return top.map((entry) => `
+          <div class="bin-item ${statusOf(entry) === "approved" ? "selected" : ""}" data-entry-id="${html(entry.id)}">
+            <div class="row">
+              ${thumbnailHtml(entry)}
+              <div style="flex:1">
+                <div class="bin-title">${html(title(entry))}</div>
+                <div class="bin-meta">${cacheStatusHtml(entry)}score ${score(entry)} · ${html(statusOf(entry))} · ${state.socialManifest?.exports?.some((item) => item.clip_id === entry.clip_id) ? "platform-ready" : "not exported"}</div>
+                ${heatmap(entry)}
+              </div>
+            </div>
+          </div>
+        `).join("") || zeroQueueCtaHtml();
+      }
+
       const SOCIAL_PLATFORMS = [
         ["tiktok", "TikTok"],
         ["instagram_reels", "Instagram Reels"],
@@ -959,6 +1179,15 @@
         `;
       }
 
+      function socialExportsSummaryHtml() {
+        const manifest = state.socialManifest || {};
+        return `
+          <div class="metric"><span>Manual packs</span><strong>${html(manifest.count || 0)}</strong></div>
+          <div class="metric"><span>Folder</span><strong>${html(manifest.output_dir || "out/social_exports")}</strong></div>
+          <div class="muted">Manual upload only. No direct posting integrations are configured.</div>
+        `;
+      }
+
       function projectRuntimeHtml() {
         const info = state.appInfo || {};
         const last = info.lastPipeline || state.status?.last_run || {};
@@ -996,13 +1225,27 @@
       function renderTimeline() {
         const events = (state.activity?.events || []).slice(-30).reverse();
         $("pipelineLine").textContent = `${state.status?.state || "idle"} · ${state.status?.message || "No live status yet"}`;
-        $("timeline").innerHTML = events.map((event) => `
-          <div class="event">
-            <strong>${html(event.event)}</strong>
-            <span>${html(event.message || event.source_path || "")}</span>
-            <span>${html(event.at || "")}</span>
+        const entry = activeEntry() || bestEntry();
+        const agents = (state.agents?.agents || []).slice(0, 6);
+        $("timeline").innerHTML = `
+          <div class="bottom-card">
+            <h3>Pipeline Activity</h3>
+            <div class="activity-list">${events.slice(0, 6).map((event) => `
+              <div class="activity-row"><span>${html((event.at || "").slice(11, 19) || "--:--")}</span><strong>${html(event.message || event.event || event.source_path || "")}</strong></div>
+            `).join("") || `<div class="muted">No activity yet. Run the watcher daemon to populate the strip.</div>`}</div>
           </div>
-        `).join("") || `<div class="event"><strong>No activity yet</strong><span>Run the watcher daemon to populate the processing strip.</span></div>`;
+          <div class="bottom-card">
+            <h3>Hook Heatmap</h3>
+            ${entry ? heatmap(entry) : `<div class="heatmap">${Array.from({ length: 12 }, () => `<span class="heat"></span>`).join("")}</div>`}
+            ${entry ? waveformHtml(cacheFor(entry)) : waveformHtml(null)}
+          </div>
+          <div class="bottom-card">
+            <h3>Agent Activity</h3>
+            <div class="activity-list">${agents.map((agent) => `
+              <div class="activity-row"><span>${html(agent.state || "idle")}</span><strong>${html(agent.name || agent.id)}</strong></div>
+            `).join("") || `<div class="muted">No agent status yet.</div>`}</div>
+          </div>
+        `;
       }
 
       function snapshotPlayback() {
@@ -1033,6 +1276,8 @@
           setNotice(`Diagnostics: ${state.diagnostics?.status || "not run"} · Full QA: ${state.qaReport?.status || "not run"}.`);
         } else if (state.mode === "social") {
           setNotice(`Social Exports: ${state.socialManifest?.count || 0} manual-upload packs, ${approvedEntries().length} approved clips available.`);
+        } else if (state.mode === "dashboard") {
+          setNotice("");
         } else if (state.mode === "queue") {
           setNotice(state.mediaCache ? `Media cache: ${state.mediaCache?.status_counts?.cached || 0} cached, ${state.mediaCache?.status_counts?.error || 0} errors.` : "");
         } else if (state.mode === "exports") {
@@ -1047,12 +1292,14 @@
       }
 
       function render() {
+        document.querySelectorAll(".tab").forEach((node) => node.classList.toggle("active", node.dataset.mode === state.mode));
         renderStatus();
         renderBin();
         renderMonitor();
         renderInspector();
         renderTimeline();
         renderModeDetails();
+        wireDesktopActions();
       }
 
       function setActive(id) {
@@ -1364,8 +1611,8 @@
       $("approveClip").addEventListener("click", () => setReview("approved"));
       $("rejectClip").addEventListener("click", () => setReview("rejected"));
       $("prioritySelect").addEventListener("change", (event) => setPriority(event.target.value));
-      $("batchApprove").addEventListener("click", () => batchReview("approved"));
-      $("batchReject").addEventListener("click", () => batchReview("rejected"));
+      $("batchApprove")?.addEventListener("click", () => batchReview("approved"));
+      $("batchReject")?.addEventListener("click", () => batchReview("rejected"));
       $("exportApproved").addEventListener("click", exportApprovedReviews);
       $("openInbox").addEventListener("click", openInbox);
       $("selectProject").addEventListener("click", selectProjectFolder);
@@ -1373,7 +1620,7 @@
       $("runFirstPipeline").addEventListener("click", runFirstPipeline);
       $("aboutApp").addEventListener("click", showAbout);
       $("closeStartup").addEventListener("click", () => $("startupOverlay").classList.remove("visible"));
-      $("recoverSession").addEventListener("click", () => { setActive(state.workspace.lastActiveId || state.entries[0]?.id); $("startupOverlay").classList.remove("visible"); });
+      $("recoverSession")?.addEventListener("click", () => { setActive(state.workspace.lastActiveId || state.entries[0]?.id); $("startupOverlay").classList.remove("visible"); });
       $("startupRecover").addEventListener("click", () => { setActive(state.workspace.lastActiveId || state.entries[0]?.id); $("startupOverlay").classList.remove("visible"); });
       document.addEventListener("keydown", handleShortcut);
 
