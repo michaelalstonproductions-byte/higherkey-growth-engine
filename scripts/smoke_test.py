@@ -59,11 +59,18 @@ def main() -> int:
     assert video["status"] == "processed", video
     assert 3 <= len(video["clips"]) <= 5, video["clips"]
     assert len(video["captions"]) == len(video["clips"])
+    assert len(video["subtitles"]) == len(video["clips"])
     assert queue["count"] >= len(video["clips"])
     for clip in video["clips"]:
         assert (root / clip["path"]).exists(), clip["path"]
+        assert isinstance(clip["score"], int), clip
+        assert "analysis" in clip, clip
     for caption in video["captions"]:
         assert (root / caption["path"]).exists(), caption["path"]
+    for subtitle in video["subtitles"]:
+        assert (root / subtitle["path"]).exists(), subtitle["path"]
+    scored_entries = [entry for entry in queue["entries"] if entry["source_video_id"] == video["id"]]
+    assert all(isinstance(entry.get("score"), int) for entry in scored_entries), scored_entries
 
     print(json.dumps({"smoke_test": "passed", "summary": summary}, indent=2, sort_keys=True))
     return 0

@@ -57,6 +57,12 @@ http://localhost:8000/dashboard/review.html
 
 The dashboard reads `queue/review_queue.json`, previews generated clips, displays caption drafts, and stores pending, approved, or rejected review status in your browser's local storage. It does not call social platforms or external APIs.
 
+## Local Content Intelligence
+
+Each generated clip is analyzed locally with FFmpeg-driven sampling. The V1.2 prototype estimates scene changes, motion intensity, brightness/contrast shifts, and audio energy peaks, then writes a deterministic hook score into each queue entry.
+
+The dashboard sorts clips by score descending and displays the local analysis signals. Subtitle extraction is scaffolded with placeholder JSON files under `captions/subtitles/`; no transcription service or cloud AI API is used.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

@@ -6,10 +6,30 @@ from typing import Any
 
 from .captions import generate_captions
 from .config import AppConfig, ensure_directories
+from .content_intelligence import analyze_clip
 from .index import load_index, register_video, save_index, utc_now
 from .ingest import discover_videos
 from .media import generate_clips
 from .review_queue import build_queue_entries, save_review_queue
+from .subtitles import create_subtitle_placeholders
+
+
+def add_content_intelligence(clips: list[dict[str, Any]], config: AppConfig) -> None:
+    for clip in clips:
+        clip_path = config.root / clip["path"]
+        try:
+            analysis = analyze_clip(clip_path)
+            clip["analysis"] = {
+                "method": analysis["method"],
+                "visual": analysis["visual"],
+                "audio": analysis["audio"],
+            }
+            clip["score"] = analysis["score"]
+            clip["score_details"] = analysis["score_details"]
+        except Exception as exc:  # noqa: BLE001 - local analysis should not discard generated clips.
+            clip["analysis"] = {"method": "ffmpeg_local_frame_and_audio_sampling", "error": str(exc)}
+            clip["score"] = 0
+            clip["score_details"] = {"reasons": ["analysis failed"]}
 
 
 def process_once(config: AppConfig) -> dict[str, Any]:
@@ -29,9 +49,12 @@ def process_once(config: AppConfig) -> dict[str, Any]:
             record["status"] = "processing"
             record["updated_at"] = utc_now()
             clips = generate_clips(record, video_path, config)
+            add_content_intelligence(clips, config)
             captions = generate_captions(record, clips, config.captions_dir, config.root)
+            subtitles = create_subtitle_placeholders(clips, config.captions_dir, config.root)
             record["clips"] = clips
             record["captions"] = captions
+            record["subtitles"] = subtitles
             record["queue_entries"] = build_queue_entries(record)
             record["status"] = "processed"
             record["updated_at"] = utc_now()
