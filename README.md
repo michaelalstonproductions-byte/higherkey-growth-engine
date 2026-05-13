@@ -390,6 +390,20 @@ V2.7 verification note:
 - `npm run qa:full` passed.
 - Treat sandbox-only `SIGABRT` as an environment limitation unless it reproduces when launching `dist/mac-arm64/HigherKey Operator OS.app` directly.
 
+## Platform-Ready Social Export Packs
+
+V2.8 adds a separate manual-upload export lane for TikTok, Instagram Reels, YouTube Shorts, and Facebook Reels:
+
+```bash
+python3 scripts/export_social_packs.py --approved-id <queue_entry_id>
+```
+
+Generated packs are written under `out/social_exports/<platform>/<clip_id>/` with a video copy, caption, hashtags, title, posting notes, upload checklist, optional thumbnail, and per-pack `manifest.json`. The root manifest is `out/social_exports/manifest.json`, and run history is stored in `analytics/social_export_history.json`.
+
+Platform guidance lives in `config/social_platform_presets.json`. The Operator UI includes a `Social Exports` tab with batch export buttons by platform when running under Electron. Static browser mode remains compatible and shows the local command path.
+
+This is manual upload workflow prep only. No direct posting APIs, cloud APIs, or social APIs are configured.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

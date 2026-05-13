@@ -1,0 +1,34 @@
+{
+  "facebook_reels": {
+    "aspect_rules": "Use vertical 9:16 video. Keep the subject centered and readable on mobile.",
+    "duration_guidance": "Prefer 15-60 seconds for short-form discovery.",
+    "hashtag_guidance": "Use 3-8 relevant hashtags. Avoid unrelated tags.",
+    "manual_upload_notes": "Upload manually in Meta Business Suite or the Facebook app. No posting integration is configured.",
+    "platform_label": "Facebook Reels",
+    "title_length_guidance": "Keep the first sentence clear and scannable."
+  },
+  "instagram_reels": {
+    "aspect_rules": "Use vertical 9:16 video. Avoid placing key text under app controls.",
+    "duration_guidance": "Prefer 7-45 seconds for tight Reels packaging.",
+    "hashtag_guidance": "Use 5-12 focused hashtags. Mix category, audience, and series tags.",
+    "manual_upload_notes": "Upload manually in Instagram. No posting integration is configured.",
+    "platform_label": "Instagram Reels",
+    "title_length_guidance": "Use a short hook line; keep caption context below it."
+  },
+  "tiktok": {
+    "aspect_rules": "Use vertical 9:16 video with strong first-frame clarity.",
+    "duration_guidance": "Prefer 7-35 seconds unless the hook needs more setup.",
+    "hashtag_guidance": "Use 3-6 specific hashtags. Avoid broad filler tags.",
+    "manual_upload_notes": "Upload manually in TikTok Studio or the TikTok app. No posting integration is configured.",
+    "platform_label": "TikTok",
+    "title_length_guidance": "Keep the title/caption hook under 120 characters when possible."
+  },
+  "youtube_shorts": {
+    "aspect_rules": "Use vertical 9:16 video. Confirm the short reads well on mobile.",
+    "duration_guidance": "Keep under 60 seconds for Shorts eligibility.",
+    "hashtag_guidance": "Use #Shorts plus 2-5 relevant topic tags.",
+    "manual_upload_notes": "Upload manually in YouTube Studio. No posting integration is configured.",
+    "platform_label": "YouTube Shorts",
+    "title_length_guidance": "Keep titles under 70 characters when possible."
+  }
+}

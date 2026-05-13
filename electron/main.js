@@ -77,6 +77,16 @@ function defaultSettings() {
   };
 }
 
+function projectProfile(settings) {
+  const profile = settings.profiles?.default || {};
+  return {
+    projectRoot: settings.activeProject || profile.projectPath || activeProjectRoot || DEFAULT_PROJECT_ROOT,
+    contentInbox: path.join(settings.activeProject || profile.projectPath || activeProjectRoot || DEFAULT_PROJECT_ROOT, "content_inbox"),
+    exportDirectory: path.join(settings.activeProject || profile.projectPath || activeProjectRoot || DEFAULT_PROJECT_ROOT, "out", "approved_posts"),
+    analyticsDirectory: path.join(settings.activeProject || profile.projectPath || activeProjectRoot || DEFAULT_PROJECT_ROOT, "analytics")
+  };
+}
+
 async function readSettings() {
   try {
     const settings = JSON.parse(await fsp.readFile(settingsPath(), "utf8"));
@@ -114,9 +124,9 @@ async function writeSettings(settings) {
   settings.profiles = settings.profiles || {};
   settings.profiles.default = settings.profiles.default || {};
   settings.profiles.default.projectPath = settings.activeProject;
-  settings.profiles.default.contentInbox = settings.profiles.default.contentInbox || path.join(settings.activeProject, "content_inbox");
-  settings.profiles.default.exportDirectory = settings.profiles.default.exportDirectory || path.join(settings.activeProject, "out", "approved_posts");
-  settings.profiles.default.analyticsDirectory = settings.profiles.default.analyticsDirectory || path.join(settings.activeProject, "analytics");
+  settings.profiles.default.contentInbox = path.join(settings.activeProject, "content_inbox");
+  settings.profiles.default.exportDirectory = path.join(settings.activeProject, "out", "approved_posts");
+  settings.profiles.default.analyticsDirectory = path.join(settings.activeProject, "analytics");
   settings.profiles.default.setupCompleted = Boolean(settings.profiles.default.setupCompleted);
   settings.profiles.default.setupCompletedAt = settings.profiles.default.setupCompletedAt || null;
   activeProjectRoot = settings.activeProject;
@@ -337,18 +347,107 @@ async function showAboutPanel() {
 
 function runPython(args) {
   return new Promise((resolve) => {
+    const cwd = activeProjectRoot;
     const [script, ...rest] = args;
     const scriptPath = path.isAbsolute(script) ? script : path.join(APP_ROOT, script);
+    const startedAt = new Date().toISOString();
     const child = spawn("python3", [scriptPath, ...rest], {
-      cwd: activeProjectRoot,
+      cwd,
       env: { ...process.env, PYTHONPATH: APP_ROOT }
     });
     let stdout = "";
     let stderr = "";
     child.stdout.on("data", (data) => { stdout += data.toString(); });
     child.stderr.on("data", (data) => { stderr += data.toString(); });
-    child.on("close", (code) => resolve({ code, stdout, stderr }));
+    child.on("close", (code) => resolve({ code, stdout, stderr, cwd, scriptPath, args: rest, startedAt, completedAt: new Date().toISOString() }));
   });
+}
+
+function tail(value, max = 4000) {
+  const text = String(value || "");
+  return text.length > max ? text.slice(-max) : text;
+}
+
+async function writePipelineLastRun(result, extra = {}) {
+  const logsDir = path.join(activeProjectRoot, "logs");
+  const analyticsDir = path.join(activeProjectRoot, "analytics");
+  await fsp.mkdir(logsDir, { recursive: true });
+  await fsp.mkdir(analyticsDir, { recursive: true });
+  const payload = {
+    state: extra.state_hint || (result.code === 0 ? "completed" : "failed"),
+    message: extra.state_hint === "running" ? "Pipeline running" : (result.code === 0 ? "Pipeline completed" : "Pipeline failed"),
+    local_only: true,
+    active_project_root: activeProjectRoot,
+    content_inbox: path.join(activeProjectRoot, "content_inbox"),
+    last_run: {
+      ...extra,
+      cwd: result.cwd,
+      script_path: result.scriptPath,
+      args: result.args,
+      returncode: result.code,
+      stdout_tail: tail(result.stdout),
+      stderr_tail: tail(result.stderr),
+      started_at: result.startedAt,
+      completed_at: result.completedAt
+    },
+    updated_at: new Date().toISOString()
+  };
+  await fsp.writeFile(path.join(logsDir, "pipeline_last_run.log"), [
+    `started_at=${result.startedAt}`,
+    `completed_at=${result.completedAt}`,
+    `cwd=${result.cwd}`,
+    `script=${result.scriptPath}`,
+    `returncode=${result.code}`,
+    "",
+    "STDOUT:",
+    result.stdout || "",
+    "",
+    "STDERR:",
+    result.stderr || ""
+  ].join("\n"), "utf8");
+  await fsp.writeFile(path.join(analyticsDir, "pipeline_status.json"), JSON.stringify(payload, null, 2) + "\n");
+  return payload;
+}
+
+async function runPipelineOnce() {
+  const settings = await readSettings();
+  const profile = projectProfile(settings);
+  await fsp.mkdir(profile.contentInbox, { recursive: true });
+  await writePipelineLastRun({
+    code: null,
+    stdout: "",
+    stderr: "",
+    cwd: activeProjectRoot,
+    scriptPath: path.join(APP_ROOT, "scripts", "run_pipeline.py"),
+    args: [],
+    startedAt: new Date().toISOString(),
+    completedAt: null
+  }, { state_hint: "running" });
+  const result = await runPython(["scripts/run_pipeline.py"]);
+  const status = await writePipelineLastRun(result, { command: "run_pipeline.py" });
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, status, parsed, contentInbox: profile.contentInbox, activeProjectRoot };
+}
+
+async function exportSocialPacks(_event, options = {}) {
+  const platforms = Array.isArray(options.platforms) && options.platforms.length ? options.platforms : [];
+  const approvedIds = Array.isArray(options.approvedIds) ? options.approvedIds.filter(Boolean) : [];
+  const args = ["scripts/export_social_packs.py"];
+  for (const platform of platforms) {
+    args.push("--platform", String(platform));
+  }
+  for (const id of approvedIds) {
+    args.push("--approved-id", String(id));
+  }
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
 }
 
 async function startWatcher() {
@@ -418,15 +517,18 @@ async function pickDirectory(kind) {
   }
   await writeSettings(settings);
   mainWindow?.webContents.send("higherkey:settings", settings);
+  mainWindow?.webContents.send("higherkey:project", await appInfo());
   return selected;
 }
 
 async function openContentInbox() {
   const settings = await readSettings();
-  const inbox = settings.profiles.default.contentInbox || path.join(activeProjectRoot, "content_inbox");
+  const inbox = path.join(activeProjectRoot, "content_inbox");
+  settings.profiles.default.contentInbox = inbox;
+  await writeSettings(settings);
   await fsp.mkdir(inbox, { recursive: true });
   await shell.openPath(inbox);
-  return { path: inbox };
+  return { path: inbox, activeProjectRoot };
 }
 
 async function runFirstRunSetup(force = false) {
@@ -473,9 +575,43 @@ async function runFirstRunSetup(force = false) {
 }
 
 async function ingestDroppedFiles(filePaths) {
-  const settings = await readSettings();
-  const inbox = settings.profiles.default.contentInbox || path.join(activeProjectRoot, "content_inbox");
+  await readSettings();
+  const inbox = path.join(activeProjectRoot, "content_inbox");
   return ingestDroppedFilesToInbox(filePaths, inbox);
+}
+
+async function appInfo() {
+  const settings = await readSettings();
+  const profile = projectProfile(settings);
+  let lastPipeline = null;
+  try {
+    lastPipeline = JSON.parse(await fsp.readFile(path.join(profile.projectRoot, "analytics", "pipeline_status.json"), "utf8")).last_run || null;
+  } catch {}
+  return {
+    ...releaseInfo(),
+    packaged: app.isPackaged,
+    devMode: !app.isPackaged,
+    appRoot: APP_ROOT,
+    projectRoot: profile.projectRoot,
+    activeProjectRoot: profile.projectRoot,
+    contentInbox: profile.contentInbox,
+    analyticsDirectory: profile.analyticsDirectory,
+    exportDirectory: profile.exportDirectory,
+    lastPipeline
+  };
+}
+
+async function useCurrentRepoProject() {
+  if (app.isPackaged) {
+    return { changed: false, reason: "Use Current Repo as Project is only available in dev mode.", ...(await appInfo()) };
+  }
+  const settings = await readSettings();
+  settings.activeProject = APP_ROOT;
+  settings.recentProjects = [APP_ROOT, ...(settings.recentProjects || []).filter((item) => item !== APP_ROOT)].slice(0, 10);
+  await writeSettings(settings);
+  mainWindow?.webContents.send("higherkey:settings", settings);
+  mainWindow?.webContents.send("higherkey:project", await appInfo());
+  return { changed: true, ...(await appInfo()) };
 }
 
 function registerIpc() {
@@ -485,12 +621,14 @@ function registerIpc() {
   ipcMain.handle("pipeline:startWatcher", startWatcher);
   ipcMain.handle("pipeline:stopWatcher", stopWatcher);
   ipcMain.handle("pipeline:status", () => ({ watcherRunning: Boolean(watcherProcess), watcherPid: watcherProcess?.pid || null }));
-  ipcMain.handle("pipeline:runOnce", () => runPython(["scripts/watch_daemon.py", "--once"]));
+  ipcMain.handle("pipeline:runOnce", runPipelineOnce);
   ipcMain.handle("orchestrator:runOnce", () => runPython(["scripts/run_orchestrator.py", "--once"]));
   ipcMain.handle("media:buildCache", () => runPython(["scripts/build_media_cache.py"]));
+  ipcMain.handle("social:exportPacks", exportSocialPacks);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("qa:runFull", () => runPython(["scripts/run_full_qa.py"]));
-  ipcMain.handle("app:info", () => ({ ...releaseInfo(), packaged: app.isPackaged, projectRoot: activeProjectRoot }));
+  ipcMain.handle("app:info", appInfo);
+  ipcMain.handle("project:useCurrentRepo", useCurrentRepoProject);
   ipcMain.handle("app:about", showAboutPanel);
   ipcMain.handle("setup:firstRun", () => runFirstRunSetup(true));
   ipcMain.handle("folder:openContentInbox", openContentInbox);

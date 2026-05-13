@@ -382,6 +382,8 @@
           </div>
           <div class="tools">
             <button id="openInbox">Open Inbox</button>
+            <button id="selectProject">Select Project Folder</button>
+            <button id="useRepoProject">Use Current Repo</button>
             <button id="runFirstPipeline">Run First Pipeline</button>
             <button id="aboutApp">About</button>
             <button id="batchApprove">Approve Selected</button>
@@ -391,6 +393,7 @@
           </div>
         </div>
         <div class="statusbar" id="systemStatus"></div>
+        <div class="statusbar" id="projectStatus"></div>
         <div class="tabs" id="modeTabs">
           <button class="tab active" data-mode="queue">Queue</button>
           <button class="tab" data-mode="analytics">Analytics</button>
@@ -398,6 +401,7 @@
           <button class="tab" data-mode="clusters">Clusters</button>
           <button class="tab" data-mode="agents">Agents</button>
           <button class="tab" data-mode="diagnostics">Diagnostics</button>
+          <button class="tab" data-mode="social">Social Exports</button>
           <button class="tab" data-mode="exports">Exports</button>
           <button class="tab" data-mode="settings">Settings</button>
         </div>
@@ -499,7 +503,10 @@
         mediaCache: "../analytics/media_cache.json",
         diagnostics: "../analytics/diagnostics.json",
         qaReport: "../analytics/qa_report.json",
-        release: "../config/release.json"
+        release: "../config/release.json",
+        socialManifest: "../out/social_exports/manifest.json",
+        socialHistory: "../analytics/social_export_history.json",
+        socialPresets: "../config/social_platform_presets.json"
       };
       const REVIEW_KEY = "higherkey.review_status.v1";
       const PRIORITY_KEY = "higherkey.queue_priority.v21";
@@ -531,6 +538,9 @@
         mediaCacheByClip: {},
         diagnostics: null,
         qaReport: null,
+        socialManifest: null,
+        socialHistory: null,
+        socialPresets: null,
         release: null,
         appInfo: null,
         live: { refreshing: false, intervalMs: 4000, lastRefresh: null },
@@ -620,7 +630,15 @@
           ["Agents", runningAgents ? `${runningAgents} running` : (state.agents?.execution_mode || "idle")]
         ].map(([label, value]) => `<span class="stat"><strong>${html(value)}</strong> ${html(label)}</span>`).join("");
         $("versionBadge").textContent = versionLabel();
+        const project = state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static project root";
+        const inbox = state.appInfo?.contentInbox || "content_inbox";
         $("sessionLine").textContent = `${window.higherkey ? "Electron bridge online" : "Static browser mode"} · ${state.entries.length} local clips`;
+        $("projectStatus").innerHTML = [
+          ["Active Project", project],
+          ["Content Inbox", inbox],
+          ["Last Pipeline CWD", state.appInfo?.lastPipeline?.cwd || state.status?.last_run?.cwd || "not run"]
+        ].map(([label, value]) => `<span class="stat"><strong>${html(label)}</strong> ${html(value)}</span>`).join("");
+        $("useRepoProject").style.display = window.higherkey && state.appInfo?.devMode ? "" : "none";
       }
 
       function renderBin() {
@@ -675,8 +693,18 @@
         const entry = activeEntry();
         const events = state.activity?.events || [];
         const jobs = state.history?.jobs || [];
+        if (state.mode === "social") {
+          $("inspector").innerHTML = socialExportsHtml();
+          wireSocialExportActions();
+          return;
+        }
         if (!entry) {
-          $("inspector").innerHTML = `<div class="card"><h3>Inspector</h3><div class="muted">No active clip.</div></div>`;
+          $("inspector").innerHTML = `
+            <div class="card"><h3>Project Runtime</h3>${projectRuntimeHtml()}</div>
+            <div class="card"><h3>Desktop Bridge</h3>${desktopBridgeHtml()}</div>
+            <div class="card"><h3>Inspector</h3><div class="muted">No active clip. Select the repo project or open the active inbox, then run the first pipeline.</div></div>
+          `;
+          wireDesktopActions();
           return;
         }
         const analytics = state.learning || {};
@@ -704,20 +732,10 @@
             <div class="metric"><span>Avg delta</span><strong>${html(analytics.avg_learning_delta || 0)}</strong></div>
           </div>
           <div class="card"><h3>Desktop Bridge</h3>
-            <div class="tools">
-              <button data-desktop-action="pick-content">Inbox</button>
-              <button data-desktop-action="open-inbox">Open Inbox</button>
-              <button data-desktop-action="pick-export">Export</button>
-              <button data-desktop-action="first-run-setup">Setup</button>
-              <button data-desktop-action="start-watcher">Start Watcher</button>
-              <button data-desktop-action="run-once">Run Once</button>
-              <button data-desktop-action="run-orchestrator">Run Agents</button>
-              <button data-desktop-action="build-media-cache">Re-cache Media</button>
-              <button data-desktop-action="run-diagnostics">Diagnostics</button>
-              <button data-desktop-action="run-full-qa">Full QA</button>
-              <button data-desktop-action="notify-test">Notify</button>
-            </div>
-            <div class="muted">${window.higherkey ? "Available" : "Static browser mode"}</div>
+            ${desktopBridgeHtml()}
+          </div>
+          <div class="card"><h3>Project Runtime</h3>
+            ${projectRuntimeHtml()}
           </div>
           <div class="card"><h3>Session</h3>
             <div class="metric"><span>History jobs</span><strong>${html(jobs.length)}</strong></div>
@@ -899,6 +917,82 @@
         `).join("")}</div>`;
       }
 
+      const SOCIAL_PLATFORMS = [
+        ["tiktok", "TikTok"],
+        ["instagram_reels", "Instagram Reels"],
+        ["youtube_shorts", "YouTube Shorts"],
+        ["facebook_reels", "Facebook Reels"]
+      ];
+
+      function approvedEntries() {
+        return state.entries.filter((entry) => statusOf(entry) === "approved");
+      }
+
+      function socialExportsHtml() {
+        const approved = approvedEntries();
+        const manifest = state.socialManifest || {};
+        const history = state.socialHistory?.runs || [];
+        const presets = state.socialPresets || {};
+        return `
+          <div class="card"><h3>Social Export Packs</h3>
+            <div class="metric"><span>Approved clips</span><strong>${html(approved.length)}</strong></div>
+            <div class="metric"><span>Latest exports</span><strong>${html(manifest.count || 0)}</strong></div>
+            <div class="metric"><span>Output</span><strong>${html(manifest.output_dir || "out/social_exports")}</strong></div>
+            <div class="muted">Manual upload workflow only. No direct posting integrations are configured.</div>
+            <div class="tools" style="margin-top:10px">
+              <button data-social-export="all" class="primary">Export All Platforms</button>
+              ${SOCIAL_PLATFORMS.map(([key, label]) => `<button data-social-export="${html(key)}">${html(label)}</button>`).join("")}
+            </div>
+            <div class="muted" style="margin-top:8px">${window.higherkey ? "Electron exports use approved clips from this workspace." : "Static mode: run python3 scripts/export_social_packs.py after saving approved reviews."}</div>
+          </div>
+          <div class="card"><h3>Platform Presets</h3>
+            ${SOCIAL_PLATFORMS.map(([key, label]) => {
+              const preset = presets[key] || {};
+              return `<div class="diagnostic-row"><span>${html(label)}</span><strong>${html(preset.duration_guidance || "vertical short-form pack")}</strong></div>`;
+            }).join("")}
+          </div>
+          <div class="card"><h3>Export History</h3>
+            ${(history || []).slice(-6).reverse().map((run) => `
+              <div class="diagnostic-row"><span>${html(run.updated_at || "")}</span><strong>${html((run.platforms || []).join(", "))} · ${html(run.count || 0)}</strong></div>
+            `).join("") || `<div class="muted">No local social export history yet.</div>`}
+          </div>
+        `;
+      }
+
+      function projectRuntimeHtml() {
+        const info = state.appInfo || {};
+        const last = info.lastPipeline || state.status?.last_run || {};
+        return `
+          <div class="metric"><span>Active project</span><strong>${html(info.activeProjectRoot || info.projectRoot || "static browser root")}</strong></div>
+          <div class="metric"><span>Content inbox</span><strong>${html(info.contentInbox || "content_inbox")}</strong></div>
+          <div class="metric"><span>Mode</span><strong>${html(info.packaged ? "packaged" : (window.higherkey ? "dev electron" : "static browser"))}</strong></div>
+          <div class="metric"><span>Last pipeline cwd</span><strong>${html(last.cwd || "not run")}</strong></div>
+          <div class="metric"><span>Last return code</span><strong>${html(last.returncode ?? "not run")}</strong></div>
+          ${last.stdout_tail ? `<div class="muted"><strong>stdout</strong><br>${html(last.stdout_tail)}</div>` : ""}
+          ${last.stderr_tail ? `<div class="muted"><strong>stderr</strong><br>${html(last.stderr_tail)}</div>` : ""}
+        `;
+      }
+
+      function desktopBridgeHtml() {
+        return `
+          <div class="tools">
+            <button data-desktop-action="pick-project">Select Project</button>
+            ${state.appInfo?.devMode ? `<button data-desktop-action="use-current-repo">Use Current Repo</button>` : ""}
+            <button data-desktop-action="open-inbox">Open Inbox</button>
+            <button data-desktop-action="pick-export">Export</button>
+            <button data-desktop-action="first-run-setup">Setup</button>
+            <button data-desktop-action="start-watcher">Start Watcher</button>
+            <button data-desktop-action="run-once">Run First Pipeline</button>
+            <button data-desktop-action="run-orchestrator">Run Agents</button>
+            <button data-desktop-action="build-media-cache">Re-cache Media</button>
+            <button data-desktop-action="run-diagnostics">Diagnostics</button>
+            <button data-desktop-action="run-full-qa">Full QA</button>
+            <button data-desktop-action="notify-test">Notify</button>
+          </div>
+          <div class="muted">${window.higherkey ? "Available" : "Static browser mode"}</div>
+        `;
+      }
+
       function renderTimeline() {
         const events = (state.activity?.events || []).slice(-30).reverse();
         $("pipelineLine").textContent = `${state.status?.state || "idle"} · ${state.status?.message || "No live status yet"}`;
@@ -937,6 +1031,8 @@
           setNotice(`Agents: ${(state.agents?.agents || []).length} local workers, ${state.agents?.execution_mode || "sequential"} execution.`);
         } else if (state.mode === "diagnostics") {
           setNotice(`Diagnostics: ${state.diagnostics?.status || "not run"} · Full QA: ${state.qaReport?.status || "not run"}.`);
+        } else if (state.mode === "social") {
+          setNotice(`Social Exports: ${state.socialManifest?.count || 0} manual-upload packs, ${approvedEntries().length} approved clips available.`);
         } else if (state.mode === "queue") {
           setNotice(state.mediaCache ? `Media cache: ${state.mediaCache?.status_counts?.cached || 0} cached, ${state.mediaCache?.status_counts?.error || 0} errors.` : "");
         } else if (state.mode === "exports") {
@@ -1026,7 +1122,26 @@
       async function openInbox() {
         if (!window.higherkey) return setNotice("Static mode: open content_inbox from the project folder and add local videos.");
         const result = await window.higherkey.openContentInbox();
+        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        renderStatus();
         setNotice(`Content inbox opened: ${result.path}`);
+      }
+
+      async function selectProjectFolder() {
+        if (!window.higherkey) return setNotice("Static mode: start the local server from the project root you want to inspect.");
+        const selected = await window.higherkey.pickDirectory("project");
+        if (!selected) return setNotice("Project selection cancelled.");
+        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        setNotice(`Active project set to ${state.appInfo?.activeProjectRoot || selected}. Refreshing local JSON.`);
+        await refreshLiveData();
+      }
+
+      async function useCurrentRepoProject() {
+        if (!window.higherkey?.useCurrentRepoProject) return setNotice("Use Current Repo is only available in Electron dev mode.");
+        const result = await window.higherkey.useCurrentRepoProject();
+        state.appInfo = result;
+        setNotice(result.changed ? `Active project set to current repo: ${result.activeProjectRoot}` : (result.reason || "Project unchanged."));
+        await refreshLiveData();
       }
 
       async function ingestDroppedFiles(files) {
@@ -1054,9 +1169,19 @@
 
       async function runFirstPipeline() {
         if (!window.higherkey) return setNotice("Static mode: run python3 scripts/run_pipeline.py from the project root.");
-        await window.higherkey.runPipelineOnce();
-        setNotice("First pipeline pass completed. Refreshing local queue data.");
+        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        setNotice(`Pipeline started. cwd=${state.appInfo?.activeProjectRoot || "unknown"} inbox=${state.appInfo?.contentInbox || "unknown"}`);
+        setNotice(`Pipeline running. cwd=${state.appInfo?.activeProjectRoot || "unknown"}`);
+        const result = await window.higherkey.runPipelineOnce();
+        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        const parsed = result.parsed || {};
         await refreshLiveData();
+        if (result.code === 0) {
+          setNotice(`Pipeline completed. cwd=${result.cwd} queue=${parsed.queue_entries ?? "unknown"} processed=${parsed.processed ?? "unknown"} skipped=${parsed.skipped ?? "unknown"}`);
+        } else {
+          const detail = result.stderr || result.stdout || "Unknown pipeline error";
+          setNotice(`Pipeline failed. cwd=${result.cwd} error=${detail.slice(-800)}`);
+        }
       }
 
       async function showAbout() {
@@ -1067,24 +1192,51 @@
         await window.higherkey.showAbout();
       }
 
+      async function exportSocialPlatform(platform) {
+        const approvedIds = approvedEntries().map((entry) => entry.id);
+        if (!approvedIds.length) return setNotice("No approved clips selected for social export. Approve clips first or save queue/approved_reviews.json for static export.");
+        if (!window.higherkey?.exportSocialPacks) {
+          return setNotice(platform === "all" ? "Static mode: run python3 scripts/export_social_packs.py." : `Static mode: run python3 scripts/export_social_packs.py --platform ${platform}.`);
+        }
+        const platforms = platform === "all" ? SOCIAL_PLATFORMS.map(([key]) => key) : [platform];
+        setNotice(`Generating social export packs for ${platforms.join(", ")}.`);
+        const result = await window.higherkey.exportSocialPacks({ platforms, approvedIds });
+        if (result.code === 0) {
+          state.socialManifest = await optionalJson(PATHS.socialManifest, state.socialManifest);
+          state.socialHistory = await optionalJson(PATHS.socialHistory, state.socialHistory);
+          setNotice(`Social export packs complete: ${result.parsed?.count ?? 0} filesets in ${result.parsed?.output_dir || "out/social_exports"}.`);
+          render();
+        } else {
+          setNotice(`Social export failed: ${(result.stderr || result.stdout || "unknown error").slice(-800)}`);
+        }
+      }
+
+      function wireSocialExportActions() {
+        document.querySelectorAll("[data-social-export]").forEach((button) => {
+          button.onclick = () => exportSocialPlatform(button.dataset.socialExport);
+        });
+      }
+
       function wireDesktopActions() {
         document.querySelectorAll("[data-desktop-action]").forEach((button) => {
           button.disabled = !window.higherkey;
           button.onclick = async () => {
             if (!window.higherkey) return setNotice("Desktop actions require Electron. Static mode remains fully usable for review.");
             const action = button.dataset.desktopAction;
+            if (action === "pick-project") await selectProjectFolder();
+            if (action === "use-current-repo") await useCurrentRepoProject();
             if (action === "pick-content") await window.higherkey.pickDirectory("contentInbox");
             if (action === "open-inbox") await window.higherkey.openContentInbox();
             if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
             if (action === "first-run-setup") await window.higherkey.runFirstRunSetup();
             if (action === "start-watcher") await window.higherkey.startWatcher();
-            if (action === "run-once") await window.higherkey.runPipelineOnce();
+            if (action === "run-once") await runFirstPipeline();
             if (action === "run-orchestrator") await window.higherkey.runOrchestratorOnce();
             if (action === "build-media-cache") await window.higherkey.buildMediaCache();
             if (action === "run-diagnostics") await window.higherkey.runDiagnostics();
             if (action === "run-full-qa") await window.higherkey.runFullQa();
             if (action === "notify-test") await window.higherkey.testNotification();
-            setNotice(`Desktop action completed: ${action}`);
+            if (!["pick-project", "use-current-repo", "run-once"].includes(action)) setNotice(`Desktop action completed: ${action}`);
           };
         });
       }
@@ -1109,6 +1261,9 @@
           state.mediaCacheByClip = state.mediaCache?.clips || {};
           state.diagnostics = await optionalJson(PATHS.diagnostics, null);
           state.qaReport = await optionalJson(PATHS.qaReport, null);
+          state.socialManifest = await optionalJson(PATHS.socialManifest, null);
+          state.socialHistory = await optionalJson(PATHS.socialHistory, null);
+          state.socialPresets = await optionalJson(PATHS.socialPresets, null);
           state.release = await optionalJson(PATHS.release, null);
           state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => null) : null;
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
@@ -1154,6 +1309,9 @@
           state.mediaCacheByClip = state.mediaCache?.clips || {};
           state.diagnostics = await optionalJson(PATHS.diagnostics, state.diagnostics);
           state.qaReport = await optionalJson(PATHS.qaReport, state.qaReport);
+          state.socialManifest = await optionalJson(PATHS.socialManifest, state.socialManifest);
+          state.socialHistory = await optionalJson(PATHS.socialHistory, state.socialHistory);
+          state.socialPresets = await optionalJson(PATHS.socialPresets, state.socialPresets);
           state.release = await optionalJson(PATHS.release, state.release);
           state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => state.appInfo) : state.appInfo;
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
@@ -1210,6 +1368,8 @@
       $("batchReject").addEventListener("click", () => batchReview("rejected"));
       $("exportApproved").addEventListener("click", exportApprovedReviews);
       $("openInbox").addEventListener("click", openInbox);
+      $("selectProject").addEventListener("click", selectProjectFolder);
+      $("useRepoProject").addEventListener("click", useCurrentRepoProject);
       $("runFirstPipeline").addEventListener("click", runFirstPipeline);
       $("aboutApp").addEventListener("click", showAbout);
       $("closeStartup").addEventListener("click", () => $("startupOverlay").classList.remove("visible"));
@@ -1232,6 +1392,14 @@
           setNotice(`Drop failed: ${error.message || error}`, [{ label: "Open Content Inbox", action: "open-inbox" }]);
         }
       });
+
+      if (window.higherkey?.onProjectChanged) {
+        window.higherkey.onProjectChanged(async (info) => {
+          state.appInfo = info;
+          setNotice(`Active project changed: ${info.activeProjectRoot || info.projectRoot}`);
+          await refreshLiveData();
+        });
+      }
 
       loadDashboard();
       setInterval(refreshLiveData, state.live.intervalMs);
