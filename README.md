@@ -69,6 +69,22 @@ V1.3 prepares one local caption package per generated clip under `captions/packa
 
 FFprobe is used to detect whether each clip has audio. Subtitle JSON remains a local placeholder designed for a future optional Whisper workflow, but Whisper is not required and no cloud transcription is used.
 
+## Approved Post Export
+
+V1.4 adds a local export lane for reviewed clips. In the dashboard, set clips to `Approved`, click `Export Approved JSON`, and save the downloaded file as:
+
+```text
+queue/approved_reviews.json
+```
+
+Then run:
+
+```bash
+python3 scripts/export_approved_posts.py
+```
+
+Approved posts are written to `out/approved_posts/<clip_id>/` with a final video copy, `caption.txt`, `hashtags.txt`, `title.txt`, `platform_notes.json`, and `manifest.json`. This only prepares local files; it does not publish to social platforms or call cloud APIs.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

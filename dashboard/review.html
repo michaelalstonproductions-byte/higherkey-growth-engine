@@ -372,7 +372,10 @@
             <option value="rejected">Rejected</option>
           </select>
         </div>
-        <button id="resetReviews" type="button">Reset Local Reviews</button>
+        <div class="filter">
+          <button id="exportApproved" type="button">Export Approved JSON</button>
+          <button id="resetReviews" type="button">Reset Local Reviews</button>
+        </div>
       </div>
       <section class="grid" id="queueGrid" aria-live="polite"></section>
       <section class="empty" id="emptyState">No clips match the current filter.</section>
@@ -385,6 +388,7 @@
       const summary = document.querySelector("#summary");
       const notice = document.querySelector("#notice");
       const statusFilter = document.querySelector("#statusFilter");
+      const exportApproved = document.querySelector("#exportApproved");
       const resetReviews = document.querySelector("#resetReviews");
       const emptyState = document.querySelector("#emptyState");
       let entries = [];
@@ -573,6 +577,35 @@
         `;
       }
 
+      function exportApprovedReviews() {
+        const approvedEntries = entries
+          .filter((entry) => normalizeStatus(entry) === "approved")
+          .map((entry) => ({
+            id: entry.id,
+            clip_id: entry.clip_id,
+            package_path: entry.package_path || null,
+            score: scoreValue(entry)
+          }));
+        const payload = {
+          exported_at: new Date().toISOString(),
+          source: "dashboard_localStorage",
+          instructions: "Place this file at queue/approved_reviews.json, then run python3 scripts/export_approved_posts.py from the project root.",
+          approved_entry_ids: approvedEntries.map((entry) => entry.id),
+          approved_clip_ids: approvedEntries.map((entry) => entry.clip_id),
+          approved: approvedEntries
+        };
+        const blob = new Blob([JSON.stringify(payload, null, 2) + "\n"], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "approved_reviews.json";
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(url);
+        setNotice(`${approvedEntries.length} approved review decision${approvedEntries.length === 1 ? "" : "s"} exported. Save the file as queue/approved_reviews.json before running the export script.`);
+      }
+
       async function loadDashboard() {
         try {
           const queue = await readJson(QUEUE_PATH);
@@ -606,6 +639,7 @@
       }
 
       statusFilter.addEventListener("change", render);
+      exportApproved.addEventListener("click", exportApprovedReviews);
       resetReviews.addEventListener("click", () => {
         reviewState = {};
         saveReviewState();

@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -11,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from growth_engine.config import load_config
+from growth_engine.exporter import export_approved_posts
 from growth_engine.pipeline import process_once
 
 
@@ -86,6 +88,21 @@ def main() -> int:
     scored_entries = [entry for entry in queue["entries"] if entry["source_video_id"] == video["id"]]
     assert all(isinstance(entry.get("score"), int) for entry in scored_entries), scored_entries
     assert all(entry.get("package_path") for entry in scored_entries), scored_entries
+
+    approved_entry = scored_entries[0]
+    with tempfile.TemporaryDirectory() as temp_dir:
+        approvals_path = Path(temp_dir) / "approved_reviews.json"
+        output_dir = Path(temp_dir) / "approved_posts"
+        approvals_path.write_text(
+            json.dumps({"approved_entry_ids": [approved_entry["id"]]}, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        export_summary = export_approved_posts(root, approvals_path=approvals_path, output_dir=output_dir)
+        assert export_summary["exported"] == 1, export_summary
+        post_dir = output_dir / approved_entry["clip_id"]
+        for filename in ("caption.txt", "hashtags.txt", "title.txt", "platform_notes.json", "manifest.json"):
+            assert (post_dir / filename).exists(), filename
+        assert any(post_dir.glob("*.mp4")), list(post_dir.iterdir())
 
     print(json.dumps({"smoke_test": "passed", "summary": summary}, indent=2, sort_keys=True))
     return 0
