@@ -121,6 +121,24 @@ python3 scripts/import_performance_metrics.py analytics/performance_imports.json
 
 The importer updates `analytics/performance_history.json`, `analytics/learning_summary.json`, and `analytics/top_patterns.json`. It compares predicted hook score with normalized manual performance, stores `learning_delta`, and ranks best hooks, scene labels, clip lengths, and posting patterns. The dashboard reads these local analytics files when present.
 
+## Optional Local AI Metadata
+
+V1.7 adds a searchable local metadata index with optional local AI adapters. By default it requires no new dependencies and uses deterministic local fallbacks for semantic tags, embeddings, similarity, topic clusters, and optimized titles:
+
+```bash
+python3 scripts/rebuild_metadata_index.py
+```
+
+This writes `analytics/metadata_index.json`. The dashboard reads that file to enable search and filters for semantic tags, scene labels, clusters, approval status, and score ranges.
+
+Optional local AI can be enabled only if you have local tools installed:
+
+```bash
+python3 scripts/rebuild_metadata_index.py --enable-whisper --enable-ocr
+```
+
+`--enable-whisper` looks for a local `whisper` command. `--enable-ocr` looks for a local `tesseract` command. If they are missing, the indexer records `unavailable` and continues. No cloud APIs, external AI APIs, or social APIs are used.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

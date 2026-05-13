@@ -14,6 +14,7 @@ if str(ROOT) not in sys.path:
 from growth_engine.config import load_config
 from growth_engine.analytics import import_performance_metrics
 from growth_engine.exporter import export_approved_posts
+from growth_engine.local_ai import build_metadata_index
 from growth_engine.pipeline import process_once
 
 
@@ -141,6 +142,14 @@ def main() -> int:
         assert "learning_delta" in history["records"][0], history
         assert (root / "analytics" / "learning_summary.json").exists()
         assert (root / "analytics" / "top_patterns.json").exists()
+
+    metadata_summary = build_metadata_index(root)
+    assert metadata_summary["indexed"] >= len(scored_entries), metadata_summary
+    metadata_index = json.loads((root / "analytics" / "metadata_index.json").read_text(encoding="utf-8"))
+    assert metadata_index["items"], metadata_index
+    first_item = metadata_index["items"][0]
+    for key in ("semantic_tags", "embedding", "similar_clips", "cluster_id", "optimized_title"):
+        assert key in first_item, first_item
 
     print(json.dumps({"smoke_test": "passed", "summary": summary}, indent=2, sort_keys=True))
     return 0

@@ -111,6 +111,7 @@
       }
 
       select,
+      input,
       button {
         min-height: 36px;
         border: 1px solid var(--line);
@@ -127,8 +128,13 @@
       }
 
       button:hover,
+      input:hover,
       select:hover {
         border-color: #b8c0cf;
+      }
+
+      input {
+        min-width: 220px;
       }
 
       .grid {
@@ -395,6 +401,14 @@
         margin-top: 3px;
       }
 
+      .searchbar {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+
       @media (max-width: 720px) {
         .header-inner,
         .toolbar {
@@ -438,6 +452,22 @@
           <button id="resetReviews" type="button">Reset Local Reviews</button>
         </div>
       </div>
+      <div class="searchbar">
+        <label for="searchInput">Search</label>
+        <input id="searchInput" type="search" placeholder="Hook, tag, label, cluster">
+        <label for="tagFilter">Tag</label>
+        <select id="tagFilter"><option value="all">All tags</option></select>
+        <label for="labelFilter">Label</label>
+        <select id="labelFilter"><option value="all">All labels</option></select>
+        <label for="clusterFilter">Cluster</label>
+        <select id="clusterFilter"><option value="all">All clusters</option></select>
+        <label for="scoreFilter">Score</label>
+        <select id="scoreFilter">
+          <option value="all">Any score</option>
+          <option value="50">50+</option>
+          <option value="25">25+</option>
+        </select>
+      </div>
       <section class="analytics" id="analyticsPanel">
         <h2>Analytics</h2>
         <div class="analytics-grid" id="analyticsGrid">
@@ -455,6 +485,7 @@
       const QUEUE_PATH = "../queue/review_queue.json";
       const LEARNING_SUMMARY_PATH = "../analytics/learning_summary.json";
       const TOP_PATTERNS_PATH = "../analytics/top_patterns.json";
+      const METADATA_INDEX_PATH = "../analytics/metadata_index.json";
       const REVIEW_KEY = "higherkey.review_status.v1";
       const grid = document.querySelector("#queueGrid");
       const summary = document.querySelector("#summary");
@@ -464,7 +495,13 @@
       const resetReviews = document.querySelector("#resetReviews");
       const emptyState = document.querySelector("#emptyState");
       const analyticsGrid = document.querySelector("#analyticsGrid");
+      const searchInput = document.querySelector("#searchInput");
+      const tagFilter = document.querySelector("#tagFilter");
+      const labelFilter = document.querySelector("#labelFilter");
+      const clusterFilter = document.querySelector("#clusterFilter");
+      const scoreFilter = document.querySelector("#scoreFilter");
       let entries = [];
+      let metadataByClip = {};
       let reviewState = loadReviewState();
 
       function loadReviewState() {
@@ -526,8 +563,10 @@
 
       function render() {
         const filter = statusFilter.value;
+        const query = searchInput.value.trim().toLowerCase();
         const filtered = entries
           .filter((entry) => filter === "all" || normalizeStatus(entry) === filter)
+          .filter((entry) => passesMetadataFilters(entry, query))
           .sort((a, b) => scoreValue(b) - scoreValue(a));
         renderSummary(filtered);
         emptyState.classList.toggle("visible", filtered.length === 0);
@@ -541,6 +580,39 @@
             render();
           });
         });
+      }
+
+      function passesMetadataFilters(entry, query) {
+        const metadata = entry.metadata || {};
+        const tags = metadata.semantic_tags || [];
+        const labels = metadata.scene_labels || entry.scene_labels || [];
+        const cluster = metadata.cluster_id || "";
+        const haystack = [
+          metadata.search_text,
+          metadata.optimized_title,
+          entry.clip_id,
+          entry.package?.hook,
+          entry.package?.caption,
+          tags.join(" "),
+          labels.join(" "),
+          cluster
+        ].join(" ").toLowerCase();
+        if (query && !haystack.includes(query)) {
+          return false;
+        }
+        if (tagFilter.value !== "all" && !tags.includes(tagFilter.value)) {
+          return false;
+        }
+        if (labelFilter.value !== "all" && !labels.includes(labelFilter.value)) {
+          return false;
+        }
+        if (clusterFilter.value !== "all" && cluster !== clusterFilter.value) {
+          return false;
+        }
+        if (scoreFilter.value !== "all" && scoreValue(entry) < Number(scoreFilter.value)) {
+          return false;
+        }
+        return true;
       }
 
       function scoreValue(entry) {
@@ -559,6 +631,7 @@
 
       function renderCard(entry) {
         const packageData = entry.package || {};
+        const metadata = entry.metadata || {};
         const caption = entry.caption || {};
         const status = normalizeStatus(entry);
         const hook = packageData.hook || caption.hook || "Caption hook unavailable";
@@ -569,8 +642,10 @@
         const visual = entry.analysis?.visual || {};
         const audio = entry.analysis?.audio || {};
         const reasons = Array.isArray(entry.score_details?.reasons) ? entry.score_details.reasons.join(", ") : "local score";
-        const sceneLabels = packageData.scene_labels || entry.scene_labels || entry.analysis?.scene_labels || [];
+        const sceneLabels = metadata.scene_labels || packageData.scene_labels || entry.scene_labels || entry.analysis?.scene_labels || [];
         const hookMoments = packageData.hook_moments || entry.hook_moments || entry.analysis?.hook_moments || [];
+        const optimizedTitle = metadata.optimized_title || packageData.suggested_title;
+        const semanticTags = metadata.semantic_tags || [];
         const packageHtml = renderPackage(packageData, entry);
         return `
           <article class="card">
@@ -594,8 +669,10 @@
                 <div class="score-label">${escapeHtml(reasons)}</div>
               </div>
               <p class="hook">${escapeHtml(hook)}</p>
+              <p class="package-title">${escapeHtml(optimizedTitle || "")}</p>
               <p class="caption">${escapeHtml(captionText)}</p>
               <div class="hashtags">${escapeHtml(hashtags)}</div>
+              ${renderSemanticTags(semanticTags)}
               ${renderSceneLabels(sceneLabels)}
               ${renderHookMoments(hookMoments)}
               <div class="signals" aria-label="Local analysis signals">
@@ -622,11 +699,19 @@
                 <div>Clip: ${escapeHtml(entry.clip_path)}</div>
                 <div>Caption: ${escapeHtml(entry.caption_path || "none")}</div>
                 <div>Package: ${escapeHtml(entry.package_path || "none")}</div>
+                <div>Cluster: ${escapeHtml(metadata.cluster_id || "none")}</div>
                 <div>Subtitles: ${escapeHtml(packageData.subtitle_status || entry.subtitle_status || "not_extracted")}</div>
               </div>
             </div>
           </article>
         `;
+      }
+
+      function renderSemanticTags(tags) {
+        if (!Array.isArray(tags) || tags.length === 0) {
+          return "";
+        }
+        return `<div class="labels">${tags.slice(0, 8).map((tag) => `<span class="label">${escapeHtml(tag)}</span>`).join("")}</div>`;
       }
 
       function renderSceneLabels(labels) {
@@ -728,9 +813,37 @@
         `;
       }
 
+      function populateMetadataFilters() {
+        const tags = new Set();
+        const labels = new Set();
+        const clusters = new Set();
+        entries.forEach((entry) => {
+          (entry.metadata?.semantic_tags || []).forEach((tag) => tags.add(tag));
+          (entry.metadata?.scene_labels || entry.scene_labels || []).forEach((label) => labels.add(label));
+          if (entry.metadata?.cluster_id) {
+            clusters.add(entry.metadata.cluster_id);
+          }
+        });
+        fillSelect(tagFilter, "All tags", tags);
+        fillSelect(labelFilter, "All labels", labels);
+        fillSelect(clusterFilter, "All clusters", clusters);
+      }
+
+      function fillSelect(select, label, values) {
+        const current = select.value;
+        select.innerHTML = `<option value="all">${label}</option>` + [...values].sort().map((value) => `<option value="${escapeHtml(value)}">${escapeHtml(value)}</option>`).join("");
+        select.value = [...values].includes(current) ? current : "all";
+      }
+
       async function loadDashboard() {
         try {
           const queue = await readJson(QUEUE_PATH);
+          try {
+            const metadataIndex = await readJson(METADATA_INDEX_PATH);
+            metadataByClip = Object.fromEntries((metadataIndex.items || []).map((item) => [item.clip_id, item]));
+          } catch (error) {
+            metadataByClip = {};
+          }
           const queueEntries = Array.isArray(queue.entries) ? queue.entries : [];
           entries = await Promise.all(queueEntries.map(async (entry) => {
             let caption = null;
@@ -749,9 +862,10 @@
                 packageData = { suggested_title: "Package failed to load", suggested_cta: error.message };
               }
             }
-            return { ...entry, caption, package: packageData };
+            return { ...entry, caption, package: packageData, metadata: metadataByClip[entry.clip_id] || null };
           }));
           entries.sort((a, b) => scoreValue(b) - scoreValue(a));
+          populateMetadataFilters();
           try {
             renderAnalytics(await readJson(LEARNING_SUMMARY_PATH), await readJson(TOP_PATTERNS_PATH));
           } catch (error) {
@@ -766,6 +880,11 @@
       }
 
       statusFilter.addEventListener("change", render);
+      searchInput.addEventListener("input", render);
+      tagFilter.addEventListener("change", render);
+      labelFilter.addEventListener("change", render);
+      clusterFilter.addEventListener("change", render);
+      scoreFilter.addEventListener("change", render);
       exportApproved.addEventListener("click", exportApprovedReviews);
       resetReviews.addEventListener("click", () => {
         reviewState = {};
