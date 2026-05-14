@@ -848,6 +848,26 @@ async function vacuumRuntimeDb(options = {}) {
   return storageCommand(args, options);
 }
 
+async function checkUpgradeStatus() {
+  return { ok: true, activeProjectRoot, upgrade: await readAnalyticsJson("client_upgrade_status.json", {}) };
+}
+
+async function buildUpgradePlan() {
+  return runPython(["scripts/upgrade_project.py", "--plan"]);
+}
+
+async function runUpgradeCheck() {
+  return runPython(["scripts/upgrade_project.py", "--check"]);
+}
+
+async function runLaunchPreflight() {
+  return runPython(["scripts/run_launch_preflight.py"]);
+}
+
+async function validateDataContract() {
+  return runPython(["scripts/validate_data_contract.py"]);
+}
+
 async function enqueueFullMediaPrep() {
   const result = await runPython(["scripts/enqueue_full_media_prep.py"]);
   let parsed = null;
@@ -1362,6 +1382,11 @@ function registerIpc() {
   ipcMain.handle("storage:applyCleanupPlan", (_event, options = {}) => applyCleanupPlan(options));
   ipcMain.handle("storage:archiveGeneratedArtifacts", (_event, options = {}) => archiveGeneratedArtifacts(options));
   ipcMain.handle("storage:vacuumRuntimeDb", (_event, options = {}) => vacuumRuntimeDb(options));
+  ipcMain.handle("upgrade:getStatus", checkUpgradeStatus);
+  ipcMain.handle("upgrade:buildPlan", buildUpgradePlan);
+  ipcMain.handle("upgrade:runCheck", runUpgradeCheck);
+  ipcMain.handle("upgrade:launchPreflight", runLaunchPreflight);
+  ipcMain.handle("upgrade:validateDataContract", validateDataContract);
   ipcMain.handle("tasks:enqueueFullMediaPrep", enqueueFullMediaPrep);
   ipcMain.handle("tasks:getSummary", getTaskSummary);
   ipcMain.handle("tasks:runWorkerOnce", runTaskWorkerOnce);

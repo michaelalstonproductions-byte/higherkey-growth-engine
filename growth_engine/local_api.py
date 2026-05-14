@@ -19,6 +19,7 @@ from .worker_runtime import health as worker_health
 from .project_lifecycle import lifecycle_summary, list_backups
 from .state_reconciler import reconcile_state
 from .cache_manager import archive_generated_artifacts, apply_cleanup_plan, build_cleanup_plan, measure_storage, vacuum_runtime_db
+from .migrations import apply_upgrade, build_upgrade_plan
 from .security import (
     generate_local_api_token,
     require_confirmation,
@@ -301,6 +302,14 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             return load_json(config.analytics_dir / "client_storage.json", {}), "Client storage loaded."
         if path == "/cleanup/plan":
             return load_json(config.analytics_dir / "cleanup_plan.json", build_cleanup_plan(config)), "Cleanup plan loaded."
+        if path == "/upgrade/status":
+            return load_json(config.analytics_dir / "client_upgrade_status.json", {}), "Upgrade status loaded."
+        if path == "/upgrade/plan":
+            return load_json(config.analytics_dir / "upgrade_plan.json", build_upgrade_plan(config)), "Upgrade plan loaded."
+        if path == "/launch/preflight":
+            return load_json(config.analytics_dir / "launch_preflight.json", {}), "Launch preflight loaded."
+        if path == "/contracts/data":
+            return load_json(config.analytics_dir / "data_contract_report.json", {}), "Data contract report loaded."
         raise KeyError(path)
 
     def _handle_post(self, path: str, body: dict[str, Any]) -> tuple[dict[str, Any], str, str]:
@@ -494,6 +503,22 @@ class LocalApiHandler(BaseHTTPRequestHandler):
                 return confirmation, confirmation["message"], "fail"
             result = vacuum_runtime_db(config, dry_run=False)
             return result, "Runtime database vacuum complete.", result["status"]
+        if path == "/upgrade/check":
+            result = build_upgrade_plan(config)
+            return result, "Upgrade check completed.", result["status"]
+        if path == "/upgrade/apply":
+            confirmation = require_confirmation(
+                config,
+                "reconcile_apply",
+                confirmed=bool(body.get("confirmed")),
+                summary="Upgrade apply requested through local API.",
+                affected_paths=["analytics/upgrade_report.json", "analytics/runtime_state.db"],
+                reversible=True,
+            )
+            if not confirmation["ok"]:
+                return confirmation, confirmation["message"], "fail"
+            result = apply_upgrade(config, force=bool(body.get("force")))
+            return result, "Upgrade apply completed.", result["status"]
         raise KeyError(path)
 
     def _action_for_post(self, path: str) -> str:
@@ -521,6 +546,8 @@ class LocalApiHandler(BaseHTTPRequestHandler):
             "/cleanup/apply": "cleanup_apply",
             "/cleanup/archive": "archive_generated_artifacts",
             "/storage/vacuum-db": "vacuum_runtime_db",
+            "/upgrade/check": "maintenance",
+            "/upgrade/apply": "maintenance",
         }
         if path not in mapping:
             raise KeyError(path)

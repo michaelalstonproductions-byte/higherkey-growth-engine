@@ -12,3 +12,4 @@ analytics/
 content_inbox/
 HIGHERKEY_OPERATOR_OS_SETUP.md
 config/desktop_runtime.json
+config/project_manifest.json

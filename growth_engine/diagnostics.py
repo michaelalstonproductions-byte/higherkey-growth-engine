@@ -64,10 +64,18 @@ JSON_CHECKS = (
     ("analytics", "client_storage.json", True),
     ("analytics", "archive_manifest.json", True),
     ("analytics", "archive_history.json", True),
+    ("analytics", "upgrade_plan.json", True),
+    ("analytics", "upgrade_report.json", True),
+    ("analytics", "client_upgrade_status.json", True),
+    ("analytics", "rollback_plan.json", True),
+    ("analytics", "pre_upgrade_backup_manifest.json", True),
+    ("analytics", "data_contract_report.json", True),
+    ("analytics", "launch_preflight.json", True),
     ("config", "error_taxonomy.json", True),
     ("config", "state_contract.json", True),
     ("config", "security_policy.json", True),
     ("config", "retention_policy.json", True),
+    ("config", "version_contract.json", True),
     ("config", "project_manifest.json", True),
 )
 

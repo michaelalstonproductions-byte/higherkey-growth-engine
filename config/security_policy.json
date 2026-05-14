@@ -83,8 +83,11 @@
     "run_task_worker",
     "security_check",
     "storage_report",
+    "upgrade_project",
     "validate_project",
+    "validate_data_contract",
     "vacuum_runtime_db",
+    "launch_preflight",
     "worker_manage"
   ],
   "local_api_auth_enabled": false,

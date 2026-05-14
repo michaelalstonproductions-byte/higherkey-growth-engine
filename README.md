@@ -701,6 +701,49 @@ Local API storage endpoints:
 
 Maintenance now builds the storage report and cleanup plan dry-run. Full QA includes retention policy loading, storage report generation, cleanup plan generation, archive dry-run, DB vacuum dry-run, and a temp-project fixture proving original footage is protected.
 
+## V3.9 Upgrade and Migration Safety
+
+V3.9 adds local upgrade planning, migration checks, rollback planning, data contract validation, and launch preflight. It is local-only and preserves original footage, JSON compatibility snapshots, runtime DB state, task queue state, worker state, local API behavior, reconciliation, security, and storage retention.
+
+Run upgrade checks:
+
+```bash
+python3 scripts/upgrade_project.py --check
+python3 scripts/upgrade_project.py --plan
+python3 scripts/validate_data_contract.py
+python3 scripts/run_launch_preflight.py
+```
+
+Generated files:
+
+- `config/version_contract.json`: app/schema compatibility contract, required runtime files, DB tables, config files, scripts, deprecated files, and migration notes.
+- `analytics/upgrade_plan.json`: dry-run upgrade plan with required migrations and compatibility status.
+- `analytics/upgrade_report.json`: upgrade apply/check report. Apply mode is explicit and safe-only.
+- `analytics/client_upgrade_status.json`: client-safe upgrade status without raw traceback or stdout/stderr.
+- `analytics/rollback_plan.json`: rollback metadata showing changed files, DB migrations, config updates, backup reference, and reversibility.
+- `analytics/pre_upgrade_backup_manifest.json`: local pre-upgrade backup recommendation and manifest.
+- `analytics/data_contract_report.json`: validation report for version/state/security/retention/project contracts, runtime DB schema, task queue schema, local API contract, and client snapshots.
+- `analytics/launch_preflight.json`: launch-readiness report for project manifest, runtime DB, version match, security, storage, reconciliation, client state, worker state, and stale locks.
+
+Safety rules:
+
+- Upgrade planning is dry-run by default.
+- `--apply` is required to run migrations.
+- Migrations are idempotent and local-only.
+- Original imported footage is never deleted or overwritten.
+- Rollback planning is written before apply mode, but automatic restore is not performed unless explicitly added later.
+
+Local API upgrade endpoints:
+
+- `GET /upgrade/status`
+- `GET /upgrade/plan`
+- `POST /upgrade/check`
+- `POST /upgrade/apply`
+- `GET /launch/preflight`
+- `GET /contracts/data`
+
+Maintenance now includes upgrade check, data contract validation, and launch preflight in dry-run mode.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

@@ -1,6 +1,6 @@
 {
   "name": "higherkey-growth-engine",
-  "version": "3.8.0",
+  "version": "3.9.0",
   "productName": "HigherKey Operator OS",
   "description": "HigherKey local-first autonomous growth engine desktop shell",
   "main": "electron/main.js",
@@ -54,13 +54,14 @@
         ]
       },
       {
-        "from": "config",
-        "to": "app-assets/config",
-        "filter": [
-          "**/*",
-          "!desktop_runtime.json"
-        ]
-      },
+      "from": "config",
+      "to": "app-assets/config",
+      "filter": [
+        "**/*",
+        "!desktop_runtime.json",
+        "!project_manifest.json"
+      ]
+    },
       {
         "from": "README.md",
         "to": "app-assets/README.md"

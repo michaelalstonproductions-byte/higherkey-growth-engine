@@ -239,6 +239,43 @@ def retention_policy_check(root: Path) -> dict[str, object]:
         return {"name": "retention_policy_load", "status": "fail", "message": str(error)}
 
 
+def version_contract_check(root: Path) -> dict[str, object]:
+    path = root / "config" / "version_contract.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        required = {"app_version", "schema_version", "required_db_tables", "required_config_files", "required_scripts"}
+        missing = sorted(required - set(payload))
+        return {"name": "version_contract_load", "status": "pass" if not missing else "fail", "missing": missing, "version": payload.get("app_version")}
+    except Exception as error:
+        return {"name": "version_contract_load", "status": "fail", "message": str(error)}
+
+
+def upgrade_fixture_check(root: Path) -> dict[str, object]:
+    script = (
+        "from pathlib import Path\n"
+        "from tempfile import TemporaryDirectory\n"
+        "import shutil\n"
+        "from growth_engine.config import ensure_directories, load_config\n"
+        "from growth_engine.json_store import save_json_file\n"
+        "from growth_engine.migrations import build_upgrade_plan, pre_upgrade_backup_manifest, rollback_plan\n"
+        "with TemporaryDirectory() as tmp:\n"
+        "    root=Path(tmp)\n"
+        "    config=load_config(root)\n"
+        "    ensure_directories(config)\n"
+        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json'):\n"
+        "        shutil.copy(Path('config')/rel, root/'config'/rel)\n"
+        "    save_json_file(root/'config'/'project_manifest.json', {'version':'V3.8','project_root':str(root),'local_only':True})\n"
+        "    plan=build_upgrade_plan(config)\n"
+        "    assert plan['status'] in ('pass','warn')\n"
+        "    backup=pre_upgrade_backup_manifest(config)\n"
+        "    rollback=rollback_plan(config, plan)\n"
+        "    assert backup['source_media_preserved'] is True\n"
+        "    assert rollback['reversible'] is True\n"
+        "print('upgrade fixture ok')\n"
+    )
+    return command_result("upgrade_plan_fixture", ["python3", "-c", script], root, timeout=60)
+
+
 def storage_fixture_check(root: Path) -> dict[str, object]:
     script = (
         "from pathlib import Path\n"
@@ -331,7 +368,7 @@ def local_api_server_check(root: Path) -> dict[str, object]:
                 last_error = str(error)
                 time.sleep(0.2)
         endpoints = []
-        for path in ("/health", "/state/client", "/tasks/summary", "/metrics/client", "/audit/recent", "/health/score", "/state/integrity", "/state/reconciliation", "/security/status", "/storage/report", "/storage/client", "/cleanup/plan"):
+        for path in ("/health", "/state/client", "/tasks/summary", "/metrics/client", "/audit/recent", "/health/score", "/state/integrity", "/state/reconciliation", "/security/status", "/storage/report", "/storage/client", "/cleanup/plan", "/upgrade/status", "/upgrade/plan", "/launch/preflight", "/contracts/data"):
             with request.urlopen(f"{base}{path}", timeout=5) as response:
                 payload = json.loads(response.read().decode("utf-8"))
             endpoints.append({"path": path, "ok": payload.get("ok"), "status": payload.get("status")})
@@ -462,6 +499,10 @@ def main() -> int:
     append_stage(results, qa_stage("cleanup_plan_dry_run", ["python3", "scripts/manage_storage.py", "plan", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("archive_dry_run", ["python3", "scripts/manage_storage.py", "archive", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("vacuum_db_dry_run", ["python3", "scripts/manage_storage.py", "vacuum-db"], root, timeout=60), config)
+    append_stage(results, qa_stage("upgrade_check", ["python3", "scripts/upgrade_project.py", "--check"], root, timeout=60), config)
+    append_stage(results, qa_stage("upgrade_plan", ["python3", "scripts/upgrade_project.py", "--plan"], root, timeout=60), config)
+    append_stage(results, qa_stage("data_contract_validation", ["python3", "scripts/validate_data_contract.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("launch_preflight", ["python3", "scripts/run_launch_preflight.py"], root, timeout=60), config)
     print("[qa] security_fixture_validation", flush=True)
     append_stage(results, security_fixture_check(root), config)
     print("[qa] audit_event_fixture", flush=True)
@@ -472,6 +513,10 @@ def main() -> int:
     append_stage(results, state_contract_check(root), config)
     print("[qa] retention_policy_load", flush=True)
     append_stage(results, retention_policy_check(root), config)
+    print("[qa] version_contract_load", flush=True)
+    append_stage(results, version_contract_check(root), config)
+    print("[qa] upgrade_plan_fixture", flush=True)
+    append_stage(results, upgrade_fixture_check(root), config)
     print("[qa] storage_apply_archive_fixture", flush=True)
     append_stage(results, storage_fixture_check(root), config)
     print("[qa] reconciliation_apply_fixture", flush=True)

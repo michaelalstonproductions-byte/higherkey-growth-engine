@@ -1,0 +1,77 @@
+{
+  "version": 1,
+  "local_only": true,
+  "app_version": "3.9.0",
+  "release_version": "V3.9",
+  "schema_version": 4,
+  "minimum_compatible_project_version": "V3.0",
+  "supported_upgrade_paths": [
+    {
+      "from": "V3.0",
+      "to": "V3.9",
+      "safe": true,
+      "notes": "Backfill runtime DB, rebuild client snapshots, validate contracts, and preserve JSON compatibility."
+    },
+    {
+      "from": "V3.8",
+      "to": "V3.9",
+      "safe": true,
+      "notes": "Add upgrade reports, launch preflight, data contract validation, and rollback plan metadata."
+    }
+  ],
+  "required_runtime_files": [
+    "analytics/runtime_state.db",
+    "analytics/events.jsonl",
+    "analytics/client_state.json",
+    "analytics/client_tasks.json",
+    "analytics/client_metrics.json",
+    "analytics/client_integrity.json",
+    "analytics/client_storage.json"
+  ],
+  "required_db_tables": [
+    "projects",
+    "media_assets",
+    "clips",
+    "jobs",
+    "events",
+    "packages",
+    "social_exports",
+    "diagnostics",
+    "school_reports",
+    "pipeline_runs",
+    "agent_runs",
+    "task_queue",
+    "task_attempts",
+    "task_dependencies",
+    "task_schedules",
+    "audit_events"
+  ],
+  "required_config_files": [
+    "config/project_manifest.json",
+    "config/state_contract.json",
+    "config/security_policy.json",
+    "config/retention_policy.json",
+    "config/error_taxonomy.json",
+    "config/release.json"
+  ],
+  "required_scripts": [
+    "scripts/backfill_runtime_db.py",
+    "scripts/build_runtime_snapshot.py",
+    "scripts/build_task_snapshot.py",
+    "scripts/build_observability_report.py",
+    "scripts/reconcile_runtime_state.py",
+    "scripts/run_security_check.py",
+    "scripts/manage_storage.py",
+    "scripts/upgrade_project.py",
+    "scripts/validate_data_contract.py",
+    "scripts/run_launch_preflight.py"
+  ],
+  "deprecated_files": [
+    "analytics/runtime_worker_status.json"
+  ],
+  "migration_notes": [
+    "Migrations are idempotent and local-only.",
+    "Original imported footage is never deleted or overwritten.",
+    "JSON compatibility snapshots remain supported."
+  ]
+}
