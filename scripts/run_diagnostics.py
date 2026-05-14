@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
 
 from growth_engine.config import load_config
 from growth_engine.diagnostics import run_diagnostics
+from growth_engine.events import append_event
 
 
 def main() -> int:
@@ -20,7 +21,9 @@ def main() -> int:
     parser.add_argument("--skip-packaging", action="store_true", help="Skip packaged app path checks.")
     args = parser.parse_args()
 
-    payload = run_diagnostics(load_config(Path(args.root)), include_packaging=not args.skip_packaging)
+    config = load_config(Path(args.root))
+    payload = run_diagnostics(config, include_packaging=not args.skip_packaging)
+    append_event(config, "diagnostics.completed", severity=payload.get("status", "info"), source="run_diagnostics", summary={"status": payload.get("status")})
     print(json.dumps(payload, indent=2, sort_keys=True))
     return 0 if payload.get("status") != "fail" else 1
 

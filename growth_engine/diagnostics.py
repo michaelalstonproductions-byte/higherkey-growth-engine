@@ -30,6 +30,45 @@ JSON_CHECKS = (
     ("analytics", "color_repair_plan.json", True),
     ("analytics", "audio_school_report.json", True),
     ("analytics", "audio_repair_plan.json", True),
+    ("analytics", "runtime_backfill_report.json", True),
+    ("analytics", "runtime_snapshot.json", True),
+    ("analytics", "client_state.json", True),
+    ("analytics", "maintenance_report.json", True),
+    ("analytics", "runtime_worker_status.json", True),
+    ("analytics", "task_summary.json", True),
+    ("analytics", "client_tasks.json", True),
+    ("analytics", "task_worker_status.json", True),
+    ("analytics", "task_schedules.json", True),
+    ("analytics", "worker_runtime_status.json", True),
+    ("analytics", "worker_runtime_history.json", True),
+    ("analytics", "local_api_status.json", True),
+    ("analytics", "local_api_history.json", True),
+    ("analytics", "project_backup_report.json", True),
+    ("analytics", "project_restore_report.json", True),
+    ("analytics", "demo_reset_report.json", True),
+    ("analytics", "project_archive_report.json", True),
+    ("analytics", "project_validation_report.json", True),
+    ("analytics", "project_size_report.json", True),
+    ("analytics", "runtime_metrics.json", True),
+    ("analytics", "client_metrics.json", True),
+    ("analytics", "observability_report.json", True),
+    ("analytics", "client_observability.json", True),
+    ("analytics", "state_reconciliation_report.json", True),
+    ("analytics", "client_integrity.json", True),
+    ("analytics", "quarantine_report.json", True),
+    ("analytics", "security_report.json", True),
+    ("analytics", "permissions_manifest.json", True),
+    ("analytics", "cache_report.json", True),
+    ("analytics", "cleanup_plan.json", True),
+    ("analytics", "cleanup_history.json", True),
+    ("analytics", "client_storage.json", True),
+    ("analytics", "archive_manifest.json", True),
+    ("analytics", "archive_history.json", True),
+    ("config", "error_taxonomy.json", True),
+    ("config", "state_contract.json", True),
+    ("config", "security_policy.json", True),
+    ("config", "retention_policy.json", True),
+    ("config", "project_manifest.json", True),
 )
 
 
@@ -114,6 +153,8 @@ def _json_check(path: Path, root: Path, optional: bool) -> dict[str, Any]:
     }
     if not path.exists():
         item["message"] = "missing optional file" if optional else "missing required file"
+        if optional:
+            item["status"] = "pass"
         return item
     try:
         json.loads(path.read_text(encoding="utf-8"))

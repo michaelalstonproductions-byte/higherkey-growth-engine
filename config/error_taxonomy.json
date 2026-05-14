@@ -1,0 +1,80 @@
+{
+  "api_offline": {
+    "client_message": "Local API is offline. The app will continue using local JSON snapshots.",
+    "recommended_action": "Start the local API from Settings or continue in snapshot mode.",
+    "severity": "warn",
+    "technical_message": "Local API status file is missing, stale, or reports a failed state."
+  },
+  "diagnostics_warning": {
+    "client_message": "Diagnostics found an item that needs attention.",
+    "recommended_action": "Open Diagnostics and review the latest report.",
+    "severity": "warn",
+    "technical_message": "analytics/diagnostics.json returned warn or fail."
+  },
+  "export_incomplete": {
+    "client_message": "Some export packages are incomplete.",
+    "recommended_action": "Rebuild social export packs after reviewing approved clips.",
+    "severity": "warn",
+    "technical_message": "Social export manifest or history indicates missing assets."
+  },
+  "ffmpeg_unavailable": {
+    "client_message": "FFmpeg is unavailable, so media processing cannot run.",
+    "recommended_action": "Install FFmpeg and rerun diagnostics.",
+    "severity": "fail",
+    "technical_message": "ffmpeg executable was not found on PATH."
+  },
+  "ffprobe_unavailable": {
+    "client_message": "FFprobe is unavailable, so media analysis cannot run.",
+    "recommended_action": "Install FFmpeg/FFprobe and rerun diagnostics.",
+    "severity": "fail",
+    "technical_message": "ffprobe executable was not found on PATH."
+  },
+  "media_invalid": {
+    "client_message": "One or more media files could not be analyzed.",
+    "recommended_action": "Repair project media or replace invalid source files.",
+    "severity": "warn",
+    "technical_message": "ffprobe/ffmpeg failed on a media asset."
+  },
+  "media_missing": {
+    "client_message": "Older missing media references were skipped.",
+    "recommended_action": "Run Repair Project Media, then rerun Full Media Prep.",
+    "severity": "warn",
+    "technical_message": "A source or clip path referenced by JSON/runtime state does not exist."
+  },
+  "path_mismatch": {
+    "client_message": "The active project path may not match the project containing your media.",
+    "recommended_action": "Select the project folder that contains content_inbox.",
+    "severity": "warn",
+    "technical_message": "Runtime project root, manifest root, or activeProjectRoot are inconsistent."
+  },
+  "project_invalid": {
+    "client_message": "Project validation failed.",
+    "recommended_action": "Run project validation and repair missing folders/files.",
+    "severity": "fail",
+    "technical_message": "Required project folders or runtime files are missing/corrupt."
+  },
+  "school_warning": {
+    "client_message": "Color or Audio School found clips that need review.",
+    "recommended_action": "Review safe recommendations before exporting.",
+    "severity": "warn",
+    "technical_message": "Color School or Audio School report status is warn."
+  },
+  "task_failed": {
+    "client_message": "A local task failed.",
+    "recommended_action": "Open Diagnostics and retry the task if it is safe.",
+    "severity": "fail",
+    "technical_message": "task_queue contains failed task records."
+  },
+  "unknown": {
+    "client_message": "An unknown local runtime issue was detected.",
+    "recommended_action": "Open Diagnostics and run maintenance.",
+    "severity": "warn",
+    "technical_message": "No taxonomy match was found."
+  },
+  "worker_stale": {
+    "client_message": "The background worker appears stale.",
+    "recommended_action": "Run worker cleanup or restart the worker.",
+    "severity": "warn",
+    "technical_message": "Worker heartbeat is stale or worker status is stale."
+  }
+}

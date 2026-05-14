@@ -11,6 +11,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from growth_engine.config import load_config
+from growth_engine.events import append_event
 from growth_engine.pipeline import process_once, watch
 
 
@@ -26,7 +27,15 @@ def main() -> int:
         watch(config, args.interval)
         return 0
 
+    append_event(config, "pipeline.started", severity="info", source="run_pipeline", summary={"watch": False})
     summary = process_once(config)
+    severity = summary.get("severity", "pass")
+    event_type = "pipeline.completed"
+    if severity == "needs_attention":
+        event_type = "pipeline.needs_attention"
+    elif severity == "fail":
+        event_type = "pipeline.failed"
+    append_event(config, event_type, severity=severity, source="run_pipeline", summary=summary)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 1 if summary.get("severity") == "fail" else 0
 

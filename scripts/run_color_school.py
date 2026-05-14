@@ -11,6 +11,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from growth_engine.color_school import analyze_color_school
+from growth_engine.config import load_config
+from growth_engine.events import append_event
 
 
 def main() -> int:
@@ -20,7 +22,9 @@ def main() -> int:
     parser.add_argument("--quick", action="store_true", help="Analyze only a small bounded sample for QA.")
     args = parser.parse_args()
     limit = 3 if args.quick and args.limit is None else args.limit
-    report = analyze_color_school(Path(args.root), limit=limit)
+    root = Path(args.root)
+    report = analyze_color_school(root, limit=limit)
+    append_event(load_config(root), "color_school.completed", severity=report.get("status", "info"), source="run_color_school", summary=report.get("summary", {}))
     print(json.dumps({
         "status": report.get("status"),
         "summary": report.get("summary"),

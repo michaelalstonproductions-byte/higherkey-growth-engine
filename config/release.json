@@ -3,6 +3,6 @@
   "build_status": "release-candidate",
   "local_first_statement": "HigherKey Operator OS runs locally. No cloud APIs or social APIs are configured.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "Platform-Ready Social Export Packs",
-  "version": "V2.8"
+  "release_name": "Storage Retention and Cleanup Infrastructure",
+  "version": "V3.8"
 }

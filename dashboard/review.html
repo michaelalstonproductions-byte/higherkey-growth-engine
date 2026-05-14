@@ -868,7 +868,9 @@
         release: "../config/release.json",
         socialManifest: "../out/social_exports/manifest.json",
         socialHistory: "../analytics/social_export_history.json",
-        socialPresets: "../config/social_platform_presets.json"
+        socialPresets: "../config/social_platform_presets.json",
+        clientTasks: "../analytics/client_tasks.json",
+        localApiStatus: "../analytics/local_api_status.json"
       };
       const REVIEW_KEY = "higherkey.review_status.v1";
       const PRIORITY_KEY = "higherkey.queue_priority.v21";
@@ -910,6 +912,8 @@
         socialManifest: null,
         socialHistory: null,
         socialPresets: null,
+        clientTasks: null,
+        localApiStatus: null,
         release: null,
         appInfo: null,
         live: { refreshing: false, intervalMs: 4000, lastRefresh: null },
@@ -1432,12 +1436,14 @@
         const cached = state.mediaCache?.status_counts?.cached || 0;
         const health = state.diagnostics?.status || state.qaReport?.status || "unknown";
         const pipeline = pipelineUiState();
+        const apiState = state.localApiStatus?.state || (state.localApiStatus?.running ? "running" : "offline");
         $("systemStatus").innerHTML = [
           ["Engine", pipeline.state === "needs_attention" ? "needs attention" : pipeline.state === "failed" ? "failed" : "ready"],
           ["Queue", visible.length],
           ["Approved", approved],
           ["Indexed", indexed],
           ["Cache", `${cached}/${visible.length || state.entries.length}`],
+          ["API", apiState === "running" ? "online" : apiState === "health_checked" ? "checked" : "offline"],
           ["Agents", runningAgents ? `${runningAgents} active` : (state.agents?.execution_mode || "idle")]
         ].map(([label, value]) => `<div class="system-row"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join("");
         $("versionBadge").textContent = versionLabel();
@@ -1983,7 +1989,8 @@
       function renderTimeline() {
         const events = (state.activity?.events || []).slice(-30).reverse();
         const pipeline = pipelineUiState();
-        $("pipelineLine").textContent = `${pipeline.label} · ${pipeline.message || state.status?.message || "No live status yet"}`;
+        const taskLine = state.clientTasks?.current_task ? ` · Task: ${state.clientTasks.current_task}` : state.clientTasks?.queued_count ? ` · ${state.clientTasks.queued_count} task(s) queued` : "";
+        $("pipelineLine").textContent = `${pipeline.label} · ${pipeline.message || state.status?.message || "No live status yet"}${taskLine}`;
         const entry = activeEntry() || bestEntry();
         const agents = (state.agents?.agents || []).slice(0, 6);
         $("timeline").innerHTML = `
@@ -2072,6 +2079,7 @@
         const hidden = hiddenTestCount();
         const pipeline = pipelineUiState();
         const nextAction = !entries.length ? "Import real footage" : approved ? "Prepare social export packs" : "Review highest-scoring clips";
+        const taskControls = window.higherkey ? `<button class="btn" data-desktop-action="enqueue-full-media-prep">Enqueue Full Media Prep</button><button class="btn" data-desktop-action="run-task-worker-once">Run Task Worker Once</button>` : "";
         return `
           <section class="inspector-section"><h3>Command Status</h3>
             <div class="metric"><span>Mode</span><strong>Production</strong></div>
@@ -2082,7 +2090,8 @@
             ${best ? `<div class="metric"><span>Clip</span><strong>${html(best.clip_id || title(best))}</strong></div><div class="metric"><span>Score</span><strong>${html(score(best))}</strong></div><div class="copy">${html((state.recommendations?.recommendations?.[0]?.reason || best.package?.caption || "Highest local score among visible production clips.").slice(0, 220))}</div>` : `<div class="muted">No real clip selected.</div>`}
           </section>
           ${pipeline.state === "needs_attention" ? `<section class="inspector-section"><h3>Pipeline Needs Attention</h3><div class="copy">${html(pipeline.message)}</div><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button><button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button></div></section>` : ""}
-          <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(nextAction)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button></div></section>
+          <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(nextAction)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button>${taskControls}</div></section>
+          <section class="inspector-section"><h3>Task Queue</h3><div class="copy">${html(state.clientTasks?.current_task || "No task running.")}</div><div class="metric"><span>Queued</span><strong>${html(state.clientTasks?.queued_count || 0)}</strong></div><div class="metric"><span>Completed</span><strong>${html(state.clientTasks?.completed_count || 0)}</strong></div></section>
           <section class="inspector-section"><h3>Social Readiness</h3>${socialExportsSummaryHtml()}</section>
           <section class="inspector-section"><h3>Compact Health</h3>${compactHealthHtml()}</section>
         `;
@@ -2525,6 +2534,16 @@
             if (action === "copy-audio-notes") return copySchoolNotes("audio");
             if (action === "refresh-school-reports") { await refreshLiveData(); return setNotice("School reports refreshed."); }
             if (!window.higherkey) return setNotice(staticModeMessage());
+            if (action === "enqueue-full-media-prep") {
+              const result = await window.higherkey.enqueueFullMediaPrep();
+              await refreshLiveData();
+              return setNotice(`Full Media Prep queued: ${result.parsed?.tasks?.length || 0} tasks.`);
+            }
+            if (action === "run-task-worker-once") {
+              const result = await window.higherkey.runTaskWorkerOnce();
+              await refreshLiveData();
+              return setNotice(`Task worker completed: ${result.parsed?.processed?.length || 0} task(s).`);
+            }
             if (action === "pick-project") await selectProjectFolder();
             if (action === "use-current-repo") await useCurrentRepoProject();
             if (action === "pick-content") await window.higherkey.pickDirectory("contentInbox");
@@ -2577,6 +2596,8 @@
           state.socialManifest = await optionalJson(PATHS.socialManifest, null);
           state.socialHistory = await optionalJson(PATHS.socialHistory, null);
           state.socialPresets = await optionalJson(PATHS.socialPresets, null);
+          state.clientTasks = await optionalJson(PATHS.clientTasks, null);
+          state.localApiStatus = window.higherkey?.getLocalApiStatus ? await window.higherkey.getLocalApiStatus().catch(() => null) : await optionalJson(PATHS.localApiStatus, null);
           state.release = await optionalJson(PATHS.release, null);
           state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => null) : null;
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));
@@ -2633,6 +2654,8 @@
           state.socialManifest = await optionalJson(PATHS.socialManifest, state.socialManifest);
           state.socialHistory = await optionalJson(PATHS.socialHistory, state.socialHistory);
           state.socialPresets = await optionalJson(PATHS.socialPresets, state.socialPresets);
+          state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
+          state.localApiStatus = window.higherkey?.getLocalApiStatus ? await window.higherkey.getLocalApiStatus().catch(() => state.localApiStatus) : await optionalJson(PATHS.localApiStatus, state.localApiStatus);
           state.release = await optionalJson(PATHS.release, state.release);
           state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => state.appInfo) : state.appInfo;
           state.metadataByClip = Object.fromEntries((state.metadata.items || []).map((item) => [item.clip_id, item]));

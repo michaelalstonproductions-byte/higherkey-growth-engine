@@ -1,0 +1,239 @@
+{
+  "version": 1,
+  "local_only": true,
+  "defaults": {
+    "archive_before_delete": true,
+    "delete_allowed": false,
+    "client_visible": true,
+    "protected": false
+  },
+  "rules": {
+    "media_cache": {
+      "enabled": true,
+      "paths": [
+        "out/media_cache",
+        "analytics/media_cache.json"
+      ],
+      "max_age_days": 30,
+      "max_size_mb": 4096,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": true,
+      "protected": false
+    },
+    "old_task_attempts": {
+      "enabled": true,
+      "paths": [
+        "analytics/task_worker_history.json",
+        "analytics/task_summary.json",
+        "analytics/client_tasks.json"
+      ],
+      "max_age_days": 45,
+      "max_size_mb": 128,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": false,
+      "protected": false
+    },
+    "worker_history": {
+      "enabled": true,
+      "paths": [
+        "analytics/worker_runtime_history.json",
+        "analytics/runtime_worker_history.json"
+      ],
+      "max_age_days": 45,
+      "max_size_mb": 128,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": false,
+      "protected": false
+    },
+    "activity_feed": {
+      "enabled": true,
+      "paths": [
+        "analytics/activity_feed.json"
+      ],
+      "max_age_days": 30,
+      "max_size_mb": 64,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": false,
+      "protected": false
+    },
+    "event_log_snapshots": {
+      "enabled": true,
+      "paths": [
+        "analytics/events.jsonl"
+      ],
+      "max_age_days": 90,
+      "max_size_mb": 256,
+      "archive_before_delete": true,
+      "delete_allowed": false,
+      "client_visible": false,
+      "protected": false
+    },
+    "audit_log_archival": {
+      "enabled": true,
+      "paths": [
+        "analytics/audit_log.jsonl"
+      ],
+      "max_age_days": 180,
+      "max_size_mb": 256,
+      "archive_before_delete": true,
+      "delete_allowed": false,
+      "client_visible": false,
+      "protected": true
+    },
+    "qa_reports": {
+      "enabled": true,
+      "paths": [
+        "analytics/qa_report.json"
+      ],
+      "max_age_days": 14,
+      "max_size_mb": 64,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": false,
+      "protected": false
+    },
+    "diagnostics_reports": {
+      "enabled": true,
+      "paths": [
+        "analytics/diagnostics.json"
+      ],
+      "max_age_days": 14,
+      "max_size_mb": 64,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": false,
+      "protected": false
+    },
+    "old_social_export_packs": {
+      "enabled": true,
+      "paths": [
+        "out/social_exports"
+      ],
+      "max_age_days": 90,
+      "max_size_mb": 8192,
+      "archive_before_delete": true,
+      "delete_allowed": false,
+      "client_visible": true,
+      "protected": true
+    },
+    "approved_exports": {
+      "enabled": true,
+      "paths": [
+        "out/approved_posts"
+      ],
+      "max_age_days": 365,
+      "max_size_mb": 8192,
+      "archive_before_delete": true,
+      "delete_allowed": false,
+      "client_visible": true,
+      "protected": true
+    },
+    "archived_test_media": {
+      "enabled": true,
+      "paths": [
+        "out/archived_test_media",
+        "out/project_archive"
+      ],
+      "max_age_days": 60,
+      "max_size_mb": 2048,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": true,
+      "protected": false
+    },
+    "quarantine_manifests": {
+      "enabled": true,
+      "paths": [
+        "out/quarantine",
+        "analytics/quarantine_report.json"
+      ],
+      "max_age_days": 60,
+      "max_size_mb": 256,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": false,
+      "protected": false
+    },
+    "audio_preview_files": {
+      "enabled": true,
+      "paths": [
+        "out/audio_school/previews"
+      ],
+      "max_age_days": 30,
+      "max_size_mb": 1024,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": true,
+      "protected": false
+    },
+    "school_reports": {
+      "enabled": true,
+      "paths": [
+        "analytics/color_school_report.json",
+        "analytics/color_repair_plan.json",
+        "analytics/audio_school_report.json",
+        "analytics/audio_repair_plan.json"
+      ],
+      "max_age_days": 30,
+      "max_size_mb": 64,
+      "archive_before_delete": true,
+      "delete_allowed": false,
+      "client_visible": true,
+      "protected": false
+    },
+    "temporary_files": {
+      "enabled": true,
+      "paths": [
+        "logs",
+        "out/tmp"
+      ],
+      "max_age_days": 7,
+      "max_size_mb": 512,
+      "archive_before_delete": true,
+      "delete_allowed": true,
+      "client_visible": false,
+      "protected": false
+    },
+    "dist_artifacts": {
+      "enabled": true,
+      "paths": [
+        "dist"
+      ],
+      "max_age_days": 14,
+      "max_size_mb": 4096,
+      "archive_before_delete": false,
+      "delete_allowed": false,
+      "client_visible": false,
+      "protected": true
+    },
+    "source_footage": {
+      "enabled": true,
+      "paths": [
+        "content_inbox"
+      ],
+      "max_age_days": 0,
+      "max_size_mb": 0,
+      "archive_before_delete": false,
+      "delete_allowed": false,
+      "client_visible": true,
+      "protected": true
+    },
+    "runtime_database": {
+      "enabled": true,
+      "paths": [
+        "analytics/runtime_state.db",
+        "config/project_manifest.json"
+      ],
+      "max_age_days": 0,
+      "max_size_mb": 0,
+      "archive_before_delete": false,
+      "delete_allowed": false,
+      "client_visible": false,
+      "protected": true
+    }
+  }
+}

@@ -1,0 +1,79 @@
+{
+  "client_facing_files": [
+    "analytics/client_state.json",
+    "analytics/client_tasks.json",
+    "analytics/client_metrics.json",
+    "analytics/client_integrity.json",
+    "analytics/client_observability.json"
+  ],
+  "db_tables": [
+    "projects",
+    "media_assets",
+    "clips",
+    "jobs",
+    "events",
+    "packages",
+    "social_exports",
+    "diagnostics",
+    "school_reports",
+    "pipeline_runs",
+    "agent_runs",
+    "task_queue",
+    "task_attempts",
+    "task_dependencies",
+    "task_schedules",
+    "audit_events"
+  ],
+  "generated_files": [
+    "analytics/runtime_snapshot.json",
+    "analytics/runtime_metrics.json",
+    "analytics/observability_report.json",
+    "analytics/state_reconciliation_report.json",
+    "analytics/quarantine_report.json"
+  ],
+  "ignored_runtime_files": [
+    "analytics/*.db-wal",
+    "analytics/*.db-shm",
+    "analytics/runtime.lock",
+    "logs/*",
+    "dist/*",
+    "node_modules/*",
+    ".git/*"
+  ],
+  "local_only": true,
+  "optional_folders": [
+    "out/media_cache",
+    "out/social_exports",
+    "out/approved_posts",
+    "out/project_backups",
+    "out/project_archive",
+    "out/quarantine"
+  ],
+  "required_folders": [
+    "analytics",
+    "queue",
+    "clips",
+    "captions",
+    "content_inbox",
+    "config",
+    "out"
+  ],
+  "required_runtime_files": [
+    "config/project_manifest.json",
+    "analytics/runtime_state.db",
+    "analytics/events.jsonl",
+    "queue/review_queue.json"
+  ],
+  "snapshots": [
+    "analytics/video_index.json",
+    "analytics/media_cache.json",
+    "analytics/task_summary.json",
+    "analytics/worker_runtime_status.json",
+    "analytics/local_api_status.json",
+    "analytics/project_validation_report.json",
+    "analytics/project_size_report.json",
+    "analytics/color_school_report.json",
+    "analytics/audio_school_report.json"
+  ],
+  "version": 1
+}

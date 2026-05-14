@@ -12,6 +12,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from growth_engine.config import load_config
+from growth_engine.events import append_event
 from growth_engine.index import load_index, mark_missing_source, resolve_media_path, save_index, utc_now
 from growth_engine.json_store import load_json_file
 
@@ -133,6 +134,7 @@ def repair_index(root: Path, prune_stale_queue: bool = False) -> dict[str, Any]:
     report_path = config.analytics_dir / "project_repair_report.json"
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    append_event(config, "repair.completed", severity="info", source="repair_project_media", summary={"counts": report["counts"]})
     return report
 
 

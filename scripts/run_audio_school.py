@@ -11,6 +11,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from growth_engine.audio_school import analyze_audio_school
+from growth_engine.config import load_config
+from growth_engine.events import append_event
 
 
 def main() -> int:
@@ -20,7 +22,9 @@ def main() -> int:
     parser.add_argument("--quick", action="store_true", help="Analyze only a small bounded sample for QA and skip preview writes.")
     args = parser.parse_args()
     limit = 3 if args.quick and args.limit is None else args.limit
-    report = analyze_audio_school(Path(args.root), limit=limit, write_previews=not args.quick)
+    root = Path(args.root)
+    report = analyze_audio_school(root, limit=limit, write_previews=not args.quick)
+    append_event(load_config(root), "audio_school.completed", severity=report.get("status", "info"), source="run_audio_school", summary=report.get("summary", {}))
     print(json.dumps({
         "status": report.get("status"),
         "summary": report.get("summary"),

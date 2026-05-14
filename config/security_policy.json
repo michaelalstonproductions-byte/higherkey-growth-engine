@@ -1,0 +1,101 @@
+{
+  "version": 1,
+  "local_only": true,
+  "allowed_api_hosts": [
+    "127.0.0.1",
+    "localhost"
+  ],
+  "allowed_project_roots": [],
+  "denied_project_roots": [
+    "/",
+    "/Users",
+    "/Applications",
+    "/System",
+    "/Library"
+  ],
+  "allowed_runtime_dirs": [
+    "analytics",
+    "queue",
+    "clips",
+    "captions",
+    "content_inbox",
+    "logs",
+    "out",
+    "config"
+  ],
+  "protected_dirs": [
+    "/",
+    "/Applications",
+    "/System",
+    "/Library",
+    "/usr",
+    "/bin",
+    "/sbin",
+    "/private"
+  ],
+  "destructive_actions_require_confirmation": [
+    "restore_project",
+    "reset_demo_workspace",
+    "archive_project_artifacts",
+    "archive_generated_artifacts",
+    "prune_stale_queue",
+    "reconcile_apply",
+    "backup_project",
+    "delete_cache"
+  ],
+  "allow_arbitrary_file_access": false,
+  "allow_arbitrary_command_execution": false,
+  "max_import_file_size_mb": 20480,
+  "allowed_import_extensions": [
+    ".mp4",
+    ".mov",
+    ".m4v"
+  ],
+  "allowed_script_actions": [
+    "archive_project_artifacts",
+    "archive_test_media",
+    "audio_school",
+    "backup_project",
+    "backfill_runtime_db",
+    "build_media_cache",
+    "build_observability_report",
+    "build_runtime_snapshot",
+    "build_task_snapshot",
+    "cleanup_apply",
+    "cleanup_plan",
+    "color_school",
+    "diagnostics",
+    "enqueue_full_media_prep",
+    "export_approved_posts",
+    "export_social_packs",
+    "local_api",
+    "maintenance",
+    "orchestrator",
+    "project_size_report",
+    "qa_full",
+    "rebuild_metadata_index",
+    "reconcile_apply",
+    "reconcile_dry_run",
+    "repair_project_media",
+    "reset_demo_workspace",
+    "restore_project",
+    "run_pipeline",
+    "run_task_worker",
+    "security_check",
+    "storage_report",
+    "validate_project",
+    "vacuum_runtime_db",
+    "worker_manage"
+  ],
+  "local_api_auth_enabled": false,
+  "token_storage_path": "analytics/local_api_token.json",
+  "audit_required_actions": [
+    "restore_project",
+    "reset_demo_workspace",
+    "archive_project_artifacts",
+    "prune_stale_queue",
+    "reconcile_apply",
+    "backup_project",
+    "delete_cache"
+  ]
+}

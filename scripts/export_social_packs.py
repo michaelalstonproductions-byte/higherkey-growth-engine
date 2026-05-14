@@ -11,6 +11,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from growth_engine.social_exports import PLATFORM_KEYS, export_social_packs
+from growth_engine.config import load_config
+from growth_engine.events import append_event
 
 
 def main() -> int:
@@ -30,6 +32,7 @@ def main() -> int:
         approved_id_values=args.approved_id,
         output_dir=Path(args.output).resolve() if args.output else None,
     )
+    append_event(load_config(root), "social_export.generated", severity="fail" if summary.get("errors") else "info", source="export_social_packs", summary=summary)
     print(json.dumps(summary, indent=2, sort_keys=True))
     return 0 if not summary.get("errors") else 1
 

@@ -424,6 +424,283 @@ npm run app:open-latest -- --dry-run
 
 The launcher opens `dist/mac-arm64/HigherKey Operator OS.app`, prints the app path, checks `dist/latest-build.json` when present, and verifies `package.json` and `config/release.json` versions match. If testing from a DMG, run `npm run dist:unsigned` first so old HigherKey DMGs are removed and the remaining DMG is the current local build.
 
+## V3.0 Runtime Infrastructure
+
+V3.0 adds a local runtime infrastructure layer while preserving the existing JSON snapshots used by the dashboard.
+
+- SQLite runtime DB: `analytics/runtime_state.db`
+- Append-only events: `analytics/events.jsonl`
+- Technical snapshot: `analytics/runtime_snapshot.json`
+- Client-safe state: `analytics/client_state.json`
+- Project manifest: `config/project_manifest.json`
+- Runtime lock: `analytics/runtime.lock`
+
+Useful commands:
+
+```bash
+python3 scripts/init_project_manifest.py
+python3 scripts/backfill_runtime_db.py
+python3 scripts/build_runtime_snapshot.py
+python3 scripts/run_maintenance.py --dry-run
+python3 scripts/run_runtime_worker.py --once
+```
+
+The runtime DB is a local SQLite compatibility index over existing project JSON files. JSON outputs remain the app-facing compatibility layer and are not removed. Maintenance and worker scripts are deterministic, local-only, and do not call cloud, social, or posting APIs.
+
+## V3.1 Task Queue
+
+V3.1 adds a durable local task queue and scheduling metadata layer in `analytics/runtime_state.db`.
+
+Task tables:
+
+- `task_queue`
+- `task_attempts`
+- `task_dependencies`
+- `task_schedules`
+
+Task statuses are `queued`, `scheduled`, `running`, `completed`, `failed`, `cancelled`, `retrying`, and `blocked`. Priorities are `high`, `normal`, and `low`.
+
+Useful commands:
+
+```bash
+python3 scripts/enqueue_full_media_prep.py
+python3 scripts/run_task_worker.py --once
+python3 scripts/run_task_worker.py --once --dry-run
+python3 scripts/schedule_tasks.py
+python3 scripts/build_task_snapshot.py
+```
+
+Task snapshots are written to `analytics/task_summary.json` and `analytics/client_tasks.json`. Scheduled automation metadata is written to SQLite and mirrored to `analytics/task_schedules.json`; no OS launch daemon is installed. The queue remains local-only and does not add cloud APIs, social APIs, or direct posting integrations.
+
+## V3.2 Worker Runtime
+
+V3.2 turns the durable task queue into a local worker runtime. Worker lifecycle status is written to `analytics/worker_runtime_status.json`, and lifecycle history is written to `analytics/worker_runtime_history.json`.
+
+Worker states:
+
+- `stopped`
+- `starting`
+- `idle`
+- `running`
+- `paused`
+- `stopping`
+- `failed`
+- `stale`
+
+Worker commands:
+
+```bash
+python3 scripts/manage_worker.py status
+python3 scripts/manage_worker.py once
+python3 scripts/manage_worker.py start
+python3 scripts/manage_worker.py pause
+python3 scripts/manage_worker.py resume
+python3 scripts/manage_worker.py stop
+python3 scripts/manage_worker.py restart
+python3 scripts/manage_worker.py cleanup-stale
+```
+
+The local setting `worker.auto_start` defaults to `false`. When enabled in Electron settings, the app starts the worker on launch while avoiding duplicate worker processes. Queued Import & Process mode is available through the Electron bridge as an additive path: it imports footage, enqueues the Full Media Prep task chain, and runs the worker without removing the existing synchronous process path.
+
+`analytics/client_tasks.json` contains client-safe task progress, stage, and message fields. Raw stdout/stderr stays in technical task reports and diagnostics.
+
+## V3.3 Local API Service
+
+V3.3 adds an optional local-only API service so Electron and future UI surfaces can query stable endpoints while the existing JSON snapshot workflow remains supported.
+
+Run the API:
+
+```bash
+python3 scripts/run_local_api.py --once-health
+python3 scripts/run_local_api.py --host 127.0.0.1 --port 8765 --write-status
+```
+
+Status files:
+
+- `analytics/local_api_status.json`
+- `analytics/local_api_history.json`
+
+Read endpoints include `/health`, `/state/client`, `/state/runtime`, `/tasks`, `/tasks/summary`, `/worker/status`, `/events/recent`, `/project/manifest`, `/media/summary`, `/pipeline/status`, `/diagnostics`, `/social/exports`, `/schools/color`, and `/schools/audio`.
+
+Safe local POST endpoints include `/tasks/enqueue/full-media-prep`, `/worker/once`, `/worker/start`, `/worker/stop`, `/worker/pause`, `/worker/resume`, `/maintenance/run`, `/snapshot/build`, and `/repair/run`.
+
+The API binds only to `127.0.0.1`, rejects non-local requests, exposes no arbitrary command execution or file read endpoints, and does not add cloud APIs, social APIs, or direct posting integrations. The Electron setting `local_api.auto_start` defaults to `false`.
+
+## V3.4 Project Lifecycle
+
+V3.4 adds local project lifecycle infrastructure for backup, restore, reset, archive, validation, and portable handoff. All commands are local-only and preserve source media unless an explicit destructive flag is provided.
+
+Useful commands:
+
+```bash
+python3 scripts/backup_project.py --dry-run
+python3 scripts/backup_project.py
+python3 scripts/restore_project.py out/project_backups/<backup>.zip --dry-run
+python3 scripts/reset_demo_workspace.py --soft --dry-run
+python3 scripts/archive_project_artifacts.py --dry-run
+python3 scripts/validate_project.py
+python3 scripts/project_size_report.py
+```
+
+Backup output goes under `out/project_backups/` and writes `analytics/project_backup_report.json`. Backups include project manifest, runtime DB, event log, client snapshots, queue, clips, captions, social exports, approved posts, analytics reports, and config JSON. Source media in `content_inbox/` is excluded unless `--include-source-media` is passed. Large media cache files are excluded unless `--include-cache` is passed.
+
+Restore validates `backup_manifest.json`, refuses to overwrite existing targets unless `--force` is passed, writes `analytics/project_restore_report.json`, refreshes `config/project_manifest.json`, and rebuilds runtime snapshots.
+
+Demo reset modes:
+
+- `--soft`: clears generated outputs while keeping `content_inbox/`.
+- `--hard`: clears generated outputs and source inbox only with `--confirm-delete-source-media`.
+- `--archive-first`: creates a backup before reset.
+
+Lifecycle reports:
+
+- `analytics/project_validation_report.json`
+- `analytics/project_size_report.json`
+- `analytics/demo_reset_report.json`
+- `analytics/project_archive_report.json`
+
+The task queue can run lifecycle task types, and the local API exposes lifecycle endpoints under `/project/*`. No cloud APIs, social APIs, or posting APIs are added.
+
+## V3.5 Observability
+
+V3.5 adds local observability, client-safe metrics, and an append-only audit trail. It is local-only and does not add cloud APIs, social APIs, or direct posting integrations.
+
+Build reports:
+
+```bash
+python3 scripts/build_observability_report.py
+```
+
+Generated files:
+
+- `analytics/runtime_metrics.json`: technical runtime metrics for tasks, worker state, pipeline health, media counts, school status, diagnostics, runtime DB size, project size, event counts, and recent warnings.
+- `analytics/client_metrics.json`: client-friendly metrics with health labels, task status, media summary, and next action.
+- `analytics/audit_log.jsonl`: append-only audit trail for project, media, pipeline, task, worker, export, diagnostics, QA, maintenance, and settings events.
+- `analytics/observability_report.json`: aggregated local observability report from events, audit, worker/task history, maintenance, QA, repair, and pipeline status.
+- `analytics/client_observability.json`: client-safe observability summary without raw stderr, tracebacks, or large JSON blocks.
+- `config/error_taxonomy.json`: local mapping for common runtime categories such as missing media, path mismatch, stale workers, API offline, diagnostics warnings, and school warnings.
+
+The runtime health score is a local 0-100 score derived from diagnostics, valid production clips, task failures, worker state, missing media, runtime DB health, local API state, and project validation. It is mirrored into `analytics/client_state.json` and `analytics/client_metrics.json`.
+
+Local API observability endpoints:
+
+- `GET /metrics/runtime`
+- `GET /metrics/client`
+- `GET /audit/recent`
+- `GET /observability/report`
+- `GET /health/score`
+
+Maintenance now includes observability report generation. Full QA includes bounded observability, audit, taxonomy, and local API metrics checks.
+
+## V3.6 State Reconciliation
+
+V3.6 adds local state reconciliation and self-healing checks across SQLite runtime state, JSON snapshots, generated clips, captions, media cache, social exports, school reports, task snapshots, event logs, and audit logs.
+
+Run reconciliation:
+
+```bash
+python3 scripts/reconcile_runtime_state.py --dry-run
+python3 scripts/reconcile_runtime_state.py --dry-run --json
+python3 scripts/reconcile_runtime_state.py --apply
+```
+
+Generated files:
+
+- `config/state_contract.json`: source-of-truth contract for DB tables, required folders, runtime files, client-facing files, generated files, and ignored runtime files.
+- `analytics/state_reconciliation_report.json`: technical reconciliation report with issue categories and repairable flags.
+- `analytics/client_integrity.json`: client-safe integrity summary with status, warnings, and next action.
+- `analytics/quarantine_report.json`: metadata-only quarantine manifest for stale references.
+
+Dry run is the default and only reports issues. Apply mode is non-destructive: it backfills runtime DB rows from JSON, rebuilds client/runtime/task/observability snapshots, marks safe metadata issues, and writes quarantine manifests. It does not delete real media, overwrite source footage, or move original footage.
+
+Local API reconciliation endpoints:
+
+- `GET /state/integrity`
+- `GET /state/reconciliation`
+- `POST /state/reconcile`
+- `POST /state/reconcile/apply`
+
+Maintenance includes a reconciliation dry-run. Full QA includes state contract loading, reconciliation dry-run, client integrity generation, and a temp-project apply fixture.
+
+## V3.7 Local Security
+
+V3.7 adds local security policy, permission summaries, confirmation receipts, and runtime safety checks. It remains local-only and does not add cloud APIs, social APIs, direct posting APIs, arbitrary command execution, or arbitrary file access.
+
+Run security checks:
+
+```bash
+python3 scripts/run_security_check.py
+```
+
+Generated files:
+
+- `config/security_policy.json`: local security policy for allowed API hosts, protected project roots, runtime directories, import extensions, action allowlists, confirmation requirements, and token settings.
+- `analytics/security_report.json`: security check report with protected path rejection, import validation, local API safety, and action allowlist results.
+- `analytics/permissions_manifest.json`: client-readable summary of writable runtime directories, read-only app directories, protected directories, enabled actions, and disabled unsafe capabilities.
+- `analytics/confirmation_receipts.jsonl`: append-only confirmation receipts for sensitive local actions such as restore, reset, archive, reconcile apply, backup, and cache deletion.
+
+Protected path rules:
+
+- The project root cannot be `content_inbox`.
+- The project root cannot be `/`, `/Users`, `/Applications`, `/System`, `/Library`, or the home folder directly.
+- Runtime writes must stay inside the active project root.
+- Imports are limited to `.mp4`, `.mov`, and `.m4v`, with duplicate handling and file size validation.
+
+Local API security:
+
+- The local API binds to `127.0.0.1` by default and rejects non-localhost requests.
+- POST actions are checked against the security policy allowlist.
+- Optional local token support is available through `config/security_policy.json`; tokens are stored locally and are not exposed in normal client state.
+- Security endpoints:
+  - `GET /security/status`
+  - `POST /security/validate-path`
+  - `POST /security/rotate-token`
+
+Maintenance now runs the security check and updates `analytics/permissions_manifest.json`. Observability, diagnostics, and client state include client-safe security status labels: `Secure`, `Needs Attention`, or `Unsafe Configuration`.
+
+## V3.8 Storage and Retention
+
+V3.8 adds local data retention, cache reporting, cleanup planning, generated artifact archiving, and workspace storage health. It is local-only and does not add cloud APIs, social APIs, direct posting APIs, arbitrary file cleanup, or destructive source-media behavior.
+
+Run storage tools:
+
+```bash
+python3 scripts/manage_storage.py report
+python3 scripts/manage_storage.py plan --dry-run
+python3 scripts/manage_storage.py archive --dry-run
+python3 scripts/manage_storage.py apply --apply --confirm --category media_cache
+```
+
+Generated files:
+
+- `config/retention_policy.json`: safe retention rules for media cache, logs, QA reports, diagnostics, school reports, quarantine manifests, audio previews, archives, dist artifacts, source footage, and runtime DB files.
+- `analytics/cache_report.json`: technical storage report with category sizes, counts, age, and protection status.
+- `analytics/cleanup_plan.json`: dry-run cleanup plan with eligible generated files, protected items, and planned archive/delete actions.
+- `analytics/cleanup_history.json`: local history of cleanup runs.
+- `analytics/client_storage.json`: client-safe storage summary with labels such as `Storage Healthy`, `Cleanup Recommended`, and `Storage Needs Attention`.
+- `analytics/archive_manifest.json` and `analytics/archive_history.json`: local archive manifests for generated artifacts moved under `out/archives/`.
+
+Safety rules:
+
+- Cleanup is dry-run by default.
+- Apply mode requires both `--apply` and `--confirm`.
+- Original imported footage in `content_inbox/` is protected and is never deleted automatically.
+- Approved exports and social export packs are protected by default.
+- Runtime DB and project manifest are protected by default.
+- No cleanup action may operate outside the active project root.
+
+Local API storage endpoints:
+
+- `GET /storage/report`
+- `GET /storage/client`
+- `GET /cleanup/plan`
+- `POST /cleanup/plan`
+- `POST /cleanup/apply`
+- `POST /cleanup/archive`
+- `POST /storage/vacuum-db`
+
+Maintenance now builds the storage report and cleanup plan dry-run. Full QA includes retention policy loading, storage report generation, cleanup plan generation, archive dry-run, DB vacuum dry-run, and a temp-project fixture proving original footage is protected.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

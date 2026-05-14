@@ -2,6 +2,7 @@ const { app, BrowserWindow, Menu, dialog, ipcMain, Notification, shell } = requi
 const http = require("node:http");
 const fs = require("node:fs");
 const fsp = require("node:fs/promises");
+const os = require("node:os");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 const { ingestDroppedFilesToInbox } = require("./ingest");
@@ -28,10 +29,85 @@ let mainWindow = null;
 let splashWindow = null;
 let staticServer = null;
 let watcherProcess = null;
+let localApiProcess = null;
 let activityPoll = null;
 let lastActivityCount = 0;
 let activeProjectRoot = DEFAULT_PROJECT_ROOT;
 let releaseInfoCache = null;
+let securityPolicyCache = null;
+
+function securityPolicy() {
+  if (securityPolicyCache) return securityPolicyCache;
+  try {
+    securityPolicyCache = JSON.parse(fs.readFileSync(path.join(APP_ROOT, "config", "security_policy.json"), "utf8"));
+  } catch {
+    securityPolicyCache = {
+      allowed_import_extensions: [".mp4", ".mov", ".m4v"],
+      max_import_file_size_mb: 20480,
+      allowed_script_actions: [],
+      protected_dirs: ["/", "/Applications", "/System", "/Library", "/usr", "/bin", "/sbin", "/private"],
+      denied_project_roots: ["/", "/Users", "/Applications", "/System", "/Library"],
+      destructive_actions_require_confirmation: ["restore_project", "reset_demo_workspace", "archive_project_artifacts", "reconcile_apply", "backup_project"]
+    };
+  }
+  return securityPolicyCache;
+}
+
+function securityFail(message, extra = {}) {
+  return { ok: false, status: "fail", message, error: message, security: true, ...extra };
+}
+
+function validateProjectRootSelection(selected) {
+  const resolved = path.resolve(selected);
+  const denied = new Set([path.parse(resolved).root, os.homedir(), ...securityPolicy().denied_project_roots.map((item) => path.resolve(item))]);
+  if (path.basename(resolved) === "content_inbox") {
+    return securityFail("Select the project folder, not the inbox folder.", { suggestedProjectRoot: path.dirname(resolved) });
+  }
+  if (denied.has(resolved)) {
+    return securityFail("That folder cannot be used as a project.", { path: resolved });
+  }
+  return { ok: true, status: "pass", path: resolved, message: "Project folder is allowed." };
+}
+
+function validateImportSelection(filePath) {
+  const resolved = path.resolve(filePath);
+  const extension = path.extname(resolved).toLowerCase();
+  const allowed = new Set(securityPolicy().allowed_import_extensions || [".mp4", ".mov", ".m4v"]);
+  if (!allowed.has(extension)) {
+    return securityFail("This file type is not supported.", { path: resolved, extension });
+  }
+  let stats = null;
+  try {
+    stats = fs.statSync(resolved);
+  } catch {
+    return securityFail("The selected file was not found.", { path: resolved });
+  }
+  if (!stats.isFile()) {
+    return securityFail("Only video files can be imported.", { path: resolved });
+  }
+  const maxBytes = Number(securityPolicy().max_import_file_size_mb || 20480) * 1024 * 1024;
+  if (stats.size > maxBytes) {
+    return securityFail("This file is larger than the import limit.", { path: resolved, size: stats.size });
+  }
+  for (const protectedDir of ["/System", "/Library", "/Applications"]) {
+    const protectedPath = path.resolve(protectedDir);
+    if (resolved === protectedPath || resolved.startsWith(`${protectedPath}${path.sep}`)) {
+      return securityFail("Files from protected system folders cannot be imported.", { path: resolved });
+    }
+  }
+  return { ok: true, status: "pass", path: resolved, extension, size: stats.size };
+}
+
+function filterImportSelections(filePaths) {
+  const valid = [];
+  const errors = [];
+  for (const filePath of filePaths || []) {
+    const result = validateImportSelection(filePath);
+    if (result.ok) valid.push(result.path);
+    else errors.push(result);
+  }
+  return { valid, errors };
+}
 
 function releaseInfo() {
   if (releaseInfoCache) return releaseInfoCache;
@@ -125,6 +201,8 @@ function defaultSettings() {
         exportDirectory: path.join(DEFAULT_PROJECT_ROOT, "out", "approved_posts"),
         analyticsDirectory: path.join(DEFAULT_PROJECT_ROOT, "analytics"),
         startWatcherOnLaunch: false,
+        worker: { auto_start: false },
+        local_api: { auto_start: false, port: 8765 },
         setupCompleted: false,
         setupCompletedAt: null
       }
@@ -155,7 +233,9 @@ async function readSettings() {
         projectPath: DEFAULT_PROJECT_ROOT,
         contentInbox: path.join(DEFAULT_PROJECT_ROOT, "content_inbox"),
         exportDirectory: path.join(DEFAULT_PROJECT_ROOT, "out", "approved_posts"),
-        analyticsDirectory: path.join(DEFAULT_PROJECT_ROOT, "analytics")
+        analyticsDirectory: path.join(DEFAULT_PROJECT_ROOT, "analytics"),
+        worker: settings.profiles.default?.worker || { auto_start: false },
+        local_api: settings.profiles.default?.local_api || { auto_start: false, port: 8765 }
       };
     }
     const projectRoot = settings.activeProject || settings.profiles?.default?.projectPath || DEFAULT_PROJECT_ROOT;
@@ -182,6 +262,8 @@ async function writeSettings(settings) {
   settings.profiles.default.contentInbox = path.join(settings.activeProject, "content_inbox");
   settings.profiles.default.exportDirectory = path.join(settings.activeProject, "out", "approved_posts");
   settings.profiles.default.analyticsDirectory = path.join(settings.activeProject, "analytics");
+  settings.profiles.default.worker = settings.profiles.default.worker || { auto_start: false };
+  settings.profiles.default.local_api = settings.profiles.default.local_api || { auto_start: false, port: 8765 };
   settings.profiles.default.setupCompleted = Boolean(settings.profiles.default.setupCompleted);
   settings.profiles.default.setupCompletedAt = settings.profiles.default.setupCompletedAt || null;
   activeProjectRoot = settings.activeProject;
@@ -610,11 +692,24 @@ async function importFootage() {
       canceled: true
     };
   }
-  const result = await ingestDroppedFilesToInbox(selected.filePaths, inbox);
+  const filtered = filterImportSelections(selected.filePaths);
+  if (!filtered.valid.length) {
+    return {
+      imported: 0,
+      skipped: [],
+      errors: filtered.errors,
+      inbox,
+      importedFiles: [],
+      canceled: false,
+      status: "fail",
+      message: "No supported footage files were selected."
+    };
+  }
+  const result = await ingestDroppedFilesToInbox(filtered.valid, inbox);
   return {
     imported: result.copied.length,
     skipped: result.skipped,
-    errors: result.errors,
+    errors: [...filtered.errors, ...result.errors],
     inbox: result.inbox,
     importedFiles: result.copied,
     accepted_extensions: result.accepted_extensions,
@@ -623,6 +718,8 @@ async function importFootage() {
 }
 
 async function runFullMediaPrep() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
   const settings = await readSettings();
   const profile = projectProfile(settings);
   await fsp.mkdir(profile.contentInbox, { recursive: true });
@@ -683,6 +780,247 @@ async function repairProjectMedia() {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function runMaintenance() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  return runPython(["scripts/run_maintenance.py"]);
+}
+
+async function buildRuntimeSnapshot() {
+  return runPython(["scripts/build_runtime_snapshot.py"]);
+}
+
+async function getClientState() {
+  const profile = await currentProfile();
+  const clientStatePath = path.join(profile.projectRoot, "analytics", "client_state.json");
+  try {
+    const payload = JSON.parse(await fsp.readFile(clientStatePath, "utf8"));
+    return { ok: true, path: clientStatePath, clientState: payload };
+  } catch (error) {
+    return { ok: false, path: clientStatePath, error: String(error?.message || error) };
+  }
+}
+
+async function getStorageReport() {
+  const profile = await currentProfile();
+  return { ok: true, activeProjectRoot, report: await readAnalyticsJson("cache_report.json", {}), path: path.join(profile.projectRoot, "analytics", "cache_report.json") };
+}
+
+async function getClientStorage() {
+  const profile = await currentProfile();
+  return { ok: true, activeProjectRoot, storage: await readAnalyticsJson("client_storage.json", {}), path: path.join(profile.projectRoot, "analytics", "client_storage.json") };
+}
+
+function storageCommand(args, options = {}) {
+  if ((args.includes("apply") || args.includes("archive") || args.includes("vacuum-db")) && options.apply && !options.confirmed) {
+    return securityFail("This action requires confirmation.", { action: args[0] });
+  }
+  return runPython(["scripts/manage_storage.py", ...args]);
+}
+
+async function buildCleanupPlan(options = {}) {
+  const args = ["plan", "--dry-run"];
+  if (options.category) args.push("--category", String(options.category));
+  return storageCommand(args, options);
+}
+
+async function applyCleanupPlan(options = {}) {
+  const args = ["apply"];
+  if (options.apply) args.push("--apply");
+  if (options.confirmed) args.push("--confirm");
+  if (options.category) args.push("--category", String(options.category));
+  return storageCommand(args, options);
+}
+
+async function archiveGeneratedArtifacts(options = {}) {
+  const args = ["archive"];
+  if (!options.apply) args.push("--dry-run");
+  if (options.apply) args.push("--apply");
+  if (options.confirmed) args.push("--confirm");
+  if (options.category) args.push("--category", String(options.category));
+  return storageCommand(args, options);
+}
+
+async function vacuumRuntimeDb(options = {}) {
+  const args = ["vacuum-db"];
+  if (options.apply) args.push("--apply");
+  if (options.confirmed) args.push("--confirm");
+  return storageCommand(args, options);
+}
+
+async function enqueueFullMediaPrep() {
+  const result = await runPython(["scripts/enqueue_full_media_prep.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function runTaskWorkerOnce() {
+  const result = await runPython(["scripts/run_task_worker.py", "--once"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getTaskSummary() {
+  await runPython(["scripts/build_task_snapshot.py"]);
+  const profile = await currentProfile();
+  const clientTasksPath = path.join(profile.projectRoot, "analytics", "client_tasks.json");
+  try {
+    const payload = JSON.parse(await fsp.readFile(clientTasksPath, "utf8"));
+    return { ok: true, path: clientTasksPath, clientTasks: payload };
+  } catch (error) {
+    return { ok: false, path: clientTasksPath, error: String(error?.message || error) };
+  }
+}
+
+function workerCommand(command) {
+  return runPython(["scripts/manage_worker.py", command]);
+}
+
+async function lifecycleScript(script, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  if (script === "scripts/reset_demo_workspace.py" && !options?.dryRun && !options?.confirmed) {
+    return securityFail("This action requires confirmation.", { action: "reset_demo_workspace" });
+  }
+  if (script === "scripts/archive_project_artifacts.py" && !options?.dryRun && !options?.confirmed) {
+    return securityFail("This action requires confirmation.", { action: "archive_project_artifacts" });
+  }
+  const args = [script];
+  if (script === "scripts/backup_project.py") {
+    if (options?.dryRun) args.push("--dry-run");
+    if (options?.includeSourceMedia) args.push("--include-source-media");
+    if (options?.includeCache) args.push("--include-cache");
+  }
+  if (script === "scripts/reset_demo_workspace.py") {
+    args.push(options?.hard ? "--hard" : "--soft");
+    if (options?.dryRun) args.push("--dry-run");
+    if (options?.archiveFirst) args.push("--archive-first");
+    if (options?.confirmDeleteSourceMedia) args.push("--confirm-delete-source-media");
+  }
+  if (script === "scripts/archive_project_artifacts.py" && options?.dryRun) args.push("--dry-run");
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function localApiStatus() {
+  const profile = await currentProfile();
+  const statusPath = path.join(profile.projectRoot, "analytics", "local_api_status.json");
+  let status = null;
+  try {
+    status = JSON.parse(await fsp.readFile(statusPath, "utf8"));
+  } catch {}
+  return {
+    ok: true,
+    running: Boolean(localApiProcess && localApiProcess.exitCode === null),
+    pid: localApiProcess?.pid || null,
+    status,
+    activeProjectRoot
+  };
+}
+
+async function startLocalApi() {
+  if (localApiProcess && localApiProcess.exitCode === null) {
+    return { ok: true, running: true, pid: localApiProcess.pid, activeProjectRoot };
+  }
+  const settings = await readSettings();
+  const port = Number(settings.profiles.default.local_api?.port || 8765);
+  const scriptPath = path.join(APP_ROOT, "scripts", "run_local_api.py");
+  localApiProcess = spawn("python3", [scriptPath, "--port", String(port), "--write-status"], {
+    cwd: activeProjectRoot,
+    env: { ...process.env, PYTHONPATH: APP_ROOT },
+    stdio: "ignore"
+  });
+  localApiProcess.on("exit", () => {
+    localApiProcess = null;
+  });
+  return { ok: true, running: true, pid: localApiProcess.pid, port, activeProjectRoot };
+}
+
+async function stopLocalApi() {
+  if (!localApiProcess || localApiProcess.exitCode !== null) {
+    localApiProcess = null;
+    return { ok: true, running: false, activeProjectRoot };
+  }
+  const pid = localApiProcess.pid;
+  localApiProcess.kill("SIGTERM");
+  localApiProcess = null;
+  return { ok: true, stopped: true, pid, activeProjectRoot };
+}
+
+async function callLocalApi(_event, apiPath, options = {}) {
+  if (!String(apiPath || "").startsWith("/")) {
+    return { ok: false, status: "fail", message: "Local API path must start with /." };
+  }
+  const settings = await readSettings();
+  const port = Number(settings.profiles.default.local_api?.port || 8765);
+  const method = String(options.method || "GET").toUpperCase();
+  const body = options.body ? JSON.stringify(options.body) : "";
+  return new Promise((resolve) => {
+    const request = http.request({
+      hostname: "127.0.0.1",
+      port,
+      path: apiPath,
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        "Content-Length": Buffer.byteLength(body)
+      }
+    }, (response) => {
+      let data = "";
+      response.on("data", (chunk) => { data += chunk.toString(); });
+      response.on("end", () => {
+        try {
+          resolve(JSON.parse(data));
+        } catch {
+          resolve({ ok: false, status: "fail", message: "Local API returned invalid JSON.", code: response.statusCode });
+        }
+      });
+    });
+    request.on("error", (error) => resolve({ ok: false, status: "fail", message: String(error?.message || error) }));
+    if (body) request.write(body);
+    request.end();
+  });
+}
+
+async function readAnalyticsJson(filename, fallback = {}) {
+  const profile = await currentProfile();
+  const jsonPath = path.join(profile.projectRoot, "analytics", filename);
+  try {
+    return JSON.parse(await fsp.readFile(jsonPath, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
+
+async function getRuntimeMetrics() {
+  return { ok: true, activeProjectRoot, metrics: await readAnalyticsJson("runtime_metrics.json", {}) };
+}
+
+async function getClientMetrics() {
+  return { ok: true, activeProjectRoot, metrics: await readAnalyticsJson("client_metrics.json", {}) };
+}
+
+async function getAuditLog() {
+  const profile = await currentProfile();
+  const auditPath = path.join(profile.projectRoot, "analytics", "audit_log.jsonl");
+  try {
+    const lines = (await fsp.readFile(auditPath, "utf8")).trim().split(/\n+/).filter(Boolean).slice(-100);
+    return { ok: true, activeProjectRoot, events: lines.map((line) => JSON.parse(line)) };
+  } catch {
+    return { ok: true, activeProjectRoot, events: [] };
+  }
+}
+
 async function runColorSchool() {
   const result = await runPython(["scripts/run_color_school.py"]);
   let parsed = null;
@@ -720,6 +1058,16 @@ async function importAndProcessFootage() {
   };
 }
 
+async function importAndQueueFootage() {
+  const imported = await importFootage();
+  if (imported.canceled || imported.imported === 0) {
+    return { code: imported.errors.length ? 1 : 0, imported, queued: null, worker: null, activeProjectRoot };
+  }
+  const queued = await enqueueFullMediaPrep();
+  const worker = await runTaskWorkerOnce();
+  return { code: worker.code || queued.code || 0, imported, queued, worker, activeProjectRoot };
+}
+
 async function verifyImportBridge() {
   await readSettings();
   const inbox = path.join(activeProjectRoot, "content_inbox");
@@ -751,6 +1099,8 @@ async function archiveTestMedia() {
 }
 
 async function exportSocialPacks(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
   const platforms = Array.isArray(options.platforms) && options.platforms.length ? options.platforms : [];
   const approvedIds = Array.isArray(options.approvedIds) ? options.approvedIds.filter(Boolean) : [];
   const args = ["scripts/export_social_packs.py"];
@@ -826,6 +1176,15 @@ async function pickDirectory(kind) {
   if (kind === "project") {
     selected = await normalizeProjectSelection(selected);
     if (!selected) return null;
+    const security = validateProjectRootSelection(selected);
+    if (!security.ok) {
+      await dialog.showMessageBox(mainWindow, {
+        type: "warning",
+        message: security.message,
+        detail: security.suggestedProjectRoot ? `Suggested project folder: ${security.suggestedProjectRoot}` : "Choose a writable project folder that contains or can contain content_inbox."
+      });
+      return security;
+    }
     settings.activeProject = selected;
     profile.projectPath = selected;
     profile.contentInbox = path.join(selected, "content_inbox");
@@ -916,7 +1275,20 @@ async function runFirstRunSetup(force = false) {
 async function ingestDroppedFiles(filePaths) {
   await readSettings();
   const inbox = path.join(activeProjectRoot, "content_inbox");
-  return ingestDroppedFilesToInbox(filePaths, inbox);
+  const filtered = filterImportSelections(filePaths || []);
+  if (!filtered.valid.length) {
+    return {
+      copied: [],
+      skipped: [],
+      errors: filtered.errors,
+      inbox,
+      accepted_extensions: [".mp4", ".mov", ".m4v"],
+      status: "fail",
+      message: "No supported footage files were dropped."
+    };
+  }
+  const result = await ingestDroppedFilesToInbox(filtered.valid, inbox);
+  return { ...result, errors: [...filtered.errors, ...result.errors] };
 }
 
 async function appInfo() {
@@ -970,6 +1342,7 @@ function registerIpc() {
   ipcMain.handle("pipeline:runFullMediaPrep", runFullMediaPrep);
   ipcMain.handle("files:importFootage", importFootage);
   ipcMain.handle("files:importAndProcessFootage", importAndProcessFootage);
+  ipcMain.handle("files:importAndQueueFootage", importAndQueueFootage);
   ipcMain.handle("files:verifyImportBridge", verifyImportBridge);
   ipcMain.handle("files:verifyImportAndProcessBridge", verifyImportAndProcessBridge);
   ipcMain.handle("orchestrator:runOnce", () => runPython(["scripts/run_orchestrator.py", "--once"]));
@@ -980,6 +1353,48 @@ function registerIpc() {
   ipcMain.handle("school:runAudio", runAudioSchool);
   ipcMain.handle("social:exportPacks", exportSocialPacks);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
+  ipcMain.handle("runtime:runMaintenance", runMaintenance);
+  ipcMain.handle("runtime:buildSnapshot", buildRuntimeSnapshot);
+  ipcMain.handle("runtime:getClientState", getClientState);
+  ipcMain.handle("storage:getReport", getStorageReport);
+  ipcMain.handle("storage:getClient", getClientStorage);
+  ipcMain.handle("storage:buildCleanupPlan", (_event, options = {}) => buildCleanupPlan(options));
+  ipcMain.handle("storage:applyCleanupPlan", (_event, options = {}) => applyCleanupPlan(options));
+  ipcMain.handle("storage:archiveGeneratedArtifacts", (_event, options = {}) => archiveGeneratedArtifacts(options));
+  ipcMain.handle("storage:vacuumRuntimeDb", (_event, options = {}) => vacuumRuntimeDb(options));
+  ipcMain.handle("tasks:enqueueFullMediaPrep", enqueueFullMediaPrep);
+  ipcMain.handle("tasks:getSummary", getTaskSummary);
+  ipcMain.handle("tasks:runWorkerOnce", runTaskWorkerOnce);
+  ipcMain.handle("worker:start", () => workerCommand("start"));
+  ipcMain.handle("worker:stop", () => workerCommand("stop"));
+  ipcMain.handle("worker:restart", () => workerCommand("restart"));
+  ipcMain.handle("worker:status", () => workerCommand("status"));
+  ipcMain.handle("worker:once", () => workerCommand("once"));
+  ipcMain.handle("worker:pause", () => workerCommand("pause"));
+  ipcMain.handle("worker:resume", () => workerCommand("resume"));
+  ipcMain.handle("localApi:start", startLocalApi);
+  ipcMain.handle("localApi:stop", stopLocalApi);
+  ipcMain.handle("localApi:status", localApiStatus);
+  ipcMain.handle("localApi:call", callLocalApi);
+  ipcMain.handle("observability:getRuntimeMetrics", getRuntimeMetrics);
+  ipcMain.handle("observability:getClientMetrics", getClientMetrics);
+  ipcMain.handle("observability:getAuditLog", getAuditLog);
+  ipcMain.handle("observability:buildReport", () => runPython(["scripts/build_observability_report.py"]));
+  ipcMain.handle("security:getStatus", async () => ({ ok: true, activeProjectRoot, security: await readAnalyticsJson("security_report.json", {}) }));
+  ipcMain.handle("security:runCheck", () => runPython(["scripts/run_security_check.py"]));
+  ipcMain.handle("state:reconcile", (_event, options = {}) => {
+    if (options.apply && !options.confirmed) {
+      return securityFail("This action requires confirmation.", { action: "reconcile_apply" });
+    }
+    return runPython(["scripts/reconcile_runtime_state.py", options.apply ? "--apply" : "--dry-run", ...(options.limit ? ["--limit", String(options.limit)] : [])]);
+  });
+  ipcMain.handle("state:getClientIntegrity", async () => ({ ok: true, activeProjectRoot, integrity: await readAnalyticsJson("client_integrity.json", {}) }));
+  ipcMain.handle("state:getReconciliationReport", async () => ({ ok: true, activeProjectRoot, report: await readAnalyticsJson("state_reconciliation_report.json", {}) }));
+  ipcMain.handle("project:backup", (_event, options) => lifecycleScript("scripts/backup_project.py", options));
+  ipcMain.handle("project:validate", () => lifecycleScript("scripts/validate_project.py"));
+  ipcMain.handle("project:sizeReport", () => lifecycleScript("scripts/project_size_report.py"));
+  ipcMain.handle("project:resetDemo", (_event, options) => lifecycleScript("scripts/reset_demo_workspace.py", options));
+  ipcMain.handle("project:archiveArtifacts", (_event, options) => lifecycleScript("scripts/archive_project_artifacts.py", options));
   ipcMain.handle("qa:runFull", () => runPython(["scripts/run_full_qa.py"]));
   ipcMain.handle("app:info", appInfo);
   ipcMain.handle("project:useCurrentRepo", useCurrentRepoProject);
@@ -1006,11 +1421,23 @@ app.whenReady().then(async () => {
   if (settings.profiles.default.startWatcherOnLaunch) {
     startWatcher();
   }
+  if (settings.profiles.default.worker?.auto_start) {
+    workerCommand("start").catch(() => {});
+  }
+  if (settings.profiles.default.local_api?.auto_start) {
+    startLocalApi().catch(() => {});
+  }
 });
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
+  }
+});
+
+app.on("before-quit", () => {
+  if (localApiProcess && localApiProcess.exitCode === null) {
+    localApiProcess.kill("SIGTERM");
   }
 });
 
