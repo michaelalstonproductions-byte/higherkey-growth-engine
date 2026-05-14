@@ -453,17 +453,89 @@ function tail(value, max = 4000) {
   return text.length > max ? text.slice(-max) : text;
 }
 
+function parseJsonOutput(value) {
+  try {
+    return JSON.parse(value || "{}");
+  } catch {
+    return null;
+  }
+}
+
+async function projectClipCounts() {
+  const queuePath = path.join(activeProjectRoot, "queue", "review_queue.json");
+  const repairPath = path.join(activeProjectRoot, "analytics", "project_repair_report.json");
+  let queueEntries = 0;
+  let missingSources = 0;
+  let staleQueueEntries = 0;
+  try {
+    const queue = JSON.parse(await fsp.readFile(queuePath, "utf8"));
+    queueEntries = Array.isArray(queue.entries) ? queue.entries.length : 0;
+  } catch {}
+  try {
+    const repair = JSON.parse(await fsp.readFile(repairPath, "utf8"));
+    missingSources = Number(repair.counts?.missing_sources || 0);
+    staleQueueEntries = Number(repair.counts?.stale_queue_entries || 0);
+  } catch {}
+  return { queueEntries, missingSources, staleQueueEntries };
+}
+
+async function classifyPipelineResult(result, extra = {}) {
+  const parsed = extra.parsed || parseJsonOutput(result.stdout);
+  const counts = await projectClipCounts();
+  const validClips = Number(parsed?.valid_clips ?? parsed?.queue_entries ?? counts.queueEntries ?? 0);
+  const missingSources = Number(parsed?.missing_sources ?? counts.missingSources ?? 0);
+  const staleQueueEntries = Number(extra.staleQueueEntries ?? counts.staleQueueEntries ?? 0);
+  const warnings = Array.isArray(parsed?.warnings) ? parsed.warnings.length : 0;
+  const errors = Array.isArray(parsed?.errors) ? parsed.errors.length : 0;
+  const parsedSeverity = parsed?.severity || parsed?.status;
+
+  if (extra.state_hint === "running") {
+    return { state: "running", severity: "warn", message: "Pipeline running", validClips, missingSources, staleQueueEntries, warnings, errors, parsed };
+  }
+  if (parsedSeverity === "fail" || (result.code !== 0 && validClips === 0)) {
+    return { state: "failed", severity: "fail", message: "No valid media found. Import footage to begin.", validClips, missingSources, staleQueueEntries, warnings, errors, parsed };
+  }
+  if (parsedSeverity === "needs_attention" || parsedSeverity === "warn" || result.code !== 0 || warnings || errors || missingSources || staleQueueEntries) {
+    return {
+      state: "needs_attention",
+      severity: "needs_attention",
+      message: `Some older media references were skipped. ${validClips} clips are ready.`,
+      validClips,
+      missingSources,
+      staleQueueEntries,
+      warnings,
+      errors,
+      parsed
+    };
+  }
+  if (validClips === 0 && parsed?.discovered === 0) {
+    return { state: "empty", severity: "warn", message: "Import footage to begin.", validClips, missingSources, staleQueueEntries, warnings, errors, parsed };
+  }
+  return { state: "completed", severity: "pass", message: "Pipeline completed. Clips are ready.", validClips, missingSources, staleQueueEntries, warnings, errors, parsed };
+}
+
 async function writePipelineLastRun(result, extra = {}) {
   const logsDir = path.join(activeProjectRoot, "logs");
   const analyticsDir = path.join(activeProjectRoot, "analytics");
   await fsp.mkdir(logsDir, { recursive: true });
   await fsp.mkdir(analyticsDir, { recursive: true });
+  const classification = await classifyPipelineResult(result, extra);
   const payload = {
-    state: extra.state_hint || (result.code === 0 ? "completed" : "failed"),
-    message: extra.state_hint === "running" ? "Pipeline running" : (result.code === 0 ? "Pipeline completed" : "Pipeline failed"),
+    state: classification.state,
+    severity: classification.severity,
+    status: classification.severity,
+    message: classification.message,
     local_only: true,
     active_project_root: activeProjectRoot,
     content_inbox: path.join(activeProjectRoot, "content_inbox"),
+    summary: {
+      valid_clips: classification.validClips,
+      queue_entries: classification.validClips,
+      missing_sources: classification.missingSources,
+      stale_queue_entries: classification.staleQueueEntries,
+      warnings: classification.warnings,
+      errors: classification.errors
+    },
     last_run: {
       ...extra,
       cwd: result.cwd,
@@ -562,6 +634,7 @@ async function runFullMediaPrep() {
     { name: "Updating agents", stage: "updating_agents", args: ["scripts/run_orchestrator.py", "--once"] }
   ];
   const results = [];
+  let staleQueueEntries = 0;
   for (const step of steps) {
     await writePipelineLastRun({
       code: null,
@@ -574,13 +647,31 @@ async function runFullMediaPrep() {
       completedAt: null
     }, { state_hint: "running", command: step.stage });
     const result = await runPython(step.args);
-    results.push({ name: step.name, stage: step.stage, ...result });
-    await writePipelineLastRun(result, { command: step.stage });
-    if (result.code !== 0) {
-      return { code: result.code, steps: results, activeProjectRoot, contentInbox: profile.contentInbox };
+    const parsed = parseJsonOutput(result.stdout);
+    if (step.stage === "repair_preflight") {
+      staleQueueEntries = Number(parsed?.counts?.stale_queue_entries || 0);
+    }
+    results.push({ name: step.name, stage: step.stage, parsed, ...result });
+    const status = await writePipelineLastRun(result, { command: step.stage, parsed, staleQueueEntries });
+    if (result.code !== 0 && status.severity === "fail") {
+      return { code: result.code, status, steps: results, activeProjectRoot, contentInbox: profile.contentInbox };
     }
   }
-  return { code: 0, steps: results, activeProjectRoot, contentInbox: profile.contentInbox };
+  const finalStatus = await writePipelineLastRun({
+    code: 0,
+    stdout: JSON.stringify({
+      severity: staleQueueEntries ? "needs_attention" : "pass",
+      stale_queue_entries: staleQueueEntries
+    }),
+    stderr: "",
+    cwd: activeProjectRoot,
+    scriptPath: "full_media_prep",
+    args: [],
+    startedAt: results[0]?.startedAt || new Date().toISOString(),
+    completedAt: new Date().toISOString()
+  }, { command: "full_media_prep", staleQueueEntries });
+  const code = finalStatus.severity === "fail" ? 1 : 0;
+  return { code, status: finalStatus, steps: results, activeProjectRoot, contentInbox: profile.contentInbox };
 }
 
 async function repairProjectMedia() {

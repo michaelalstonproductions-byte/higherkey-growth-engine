@@ -139,14 +139,32 @@ def process_once(config: AppConfig) -> dict[str, Any]:
     backfill_caption_packages(index, config)
     queue_entries = save_review_queue(config.queue_path, index)
     save_index(config.index_path, index)
+    missing_sources = len([item for item in index.get("videos", {}).values() if item.get("status") == "missing_source"])
+    queue_count = len(queue_entries)
+    severity = "pass"
+    if errors and queue_count == 0:
+        severity = "fail"
+    elif errors or warnings or missing_sources:
+        severity = "needs_attention" if queue_count else "warn"
+    message = "Pipeline completed."
+    if severity == "needs_attention":
+        message = f"Some older media references were skipped. {queue_count} clips are ready."
+    elif severity == "warn":
+        message = "No valid media found. Import footage to begin." if not queue_count else "Pipeline completed with warnings."
+    elif severity == "fail":
+        message = "Pipeline failed because no usable clips could be prepared."
     return {
+        "status": severity,
+        "severity": severity,
+        "message": message,
         "discovered": len(videos),
         "processed": processed,
         "skipped": skipped,
         "errors": errors,
         "warnings": warnings,
-        "missing_sources": len([item for item in index.get("videos", {}).values() if item.get("status") == "missing_source"]),
-        "queue_entries": len(queue_entries),
+        "missing_sources": missing_sources,
+        "valid_clips": queue_count,
+        "queue_entries": queue_count,
         "index_path": str(config.index_path),
         "queue_path": str(config.queue_path),
     }

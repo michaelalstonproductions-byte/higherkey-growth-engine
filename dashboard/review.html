@@ -967,6 +967,7 @@
             if (button.dataset.noticeAction === "open-inbox") await openInbox();
             if (button.dataset.noticeAction === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); render(); }
             if (button.dataset.noticeAction === "repair-project") await repairProjectMedia();
+            if (button.dataset.noticeAction === "run-full-media-prep") await runFullMediaPrep();
           };
         });
       }
@@ -1072,6 +1073,43 @@
       function approvedCount(entries = productionEntries()) { return entries.filter((entry) => statusOf(entry) === "approved").length; }
       function agentCount() { return (state.agents?.agents || []).filter((agent) => agent.state !== "disabled").length; }
       function healthStatus() { return state.diagnostics?.status || state.qaReport?.status || "unknown"; }
+      function pipelineUiState() {
+        const visible = productionEntries();
+        const rawState = String(state.status?.state || "idle").toLowerCase();
+        const rawSeverity = String(state.status?.severity || state.status?.status || rawState).toLowerCase();
+        const validClips = Number(state.status?.summary?.valid_clips || state.status?.summary?.queue_entries || visible.length || 0);
+        const missing = Number(state.status?.summary?.missing_sources || state.repairReport?.counts?.missing_sources || 0);
+        const stale = Number(state.status?.summary?.stale_queue_entries || state.repairReport?.counts?.stale_queue_entries || 0);
+        if (rawSeverity === "fail" || rawState === "failed") {
+          if (validClips > 0 || visible.length > 0) {
+            return {
+              state: "needs_attention",
+              label: "Needs Attention",
+              health: "Needs Attention",
+              message: `Pipeline needs attention: older missing media references were skipped. ${validClips || visible.length} production clips are available.`,
+              missing,
+              stale,
+              validClips: validClips || visible.length
+            };
+          }
+          return { state: "failed", label: "Failed", health: "Failed", message: "No valid media found. Import footage to begin.", missing, stale, validClips };
+        }
+        if (["needs_attention", "warn", "warning"].includes(rawSeverity) || ["needs_attention", "warn"].includes(rawState) || missing || stale) {
+          return {
+            state: "needs_attention",
+            label: "Needs Attention",
+            health: "Needs Attention",
+            message: `Pipeline needs attention: older missing media references were skipped. ${validClips || visible.length} production clips are available.`,
+            missing,
+            stale,
+            validClips: validClips || visible.length
+          };
+        }
+        if (validClips || visible.length) {
+          return { state: "ready", label: "Ready", health: "System Healthy", message: "Pipeline ready. Clips are available.", missing, stale, validClips: validClips || visible.length };
+        }
+        return { state: "empty", label: "Import Footage", health: "Diagnostics Available", message: "Import footage to begin.", missing, stale, validClips };
+      }
       function lastPipelineLabel() { return (state.status?.updated_at || state.appInfo?.lastPipeline?.completed_at || "not run").slice(0, 16).replace("T", " "); }
       function kpiCards(items) {
         return `<div class="kpi-grid">${items.map(([label, value, note]) => `
@@ -1366,6 +1404,9 @@
       }
       function emptyHeatmap() { return `<div class="heatmap">${Array.from({ length: 24 }, () => `<span class="heat"></span>`).join("")}</div>`; }
       function compactHealthLabel() {
+        const pipeline = pipelineUiState();
+        if (pipeline.state === "failed") return "Failed";
+        if (pipeline.state === "needs_attention") return "Needs Attention";
         const status = healthStatus();
         if (["pass", "healthy", "ok"].includes(String(status).toLowerCase())) return "System Healthy";
         if (["warn", "warning", "unknown", "not run"].includes(String(status).toLowerCase())) return "Diagnostics Available";
@@ -1390,8 +1431,9 @@
         const runningAgents = (state.agents?.agents || []).filter((agent) => ["assigned", "running"].includes(agent.state)).length;
         const cached = state.mediaCache?.status_counts?.cached || 0;
         const health = state.diagnostics?.status || state.qaReport?.status || "unknown";
+        const pipeline = pipelineUiState();
         $("systemStatus").innerHTML = [
-          ["Engine", state.status?.state || "idle"],
+          ["Engine", pipeline.state === "needs_attention" ? "needs attention" : pipeline.state === "failed" ? "failed" : "ready"],
           ["Queue", visible.length],
           ["Approved", approved],
           ["Indexed", indexed],
@@ -1404,10 +1446,10 @@
         const inbox = state.appInfo?.contentInbox || "content_inbox";
         $("sessionLine").textContent = `${window.higherkey ? "Electron bridge online" : "Static browser mode"} · ${visible.length} production clips${hiddenTestCount() ? ` · ${hiddenTestCount()} hidden` : ""}`;
         $("headerProjectPath").textContent = project;
-        $("headerPipelineState").textContent = state.status?.state || "idle";
-        $("headerHealthState").textContent = health;
+        $("headerPipelineState").textContent = pipeline.label;
+        $("headerHealthState").textContent = pipeline.state === "failed" ? "Failed" : pipeline.state === "needs_attention" ? "Needs Attention" : (health === "pass" ? "Healthy" : health);
         if ($("footerProject")) $("footerProject").textContent = `Project: ${project.split("/").filter(Boolean).pop() || project}`;
-        if ($("footerHealth")) $("footerHealth").textContent = `● ${health === "pass" ? "System Healthy" : health}`;
+        if ($("footerHealth")) $("footerHealth").textContent = `● ${pipeline.health}`;
         $("projectStatus").innerHTML = [
           ...(state.appInfo?.buildWarnings?.length ? [["Build Warning", state.appInfo.buildWarnings.join(" ")]] : []),
           ["Content Inbox", inbox],
@@ -1940,7 +1982,8 @@
 
       function renderTimeline() {
         const events = (state.activity?.events || []).slice(-30).reverse();
-        $("pipelineLine").textContent = `${state.status?.state || "idle"} · ${state.status?.message || "No live status yet"}`;
+        const pipeline = pipelineUiState();
+        $("pipelineLine").textContent = `${pipeline.label} · ${pipeline.message || state.status?.message || "No live status yet"}`;
         const entry = activeEntry() || bestEntry();
         const agents = (state.agents?.agents || []).slice(0, 6);
         $("timeline").innerHTML = `
@@ -1974,6 +2017,7 @@
       function renderBottomTelemetry(mode) {
         const project = state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static project";
         const health = healthStatus();
+        const pipeline = pipelineUiState();
         const labelsByMode = {
           dashboard: "Dashboard command center",
           queue: "Queue review lane",
@@ -1990,9 +2034,9 @@
           <span>${html(versionLabel())}</span>
           <span>Project: ${html(project.split("/").filter(Boolean).pop() || project)}</span>
           <span>Mode: ${html(labelsByMode[mode] || mode)}</span>
-          <span>Pipeline: ${html(state.status?.state || "idle")}</span>
+          <span>Pipeline: ${html(pipeline.label)}</span>
           <span>Agents: ${html(agentCount())} Active</span>
-          <span class="ok">● ${html(health === "pass" ? "System Healthy" : health)}</span>
+          <span class="ok">● ${html(pipeline.health || (health === "pass" ? "System Healthy" : health))}</span>
         `;
       }
 
@@ -2026,6 +2070,7 @@
         const best = bestEntry(entries);
         const approved = approvedCount(entries);
         const hidden = hiddenTestCount();
+        const pipeline = pipelineUiState();
         const nextAction = !entries.length ? "Import real footage" : approved ? "Prepare social export packs" : "Review highest-scoring clips";
         return `
           <section class="inspector-section"><h3>Command Status</h3>
@@ -2036,6 +2081,7 @@
           <section class="inspector-section"><h3>Best Clip Recommendation</h3>
             ${best ? `<div class="metric"><span>Clip</span><strong>${html(best.clip_id || title(best))}</strong></div><div class="metric"><span>Score</span><strong>${html(score(best))}</strong></div><div class="copy">${html((state.recommendations?.recommendations?.[0]?.reason || best.package?.caption || "Highest local score among visible production clips.").slice(0, 220))}</div>` : `<div class="muted">No real clip selected.</div>`}
           </section>
+          ${pipeline.state === "needs_attention" ? `<section class="inspector-section"><h3>Pipeline Needs Attention</h3><div class="copy">${html(pipeline.message)}</div><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button><button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button></div></section>` : ""}
           <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(nextAction)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button></div></section>
           <section class="inspector-section"><h3>Social Readiness</h3>${socialExportsSummaryHtml()}</section>
           <section class="inspector-section"><h3>Compact Health</h3>${compactHealthHtml()}</section>
@@ -2265,6 +2311,25 @@
         }
       }
 
+      function pipelineNoticeActions() {
+        return [
+          { label: "Repair Project Media", action: "repair-project" },
+          { label: "Run Full Media Prep", action: "run-full-media-prep" },
+          { label: "Open Diagnostics", action: "go-diagnostics" }
+        ];
+      }
+
+      function showPipelineResultNotice(defaultSuccess = "Ready for review. Clips are available.") {
+        const pipeline = pipelineUiState();
+        if (pipeline.state === "needs_attention") {
+          return setNotice(pipeline.message, pipelineNoticeActions());
+        }
+        if (pipeline.state === "failed") {
+          return setNotice(pipeline.message, [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
+        }
+        return setNotice(defaultSuccess);
+      }
+
       function summarizeImport(result) {
         if (!result) return "No import result returned.";
         if (result.canceled) return "Import cancelled.";
@@ -2310,9 +2375,9 @@
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
         await refreshLiveData();
         if (result.code === 0) {
-          setNotice(`${imported.imported} video${imported.imported === 1 ? "" : "s"} imported and processed. Ready for review.`);
+          showPipelineResultNotice(`${imported.imported} video${imported.imported === 1 ? "" : "s"} imported and processed. Ready for review.`);
         } else {
-          setNotice("Import completed, but processing needs attention. Open Diagnostics or repair project media.", [{ label: "Open Diagnostics", action: "go-diagnostics" }, { label: "Repair Project Media", action: "repair-project" }]);
+          showPipelineResultNotice("Import completed, but processing needs attention.");
         }
         return result;
       }
@@ -2349,10 +2414,9 @@
         const parsed = result.parsed || {};
         await refreshLiveData();
         if (result.code === 0) {
-          setNotice(`Processing complete. ${parsed.queue_entries ?? "New"} clips are ready for review.`);
+          showPipelineResultNotice(`Processing complete. ${parsed.queue_entries ?? "New"} clips are ready for review.`);
         } else {
-          const detail = result.stderr || result.stdout || "Unknown processing error";
-          setNotice(`Processing failed: ${detail.slice(-500)}`);
+          showPipelineResultNotice("Processing needs attention.");
         }
       }
 
@@ -2376,9 +2440,9 @@
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
         await refreshLiveData();
         if (result.code === 0) {
-          setNotice("Ready for review. Pipeline, metadata, thumbnails, and local agents completed.");
+          showPipelineResultNotice("Ready for review. Pipeline, metadata, thumbnails, and local agents completed.");
         } else {
-          setNotice("Pipeline needs attention. Some older media references may have been skipped.", [{ label: "Open Diagnostics", action: "go-diagnostics" }, { label: "Repair Project Media", action: "repair-project" }]);
+          showPipelineResultNotice("Pipeline needs attention.");
         }
       }
 

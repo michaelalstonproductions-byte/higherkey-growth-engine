@@ -28,7 +28,7 @@ def main() -> int:
 
     summary = process_once(config)
     print(json.dumps(summary, indent=2, sort_keys=True))
-    return 0 if not summary["errors"] else 1
+    return 1 if summary.get("severity") == "fail" else 0
 
 
 if __name__ == "__main__":
