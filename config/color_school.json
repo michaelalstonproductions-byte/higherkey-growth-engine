@@ -1,0 +1,10 @@
+{
+  "target_score": 80,
+  "dark_threshold": 64,
+  "bright_threshold": 205,
+  "low_contrast_threshold": 28,
+  "high_contrast_threshold": 78,
+  "low_saturation_threshold": 0.16,
+  "high_saturation_threshold": 0.72,
+  "limit": null
+}

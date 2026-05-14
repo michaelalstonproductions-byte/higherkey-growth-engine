@@ -269,11 +269,15 @@ Build an unpacked macOS app:
 npm run dist:dir
 ```
 
+This removes the previous unpacked app before rebuilding and writes `dist/latest-build.json`.
+
 Build an unsigned DMG:
 
 ```bash
 npm run dist:unsigned
 ```
+
+This removes old `HigherKey Operator OS-*.dmg` and `.dmg.blockmap` files before packaging, so the DMG in `dist/` is replaced with the current local build every time.
 
 Clean package output:
 
@@ -375,7 +379,7 @@ DMG/release build checklist:
 - Run `npm run electron:verify`.
 - Run `npm run qa:full`.
 - Run `npm run dist:dir` and verify `dist/mac-arm64/HigherKey Operator OS.app`.
-- Run `npm run dist:unsigned` only when an unsigned DMG is needed for local testing.
+- Run `npm run dist:unsigned` when an unsigned DMG is needed; the script removes prior HigherKey DMGs first and writes `dist/latest-build.json`.
 - Launch the unpacked app and complete first-run setup against a writable project folder.
 - Confirm `dashboard/`, `electron/`, `growth_engine/`, `scripts/`, and `config/` are available from packaged resources.
 - Confirm `content_inbox/`, `analytics/`, `queue/`, `clips/`, `captions/`, `logs/`, and `out/` are writable in the runtime project folder.
@@ -418,7 +422,7 @@ For path/version verification without launching the app:
 npm run app:open-latest -- --dry-run
 ```
 
-The launcher opens `dist/mac-arm64/HigherKey Operator OS.app`, prints the app path, and verifies `package.json` and `config/release.json` versions match. If testing from a DMG, use the newest `dist/HigherKey Operator OS-<version>-arm64.dmg`.
+The launcher opens `dist/mac-arm64/HigherKey Operator OS.app`, prints the app path, checks `dist/latest-build.json` when present, and verifies `package.json` and `config/release.json` versions match. If testing from a DMG, run `npm run dist:unsigned` first so old HigherKey DMGs are removed and the remaining DMG is the current local build.
 
 ## Smoke Test
 

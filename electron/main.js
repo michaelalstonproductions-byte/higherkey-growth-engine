@@ -308,6 +308,8 @@ function createMenu() {
         { label: "Run Full Media Prep", click: () => runFullMediaPrep() },
         { label: "Run Orchestrator Once", click: () => runPython(["scripts/run_orchestrator.py", "--once"]) },
         { label: "Build Media Cache", click: () => runPython(["scripts/build_media_cache.py"]) },
+        { label: "Run Color School", click: () => runColorSchool() },
+        { label: "Run Audio School", click: () => runAudioSchool() },
         { label: "Run Diagnostics", click: () => runPython(["scripts/run_diagnostics.py"]) },
         { label: "Run Full QA", click: () => runPython(["scripts/run_full_qa.py"]) }
       ]
@@ -590,6 +592,24 @@ async function repairProjectMedia() {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function runColorSchool() {
+  const result = await runPython(["scripts/run_color_school.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function runAudioSchool() {
+  const result = await runPython(["scripts/run_audio_school.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function importAndProcessFootage() {
   const imported = await importFootage();
   if (imported.canceled || imported.imported === 0) {
@@ -865,6 +885,8 @@ function registerIpc() {
   ipcMain.handle("media:buildCache", () => runPython(["scripts/build_media_cache.py"]));
   ipcMain.handle("media:archiveTestMedia", archiveTestMedia);
   ipcMain.handle("media:repairProject", repairProjectMedia);
+  ipcMain.handle("school:runColor", runColorSchool);
+  ipcMain.handle("school:runAudio", runAudioSchool);
   ipcMain.handle("social:exportPacks", exportSocialPacks);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("qa:runFull", () => runPython(["scripts/run_full_qa.py"]));

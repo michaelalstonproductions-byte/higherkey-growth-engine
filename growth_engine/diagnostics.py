@@ -26,6 +26,10 @@ JSON_CHECKS = (
     ("analytics", "orchestration_graph.json", True),
     ("analytics", "recommendations.json", True),
     ("analytics", "media_cache.json", True),
+    ("analytics", "color_school_report.json", True),
+    ("analytics", "color_repair_plan.json", True),
+    ("analytics", "audio_school_report.json", True),
+    ("analytics", "audio_repair_plan.json", True),
 )
 
 
@@ -169,6 +173,49 @@ def check_packaging(root: Path) -> dict[str, Any]:
     return {"status": _status_from(checks), "checks": checks}
 
 
+def _school_report_check(config: AppConfig, name: str, report_filename: str, plan_filename: str) -> dict[str, Any]:
+    report_path = config.analytics_dir / report_filename
+    plan_path = config.analytics_dir / plan_filename
+    item: dict[str, Any] = {
+        "name": name,
+        "report_path": relative_path(report_path, config.root),
+        "repair_plan_path": relative_path(plan_path, config.root),
+        "status": "warn",
+        "last_run": None,
+        "summary": {},
+    }
+    if not report_path.exists():
+        item["message"] = "report not generated yet"
+        return item
+    try:
+        payload = json.loads(report_path.read_text(encoding="utf-8"))
+        readiness_status = payload.get("status", "warn")
+        item["status"] = "pass" if readiness_status in {"pass", "warn", "empty"} else "warn"
+        item["readiness_status"] = readiness_status
+        item["last_run"] = payload.get("updated_at")
+        item["summary"] = payload.get("summary", {})
+        item["read_only"] = payload.get("read_only", True)
+        item["local_only"] = payload.get("local_only", True)
+    except Exception as exc:  # noqa: BLE001
+        item["status"] = "fail"
+        item["message"] = "school report unreadable"
+        item["error"] = str(exc)
+    return item
+
+
+def check_schools(config: AppConfig) -> dict[str, Any]:
+    checks = [
+        {
+            "name": "ffprobe_available",
+            "status": "pass" if shutil.which("ffprobe") else "fail",
+            "path": shutil.which("ffprobe"),
+        },
+        _school_report_check(config, "color_school", "color_school_report.json", "color_repair_plan.json"),
+        _school_report_check(config, "audio_school", "audio_school_report.json", "audio_repair_plan.json"),
+    ]
+    return {"status": _status_from(checks), "checks": checks}
+
+
 def run_diagnostics(config: AppConfig, include_packaging: bool = True) -> dict[str, Any]:
     ensure_directories(config)
     groups: dict[str, Any] = {
@@ -176,6 +223,7 @@ def run_diagnostics(config: AppConfig, include_packaging: bool = True) -> dict[s
         "folders": check_folders(config),
         "json_files": check_json_files(config),
         "runtime": check_runtime(config),
+        "schools": check_schools(config),
     }
     if include_packaging:
         groups["packaging"] = check_packaging(config.root)
@@ -209,6 +257,16 @@ def command_result(name: str, args: list[str], root: Path, timeout: int = 180) -
             "returncode": result.returncode,
             "stdout_tail": result.stdout[-4000:],
             "stderr_tail": result.stderr[-4000:],
+        }
+    except subprocess.TimeoutExpired as exc:
+        return {
+            "name": name,
+            "status": "fail",
+            "returncode": None,
+            "timeout_seconds": timeout,
+            "stdout_tail": (exc.stdout or "")[-4000:] if isinstance(exc.stdout, str) else "",
+            "stderr_tail": (exc.stderr or "")[-4000:] if isinstance(exc.stderr, str) else "",
+            "error": f"timed out after {timeout} seconds",
         }
     except Exception as exc:  # noqa: BLE001
         return {"name": name, "status": "fail", "error": str(exc)}

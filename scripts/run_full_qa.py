@@ -99,6 +99,25 @@ def external_api_scan(root: Path) -> dict[str, object]:
     return {"name": "external_api_scan", "status": "pass" if not risky else "fail", "hits": hits, "risky_hits": risky}
 
 
+def qa_stage(name: str, args: list[str], root: Path, timeout: int = 180) -> dict[str, object]:
+    print(f"[qa] {name}", flush=True)
+    return command_result(name, args, root, timeout=timeout)
+
+
+def append_stage(results: list[dict[str, object]], result: dict[str, object], config) -> None:
+    results.append(result)
+    payload = {
+        "version": 1,
+        "updated_at": utc_now(),
+        "local_only": True,
+        "status": summarize_report(results),
+        "root": str(config.root),
+        "in_progress": True,
+        "results": results,
+    }
+    save_json(config.analytics_dir / "qa_report.json", payload)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run HigherKey full local QA")
     parser.add_argument("--root", default=".", help="Project root. Defaults to current directory.")
@@ -109,18 +128,24 @@ def main() -> int:
     config = load_config(root)
     results: list[dict[str, object]] = []
 
+    print("[qa] diagnostics", flush=True)
     diagnostics = run_diagnostics(config)
-    results.append({"name": "diagnostics", "status": diagnostics["status"], "summary": diagnostics.get("status")})
-    results.append(command_result("py_compile", ["python3", "-m", "py_compile", *[str(path) for path in sorted(root.glob("growth_engine/*.py"))], *[str(path) for path in sorted(root.glob("scripts/*.py"))]], root))
+    append_stage(results, {"name": "diagnostics", "status": diagnostics["status"], "summary": diagnostics.get("status")}, config)
+    append_stage(results, qa_stage("py_compile", ["python3", "-m", "py_compile", *[str(path) for path in sorted(root.glob("growth_engine/*.py"))], *[str(path) for path in sorted(root.glob("scripts/*.py"))]], root, timeout=120), config)
     if not args.skip_smoke:
-        results.append(command_result("smoke_test", ["python3", "scripts/smoke_test.py"], root, timeout=240))
-    results.append(command_result("pipeline_once", ["python3", "scripts/run_pipeline.py"], root))
-    results.append(command_result("daemon_once", ["python3", "scripts/watch_daemon.py", "--once"], root))
-    results.append(command_result("orchestrator_once", ["python3", "scripts/run_orchestrator.py", "--once"], root))
-    results.append(command_result("media_cache_build", ["python3", "scripts/build_media_cache.py", "--force", "--limit", "3"], root, timeout=180))
-    results.append(dashboard_js_check(root))
-    results.append(packaged_path_check(root))
-    results.append(external_api_scan(root))
+        append_stage(results, qa_stage("smoke_test", ["python3", "scripts/smoke_test.py"], root, timeout=240), config)
+    append_stage(results, qa_stage("pipeline_once", ["python3", "scripts/run_pipeline.py"], root, timeout=180), config)
+    append_stage(results, qa_stage("daemon_once", ["python3", "scripts/watch_daemon.py", "--once"], root, timeout=180), config)
+    append_stage(results, qa_stage("orchestrator_once", ["python3", "scripts/run_orchestrator.py", "--once"], root, timeout=180), config)
+    append_stage(results, qa_stage("media_cache_build", ["python3", "scripts/build_media_cache.py", "--force", "--limit", "3"], root, timeout=180), config)
+    append_stage(results, qa_stage("color_school_quick", ["python3", "scripts/run_color_school.py", "--quick"], root, timeout=90), config)
+    append_stage(results, qa_stage("audio_school_quick", ["python3", "scripts/run_audio_school.py", "--quick"], root, timeout=90), config)
+    print("[qa] dashboard_js_syntax", flush=True)
+    append_stage(results, dashboard_js_check(root), config)
+    print("[qa] packaged_path_verification", flush=True)
+    append_stage(results, packaged_path_check(root), config)
+    print("[qa] external_api_scan", flush=True)
+    append_stage(results, external_api_scan(root), config)
 
     payload = {
         "version": 1,
@@ -128,6 +153,7 @@ def main() -> int:
         "local_only": True,
         "status": summarize_report(results),
         "root": str(root),
+        "in_progress": False,
         "results": results,
     }
     save_json(config.analytics_dir / "qa_report.json", payload)

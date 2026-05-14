@@ -1,0 +1,10 @@
+{
+  "target_score": 80,
+  "low_energy_threshold": 0.018,
+  "silence_threshold": 0.006,
+  "silence_risk_ratio": 0.58,
+  "peak_clip_threshold": 0.96,
+  "sample_seconds": 20,
+  "preview_points": 80,
+  "limit": null
+}

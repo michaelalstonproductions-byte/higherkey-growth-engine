@@ -858,6 +858,10 @@
         orchestrationGraph: "../analytics/orchestration_graph.json",
         recommendations: "../analytics/recommendations.json",
         mediaCache: "../analytics/media_cache.json",
+        colorSchool: "../analytics/color_school_report.json",
+        colorPlan: "../analytics/color_repair_plan.json",
+        audioSchool: "../analytics/audio_school_report.json",
+        audioPlan: "../analytics/audio_repair_plan.json",
         diagnostics: "../analytics/diagnostics.json",
         qaReport: "../analytics/qa_report.json",
         repairReport: "../analytics/project_repair_report.json",
@@ -896,6 +900,10 @@
         recommendations: null,
         mediaCache: null,
         mediaCacheByClip: {},
+        colorSchool: null,
+        colorPlan: null,
+        audioSchool: null,
+        audioPlan: null,
         diagnostics: null,
         qaReport: null,
         repairReport: null,
@@ -1243,7 +1251,10 @@
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Score Breakdown</div></div>${entry ? scoreBreakdownHtml(entry) : `<div class="empty-state">No scoring data.</div>`}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Hook Timeline</div></div>${entry ? hookTimelineHtml(entry) : ""}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Recommendations</div></div>${recommendationHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Color School</div><span class="badge">Read-only</span></div>${colorSchoolHtml(entry)}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Audio School</div><span class="badge">Read-only</span></div>${audioSchoolHtml(entry)}</section>
             </div>
+            <section class="panel"><div class="panel-head"><div class="panel-title">School Controls</div></div>${schoolControlsHtml()}</section>
             <section class="panel"><div class="panel-head"><div class="panel-title">Compare Clips</div></div><div class="mini-strip">${miniClipStrip(productionEntries().slice(0, 12))}</div></section>
           </div>
         `;
@@ -1599,6 +1610,100 @@
         `;
       }
 
+      function schoolClip(report, entry) {
+        if (!report || !entry) return null;
+        const clips = Array.isArray(report.clips) ? report.clips : [];
+        return clips.find((item) => item.clip_id === entry.clip_id || item.clip_id === entry.id || item.clip_path === entry.clip_path) || null;
+      }
+
+      function schoolSummaryHtml(kind, report) {
+        const summary = report?.summary || {};
+        return `
+          <div class="metric"><span>${html(kind)} status</span><strong class="${statusClass(report?.status || "warn")}">${html(report?.status || "not run")}</strong></div>
+          <div class="metric"><span>Ready</span><strong>${html(summary.ready || 0)} / ${html(summary.clips || 0)}</strong></div>
+          <div class="metric"><span>Last run</span><strong>${html((report?.updated_at || "not run").replace("T", " ").slice(0, 16))}</strong></div>
+        `;
+      }
+
+      function schoolPanelHtml(kind, report, clipReport, command) {
+        const label = kind === "color" ? "Color Readiness" : "Audio Readiness";
+        const scoreValue = clipReport?.score ?? 0;
+        const findings = (clipReport?.findings || []).slice(0, 4);
+        const recommendations = (clipReport?.safe_recommendations || []).slice(0, 4);
+        if (!report) {
+          return `
+            <div class="empty-state">
+              <div>
+                <h2>${label} not run yet.</h2>
+                <p>${window.higherkey ? "Run the local school analysis to create safe read-only recommendations." : `Static browser mode: run ${command}`}</p>
+              </div>
+            </div>
+            ${schoolControlsHtml()}
+          `;
+        }
+        if (!clipReport) {
+          return `
+            ${schoolSummaryHtml(label, report)}
+            <div class="muted">Select a clip to see per-clip ${label.toLowerCase()} findings.</div>
+            ${schoolControlsHtml()}
+          `;
+        }
+        const status = clipReport.status || "unknown";
+        return `
+          <div class="metric"><span>${label}</span><strong class="${statusClass(status === "ready" ? "pass" : status === "review" ? "warn" : "fail")}">${html(scoreValue)}</strong></div>
+          <div class="metric"><span>Status</span><strong>${html(status)}</strong></div>
+          <div class="metric"><span>Preview plan</span><strong>${clipReport.marker_candidates?.length ? "recommended" : "none"}</strong></div>
+          ${kind === "audio" ? `<div class="metric"><span>Audio detected</span><strong>${clipReport.has_audio ? "yes" : "no"}</strong></div>` : ""}
+          <div class="section-title" style="margin-top:12px">Top Findings</div>
+          <div class="copy">${findings.map((item) => `• ${html(item)}`).join("<br>") || "No findings yet."}</div>
+          <div class="section-title" style="margin-top:12px">Safe Recommendations</div>
+          <div class="copy">${recommendations.map((item) => `• ${html(item)}`).join("<br>") || "No recommendations."}</div>
+          <div class="muted" style="margin-top:10px">${html(clipReport.social_readiness_notes || "Social Readiness pending.")}</div>
+        `;
+      }
+
+      function colorSchoolHtml(entry) {
+        return schoolPanelHtml("color", state.colorSchool, schoolClip(state.colorSchool, entry), "python3 scripts/run_color_school.py");
+      }
+
+      function audioSchoolHtml(entry) {
+        return schoolPanelHtml("audio", state.audioSchool, schoolClip(state.audioSchool, entry), "python3 scripts/run_audio_school.py");
+      }
+
+      function schoolCompactHtml(entry) {
+        return `
+          <section class="inspector-section"><h3>Color School</h3>${colorSchoolHtml(entry)}</section>
+          <section class="inspector-section"><h3>Audio School</h3>${audioSchoolHtml(entry)}</section>
+        `;
+      }
+
+      function schoolControlsHtml() {
+        return `
+          <div class="tools" style="padding:12px">
+            <button data-desktop-action="run-color-school">Run Color School</button>
+            <button data-desktop-action="run-audio-school">Run Audio School</button>
+            <button data-desktop-action="copy-color-notes">Copy Color Notes</button>
+            <button data-desktop-action="copy-audio-notes">Copy Audio Notes</button>
+            <button data-desktop-action="refresh-school-reports">Refresh School Reports</button>
+          </div>
+          <div class="muted" style="padding:0 12px 12px">${window.higherkey ? "Local read-only analysis. Reports are written to analytics and previews to out." : "Static mode commands: python3 scripts/run_color_school.py · python3 scripts/run_audio_school.py"}</div>
+        `;
+      }
+
+      function schoolNotes(kind) {
+        const entry = modeEntry() || activeEntry();
+        const report = kind === "color" ? schoolClip(state.colorSchool, entry) : schoolClip(state.audioSchool, entry);
+        const label = kind === "color" ? "Color Readiness" : "Audio Readiness";
+        if (!report) return `${label}: no report available.`;
+        const lines = [
+          `${label}: ${report.score ?? 0} (${report.status || "unknown"})`,
+          ...(report.findings || []).map((item) => `Finding: ${item}`),
+          ...(report.safe_recommendations || []).map((item) => `Safe recommendation: ${item}`),
+          report.social_readiness_notes ? `Social Readiness: ${report.social_readiness_notes}` : "",
+        ].filter(Boolean);
+        return lines.join("\n");
+      }
+
       function statusClass(status) {
         return `status-${["pass", "warn", "fail"].includes(status) ? status : "warn"}`;
       }
@@ -1610,7 +1715,7 @@
         if (!diagnostics && !qa && !buildWarnings.length) {
           return `<div class="muted">Run Diagnostics or Full QA to populate local health checks.</div>`;
         }
-        const groups = diagnostics ? ["tools", "folders", "json_files", "runtime", "packaging"].map((name) => ({
+        const groups = diagnostics ? ["tools", "folders", "json_files", "runtime", "schools", "packaging"].map((name) => ({
           name,
           status: diagnostics[name]?.status || "unknown"
         })) : [];
@@ -1823,6 +1928,8 @@
             <button data-desktop-action="run-full-media-prep">Run Full Media Prep</button>
             <button data-desktop-action="run-orchestrator">Run Agents</button>
             <button data-desktop-action="build-media-cache">Re-cache Media</button>
+            <button data-desktop-action="run-color-school">Run Color School</button>
+            <button data-desktop-action="run-audio-school">Run Audio School</button>
             <button data-desktop-action="run-diagnostics">Diagnostics</button>
             <button data-desktop-action="run-full-qa">Full QA</button>
             <button data-desktop-action="notify-test">Notify</button>
@@ -1896,9 +2003,9 @@
         } else if (mode === "queue") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Selected Clip</h3>${metadataPanel(entry)}</section><section class="inspector-section"><h3>Approval Controls</h3><div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div></section><section class="inspector-section"><h3>Caption / Package</h3><div class="copy">${html(entry.package?.caption || entry.caption?.caption || "No caption package loaded.")}</div></section>` : `<section class="inspector-section"><h3>Queue Inspector</h3>${realFootageOnboardingHtml()}</section>`;
         } else if (mode === "media") {
-          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Properties</h3>${metadataPanel(entry)}</section><section class="inspector-section"><h3>Analysis</h3>${mediaCacheHtml(entry)}</section>` : `<section class="inspector-section"><h3>Media Inspector</h3><div class="muted">No media selected.</div></section>`;
+          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Properties</h3>${metadataPanel(entry)}</section><section class="inspector-section"><h3>Analysis</h3>${mediaCacheHtml(entry)}</section>${schoolCompactHtml(entry)}` : `<section class="inspector-section"><h3>Media Inspector</h3><div class="muted">No media selected.</div></section>`;
         } else if (mode === "search") {
-          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section><section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div></section>`;
+          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section>${schoolCompactHtml(entry)}<section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div>${schoolControlsHtml()}</section>`;
         } else if (mode === "agents") {
           $("inspector").innerHTML = `<section class="inspector-section"><h3>Selected Agent Details</h3>${agentHealthHtml()}</section><section class="inspector-section"><h3>Performance</h3>${orchestrationGraphHtml()}</section><section class="inspector-section"><h3>Diagnostics</h3>${diagnosticsHtml()}</section>`;
         } else if (mode === "social") {
@@ -2275,6 +2382,33 @@
         }
       }
 
+      async function runSchool(kind) {
+        const label = kind === "color" ? "Color School" : "Audio School";
+        const command = kind === "color" ? "python3 scripts/run_color_school.py" : "python3 scripts/run_audio_school.py";
+        const method = kind === "color" ? "runColorSchool" : "runAudioSchool";
+        if (!window.higherkey?.[method]) {
+          return setNotice(`Static mode: run ${command} from the project root.`);
+        }
+        setNotice(`Running ${label} read-only analysis...`);
+        const result = await window.higherkey[method]();
+        await refreshLiveData();
+        if (result.code === 0) {
+          setNotice(`${label} report updated. Safe recommendations are ready.`);
+        } else {
+          setNotice(`${label} needs attention. Open Diagnostics for technical details.`, [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
+        }
+      }
+
+      async function copySchoolNotes(kind) {
+        const text = schoolNotes(kind);
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          setNotice(`${kind === "color" ? "Color" : "Audio"} notes copied.`);
+        } else {
+          setNotice(text);
+        }
+      }
+
       async function showAbout() {
         if (!window.higherkey) {
           const release = releaseInfo();
@@ -2321,6 +2455,11 @@
             if (action === "import-and-process") return importAndProcessFootage();
             if (action === "run-full-media-prep") return runFullMediaPrep();
             if (action === "repair-project") return repairProjectMedia();
+            if (action === "run-color-school") return runSchool("color");
+            if (action === "run-audio-school") return runSchool("audio");
+            if (action === "copy-color-notes") return copySchoolNotes("color");
+            if (action === "copy-audio-notes") return copySchoolNotes("audio");
+            if (action === "refresh-school-reports") { await refreshLiveData(); return setNotice("School reports refreshed."); }
             if (!window.higherkey) return setNotice(staticModeMessage());
             if (action === "pick-project") await selectProjectFolder();
             if (action === "use-current-repo") await useCurrentRepoProject();
@@ -2364,6 +2503,10 @@
           state.recommendations = await optionalJson(PATHS.recommendations, null);
           state.mediaCache = await optionalJson(PATHS.mediaCache, null);
           state.mediaCacheByClip = state.mediaCache?.clips || {};
+          state.colorSchool = await optionalJson(PATHS.colorSchool, null);
+          state.colorPlan = await optionalJson(PATHS.colorPlan, null);
+          state.audioSchool = await optionalJson(PATHS.audioSchool, null);
+          state.audioPlan = await optionalJson(PATHS.audioPlan, null);
           state.diagnostics = await optionalJson(PATHS.diagnostics, null);
           state.qaReport = await optionalJson(PATHS.qaReport, null);
           state.repairReport = await optionalJson(PATHS.repairReport, null);
@@ -2416,6 +2559,10 @@
           state.recommendations = await optionalJson(PATHS.recommendations, state.recommendations);
           state.mediaCache = await optionalJson(PATHS.mediaCache, state.mediaCache);
           state.mediaCacheByClip = state.mediaCache?.clips || {};
+          state.colorSchool = await optionalJson(PATHS.colorSchool, state.colorSchool);
+          state.colorPlan = await optionalJson(PATHS.colorPlan, state.colorPlan);
+          state.audioSchool = await optionalJson(PATHS.audioSchool, state.audioSchool);
+          state.audioPlan = await optionalJson(PATHS.audioPlan, state.audioPlan);
           state.diagnostics = await optionalJson(PATHS.diagnostics, state.diagnostics);
           state.qaReport = await optionalJson(PATHS.qaReport, state.qaReport);
           state.repairReport = await optionalJson(PATHS.repairReport, state.repairReport);

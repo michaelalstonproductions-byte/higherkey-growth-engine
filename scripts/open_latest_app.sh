@@ -53,12 +53,31 @@ NODE
 PACKAGE_VERSION="$(node -e 'const info=JSON.parse(process.argv[1]); process.stdout.write(info.packageVersion)' "$INFO_JSON")"
 RELEASE_VERSION="$(node -e 'const info=JSON.parse(process.argv[1]); process.stdout.write(info.releaseVersionRaw)' "$INFO_JSON")"
 WARNING_COUNT="$(node -e 'const info=JSON.parse(process.argv[1]); process.stdout.write(String(info.warnings.length))' "$INFO_JSON")"
+LATEST_MANIFEST="$ROOT/dist/latest-build.json"
 
 echo "HigherKey Operator OS latest local app:"
 echo "  App: $APP_PATH"
 echo "  package.json version: $PACKAGE_VERSION"
 echo "  config/release.json version: $RELEASE_VERSION"
 echo "  repo project: $ROOT"
+
+if [[ -f "$LATEST_MANIFEST" ]]; then
+  node - "$LATEST_MANIFEST" "$APP_PATH" <<'NODE'
+const fs = require("fs");
+const path = require("path");
+const manifestPath = process.argv[2];
+const expectedApp = process.argv[3];
+const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+console.log(`  latest build manifest: ${path.relative(process.cwd(), manifestPath)}`);
+console.log(`  latest build time: ${manifest.built_at || "unknown"}`);
+if (manifest.app_path && path.resolve(manifest.app_path) !== path.resolve(expectedApp)) {
+  console.error(`  WARNING: latest manifest app path differs: ${manifest.app_path}`);
+  process.exitCode = 1;
+}
+NODE
+else
+  echo "  latest build manifest: missing; run npm run dist:dir or npm run dist:unsigned"
+fi
 
 if [[ "$WARNING_COUNT" != "0" ]]; then
   node -e 'const info=JSON.parse(process.argv[1]); for (const warning of info.warnings) console.error("  WARNING: " + warning)' "$INFO_JSON"
