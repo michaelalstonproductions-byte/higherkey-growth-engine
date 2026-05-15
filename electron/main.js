@@ -801,6 +801,57 @@ async function getClientState() {
   }
 }
 
+async function buildClientWorkflow() {
+  return runPython(["scripts/build_client_workflow.py"]);
+}
+
+async function getClientWorkflow() {
+  const profile = await currentProfile();
+  const workflowPath = path.join(profile.projectRoot, "analytics", "client_workflow.json");
+  try {
+    const payload = JSON.parse(await fsp.readFile(workflowPath, "utf8"));
+    return { ok: true, path: workflowPath, workflow: payload };
+  } catch (error) {
+    return { ok: false, path: workflowPath, error: String(error?.message || error) };
+  }
+}
+
+async function createDemoProject() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  return runPython(["scripts/create_demo_project.py", "--target", activeProjectRoot]);
+}
+
+async function collectClientFeedback(options = {}) {
+  const args = ["scripts/collect_client_feedback.py"];
+  const fields = {
+    clientName: "--client-name",
+    sessionDate: "--session-date",
+    whatWorked: "--what-worked",
+    whatConfusedYou: "--what-confused-you",
+    bugsSeen: "--bugs-seen",
+    featureRequests: "--feature-requests",
+    uploadWorkflowRating: "--upload-workflow-rating",
+    overallRating: "--overall-rating",
+    notes: "--notes"
+  };
+  for (const [key, flag] of Object.entries(fields)) {
+    if (options[key]) args.push(flag, String(options[key]));
+  }
+  return runPython(args);
+}
+
+async function createIssueReport() {
+  return runPython(["scripts/create_issue_report.py"]);
+}
+
+async function openIssueReportFolder() {
+  const reportDir = path.join(activeProjectRoot, "out", "client_issue_report");
+  await fsp.mkdir(reportDir, { recursive: true });
+  await shell.openPath(reportDir);
+  return { path: reportDir, activeProjectRoot };
+}
+
 async function getStorageReport() {
   const profile = await currentProfile();
   return { ok: true, activeProjectRoot, report: await readAnalyticsJson("cache_report.json", {}), path: path.join(profile.projectRoot, "analytics", "cache_report.json") };
@@ -1246,6 +1297,13 @@ async function openContentInbox() {
   return { path: inbox, activeProjectRoot };
 }
 
+async function openSocialExportsFolder() {
+  const exportDir = path.join(activeProjectRoot, "out", "social_exports");
+  await fsp.mkdir(exportDir, { recursive: true });
+  await shell.openPath(exportDir);
+  return { path: exportDir, activeProjectRoot };
+}
+
 async function runFirstRunSetup(force = false) {
   if (process.env.HK_ELECTRON_SMOKE === "1") return { skipped: true, reason: "smoke mode" };
   const settings = await readSettings();
@@ -1376,6 +1434,12 @@ function registerIpc() {
   ipcMain.handle("runtime:runMaintenance", runMaintenance);
   ipcMain.handle("runtime:buildSnapshot", buildRuntimeSnapshot);
   ipcMain.handle("runtime:getClientState", getClientState);
+  ipcMain.handle("workflow:buildClient", buildClientWorkflow);
+  ipcMain.handle("workflow:getClient", getClientWorkflow);
+  ipcMain.handle("workflow:createDemoProject", createDemoProject);
+  ipcMain.handle("feedback:collectClient", (_event, options = {}) => collectClientFeedback(options));
+  ipcMain.handle("support:createIssueReport", createIssueReport);
+  ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);
   ipcMain.handle("storage:getReport", getStorageReport);
   ipcMain.handle("storage:getClient", getClientStorage);
   ipcMain.handle("storage:buildCleanupPlan", (_event, options = {}) => buildCleanupPlan(options));
@@ -1426,6 +1490,7 @@ function registerIpc() {
   ipcMain.handle("app:about", showAboutPanel);
   ipcMain.handle("setup:firstRun", () => runFirstRunSetup(true));
   ipcMain.handle("folder:openContentInbox", openContentInbox);
+  ipcMain.handle("folder:openSocialExports", openSocialExportsFolder);
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
   ipcMain.handle("notify:test", () => {
     notify("HigherKey notification test", "Local notifications are wired.");

@@ -58,6 +58,7 @@ def run_maintenance(root: Path, *, dry_run: bool = False, vacuum: bool = False, 
             ("launch_preflight", ["python3", "scripts/run_launch_preflight.py"]),
             ("build_runtime_snapshot", ["python3", "scripts/build_runtime_snapshot.py"]),
             ("build_task_snapshot", ["python3", "scripts/build_task_snapshot.py"]),
+            ("build_client_workflow", ["python3", "scripts/build_client_workflow.py"]),
             ("build_observability_report", ["python3", "scripts/build_observability_report.py"]),
             ("diagnostics", ["python3", "scripts/run_diagnostics.py"]),
         ]

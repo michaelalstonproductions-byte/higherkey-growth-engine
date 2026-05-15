@@ -80,7 +80,12 @@ def external_api_scan(root: Path) -> dict[str, object]:
         for hit in hits
         if not (
             "README.md" in hit["path"]
+            or "CLIENT_HANDOFF_GUIDE.md" in hit["path"]
+            or "BETA_READINESS_CHECKLIST.md" in hit["path"]
             or "scripts/run_full_qa.py" in hit["path"]
+            or "scripts/package_client_handoff.py" in hit["path"]
+            or "scripts/collect_client_feedback.py" in hit["path"]
+            or "scripts/create_issue_report.py" in hit["path"]
             or "growth_engine/local_api.py" in hit["path"]
             or "growth_engine/observability.py" in hit["path"]
             or "growth_engine/security.py" in hit["path"]
@@ -250,6 +255,53 @@ def version_contract_check(root: Path) -> dict[str, object]:
         return {"name": "version_contract_load", "status": "fail", "message": str(error)}
 
 
+def client_workflow_check(root: Path) -> dict[str, object]:
+    path = root / "analytics" / "client_workflow.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        required = {"current_step", "steps", "completed_steps", "next_action", "client_message", "warnings_summary", "last_updated", "demo_checklist"}
+        missing = sorted(required - set(payload))
+        step_ids = {step.get("id") for step in payload.get("steps", []) if isinstance(step, dict)}
+        expected = {"import_footage", "process_media", "review_clips", "approve_clips", "export_social_packs", "upload_manually"}
+        missing_steps = sorted(expected - step_ids)
+        checklist_ok = isinstance(payload.get("demo_checklist"), list) and len(payload.get("demo_checklist", [])) >= 5
+        status = "pass" if not missing and not missing_steps and checklist_ok else "fail"
+        return {"name": "client_workflow_validation", "status": status, "missing": missing, "missing_steps": missing_steps, "checklist_ok": checklist_ok, "current_step": payload.get("current_step")}
+    except Exception as error:
+        return {"name": "client_workflow_validation", "status": "fail", "message": str(error)}
+
+
+def client_handoff_check(root: Path) -> dict[str, object]:
+    required = [
+        root / "CLIENT_HANDOFF_GUIDE.md",
+        root / "BETA_READINESS_CHECKLIST.md",
+        root / "scripts" / "create_demo_project.py",
+        root / "scripts" / "package_client_handoff.py",
+        root / "scripts" / "collect_client_feedback.py",
+        root / "scripts" / "create_issue_report.py",
+        root / "config" / "client_demo.json",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    try:
+        demo_config = json.loads((root / "config" / "client_demo.json").read_text(encoding="utf-8"))
+    except Exception as error:
+        return {"name": "client_handoff_validation", "status": "fail", "message": str(error), "missing": missing}
+    flags_ok = bool(demo_config.get("demo_mode_enabled")) and bool(demo_config.get("show_simplified_workflow"))
+    status = "pass" if not missing and flags_ok else "fail"
+    return {"name": "client_handoff_validation", "status": status, "missing": missing, "flags_ok": flags_ok}
+
+
+def beta_checklist_check(root: Path) -> dict[str, object]:
+    path = root / "BETA_READINESS_CHECKLIST.md"
+    try:
+        text = path.read_text(encoding="utf-8")
+        required = ["install DMG", "Import", "Process", "Review", "Export", "Upload", "Diagnostics", "feedback"]
+        missing = [item for item in required if item.lower() not in text.lower()]
+        return {"name": "beta_checklist_validation", "status": "pass" if not missing else "fail", "missing": missing}
+    except Exception as error:
+        return {"name": "beta_checklist_validation", "status": "fail", "message": str(error)}
+
+
 def upgrade_fixture_check(root: Path) -> dict[str, object]:
     script = (
         "from pathlib import Path\n"
@@ -262,7 +314,7 @@ def upgrade_fixture_check(root: Path) -> dict[str, object]:
         "    root=Path(tmp)\n"
         "    config=load_config(root)\n"
         "    ensure_directories(config)\n"
-        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json'):\n"
+        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json','project_manifest.example.json','client_demo.json'):\n"
         "        shutil.copy(Path('config')/rel, root/'config'/rel)\n"
         "    save_json_file(root/'config'/'project_manifest.json', {'version':'V3.8','project_root':str(root),'local_only':True})\n"
         "    plan=build_upgrade_plan(config)\n"
@@ -475,6 +527,11 @@ def main() -> int:
     append_stage(results, task_queue_check(root), config)
     append_stage(results, qa_stage("task_worker_dry_run", ["python3", "scripts/run_task_worker.py", "--once", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("task_snapshot_build", ["python3", "scripts/build_task_snapshot.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("client_workflow_build", ["python3", "scripts/build_client_workflow.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("create_demo_project_dry_run", ["python3", "scripts/create_demo_project.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("package_client_handoff_dry_run", ["python3", "scripts/package_client_handoff.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("collect_client_feedback_dry_run", ["python3", "scripts/collect_client_feedback.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("create_issue_report_dry_run", ["python3", "scripts/create_issue_report.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("schedule_tasks_dry_run", ["python3", "scripts/schedule_tasks.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("full_media_prep_chain_dry_run", ["python3", "scripts/enqueue_full_media_prep.py", "--dry-run"], root, timeout=60), config)
     print("[qa] worker_runtime_validation", flush=True)
@@ -491,6 +548,7 @@ def main() -> int:
     append_stage(results, qa_stage("demo_reset_dry_run", ["python3", "scripts/reset_demo_workspace.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("project_archive_dry_run", ["python3", "scripts/archive_project_artifacts.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("runtime_snapshot_lifecycle", ["python3", "scripts/build_runtime_snapshot.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("client_workflow_lifecycle", ["python3", "scripts/build_client_workflow.py"], root, timeout=60), config)
     append_stage(results, qa_stage("observability_report_build", ["python3", "scripts/build_observability_report.py"], root, timeout=60), config)
     append_stage(results, qa_stage("state_reconciliation_dry_run", ["python3", "scripts/reconcile_runtime_state.py", "--dry-run", "--limit", "25"], root, timeout=60), config)
     append_stage(results, qa_stage("state_reconciliation_json", ["python3", "scripts/reconcile_runtime_state.py", "--dry-run", "--json", "--limit", "10"], root, timeout=60), config)
@@ -515,6 +573,12 @@ def main() -> int:
     append_stage(results, retention_policy_check(root), config)
     print("[qa] version_contract_load", flush=True)
     append_stage(results, version_contract_check(root), config)
+    print("[qa] client_workflow_validation", flush=True)
+    append_stage(results, client_workflow_check(root), config)
+    print("[qa] client_handoff_validation", flush=True)
+    append_stage(results, client_handoff_check(root), config)
+    print("[qa] beta_checklist_validation", flush=True)
+    append_stage(results, beta_checklist_check(root), config)
     print("[qa] upgrade_plan_fixture", flush=True)
     append_stage(results, upgrade_fixture_check(root), config)
     print("[qa] storage_apply_archive_fixture", flush=True)

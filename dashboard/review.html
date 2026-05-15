@@ -169,13 +169,14 @@
 
       .notice {
         display: none;
-        margin-top: 10px;
         border: 1px solid rgba(247, 184, 75, 0.35);
-        background: rgba(247, 184, 75, 0.1);
-        border-radius: 8px;
+        background: rgba(12, 9, 4, 0.92);
+        border-radius: 10px;
         color: #ffd792;
-        font-size: 13px;
+        font-size: 12px;
+        line-height: 1.35;
         padding: 8px 10px;
+        box-shadow: 0 16px 40px rgba(0,0,0,.28);
       }
       .notice.visible { display: block; }
       .notice .notice-actions { display: inline-flex; gap: 8px; margin-left: 10px; vertical-align: middle; }
@@ -511,6 +512,21 @@
       }
       .modal h2 { margin: 0 0 8px; }
       .modal p { color: var(--muted); line-height: 1.5; }
+      .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+      .modal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 14px; }
+      .modal-stat { border: 1px solid var(--line); border-radius: 10px; background: #080d14; padding: 12px; }
+      .modal-stat span { display: block; color: var(--muted); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; }
+      .modal-stat strong { display: block; color: #fff; font-size: 24px; margin-top: 6px; }
+      .demo-checklist { display: grid; gap: 8px; }
+      .demo-check { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; color: #cbd4e2; }
+      .demo-check.done { color: #d9ffe2; }
+      .demo-dot { width: 18px; height: 18px; border-radius: 999px; display: grid; place-items: center; border: 1px solid var(--line2); color: var(--muted); font-size: 11px; }
+      .demo-check.done .demo-dot { color: #051008; background: var(--good); border-color: var(--good); }
+      .processing-stages { display: grid; gap: 8px; margin-top: 14px; }
+      .processing-stage { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: center; color: #cbd4e2; }
+      .processing-stage.current { color: #fff; }
+      .processing-stage.done { color: #c9ffd7; }
+      .processing-stage .demo-dot { background: #0c121b; }
 
       .hidden { display: none !important; }
 
@@ -568,37 +584,37 @@
       .app{
         height:100vh;
         display:grid;
-        grid-template-columns:280px minmax(680px,1fr) 388px;
-        grid-template-rows:86px 1fr 30px;
+        grid-template-columns:236px minmax(760px,1fr) 390px;
+        grid-template-rows:76px minmax(0,1fr) 30px;
         gap:12px;
         padding:10px 10px 0;
       }
       .topbar{
         grid-column:1 / 4;
         display:grid;
-        grid-template-columns:280px 1fr auto;
+        grid-template-columns:300px minmax(320px,1fr) auto;
         align-items:center;
-        gap:16px;
+        gap:14px;
         border:1px solid var(--line);
         background:
           linear-gradient(180deg,rgba(20,25,34,.92),rgba(6,8,12,.96)),
           radial-gradient(circle at 0 0,rgba(242,53,63,.16),transparent 36%);
         border-radius:16px;
         box-shadow:var(--shadow);
-        padding:0 16px;
+        padding:0 14px;
       }
       .brand{display:flex;align-items:center;gap:14px;min-width:0}
-      .logo{width:44px;height:44px;filter:drop-shadow(0 0 16px rgba(242,53,63,.45))}
+      .logo{width:42px;height:42px;filter:drop-shadow(0 0 16px rgba(242,53,63,.45))}
       .logo svg{display:block;width:100%;height:100%}
       .brand-title{line-height:1.05;letter-spacing:.08em;text-transform:uppercase;font-weight:800;font-size:17px}
       .brand-title span{display:block;color:#d9dee8;font-weight:500;font-size:13px;letter-spacing:.16em;margin-top:3px}
       .session-line{color:var(--muted);font-size:11px;margin-top:5px;white-space:nowrap}
       .badge{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:999px;border:1px solid #31506f;color:#9ed0ff;background:#0c1724;font-size:11px;font-weight:700;letter-spacing:.03em;white-space:nowrap}
-      .project-line{display:grid;grid-template-columns:1fr 160px 126px;gap:20px;align-items:center;min-width:0}
+      .project-line{display:grid;grid-template-columns:minmax(0,1fr) 112px 96px;gap:14px;align-items:center;min-width:0}
       .kicker{color:#cbd4e2;text-transform:uppercase;font-size:11px;letter-spacing:.1em;margin-bottom:6px}
       .path{color:#eff4ff;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .status-green{color:var(--green);font-weight:800;font-size:13px}
-      .actions{display:flex;align-items:center;gap:8px}
+      .actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;min-width:0;white-space:nowrap}
       .btn,button.btn,select.select,input.search{
         border:1px solid var(--line2);
         background:linear-gradient(180deg,#121925,#0a0e15);
@@ -606,7 +622,7 @@
         border-radius:8px;
         box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
       }
-      .btn,button.btn{height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:.16s ease}
+      .btn,button.btn{height:38px;padding:0 13px;display:inline-flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:.16s ease;white-space:nowrap}
       .btn:hover{border-color:#546276;transform:translateY(-1px)}
       .btn.red,.btn.primary,button.primary{background:linear-gradient(180deg,#ec3743,#9e111e);border-color:#ff5862;color:#fff;box-shadow:0 0 22px rgba(242,53,63,.22)}
       .btn.green{background:linear-gradient(180deg,#1c6d36,#103f22);border-color:#36a957}
@@ -624,10 +640,10 @@
           radial-gradient(circle at 0 0,rgba(242,53,63,.12),transparent 30%);
         overflow:hidden;
       }
-      .nav{padding:14px;display:block}
+      .nav{padding:14px 12px;display:block}
       .nav-item,.tab.nav-item{
         width:100%;
-        height:48px;
+        height:46px;
         border-radius:10px;
         display:flex;
         align-items:center;
@@ -657,7 +673,7 @@
       .operator-card{border-top:1px solid var(--line);padding:14px;display:flex;gap:12px;align-items:center}
       .avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(145deg,#f4f4f4,#777);color:#333;display:grid;place-items:center;font-weight:900}
       .operator-meta{line-height:1.2}.operator-meta strong{display:block;font-size:13px}.operator-meta span{color:var(--muted);font-size:12px}
-      .main{grid-column:2;grid-row:2;display:grid;grid-template-rows:1.3fr 260px 210px;gap:12px;min-width:0}
+      .main{grid-column:2;grid-row:2;display:grid;grid-template-rows:1.3fr 260px 210px;gap:12px;min-width:0;min-height:0}
       .panel{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,rgba(15,20,29,.96),rgba(6,8,12,.96));box-shadow:0 12px 36px rgba(0,0,0,.25);overflow:hidden}
       .panel-head{height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;border-bottom:1px solid rgba(255,255,255,.06)}
       .panel-title{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#eef4ff;font-weight:800}
@@ -689,25 +705,31 @@
       .time-row{display:flex;justify-content:space-between;color:var(--muted);font-size:11px}.pills,.chips{display:flex;flex-wrap:wrap;gap:7px}.pill,.chip{padding:5px 9px;background:#162130;border:1px solid #27374c;border-radius:999px;color:#dce7f5;font-size:11px}.pill.green{background:#12321c;border-color:#1f6e36;color:#b9ffc9}.copy,.caption{color:#d9e1ec;font-size:13px;line-height:1.45}
       .side-icons{border-left:1px solid rgba(255,255,255,.07);background:#070a0e;display:flex;flex-direction:column;align-items:center;padding-top:18px;gap:22px;color:#d9e1ed}.side-icons div{width:32px;height:32px;display:grid;place-items:center;border-radius:8px}.side-icons div.active{color:var(--red);background:rgba(242,53,63,.12)}
       .footer{grid-column:1 / 4;grid-row:3;border:1px solid var(--line);border-bottom:0;border-radius:12px 12px 0 0;background:#080c12;display:flex;align-items:center;gap:28px;padding:0 14px;color:#9aa7b7;font-size:12px}.footer .ok{margin-left:auto;color:var(--green)}
-      .notice{position:fixed;left:300px;right:410px;top:104px;z-index:10;margin:0}.notice.visible{display:block}
+      .notice{position:fixed;left:258px;right:414px;bottom:42px;z-index:25;margin:0;max-width:780px;pointer-events:auto}.notice.visible{display:block}
       .hidden{display:none!important}.muted{color:var(--muted)}
-      .mode-workspace{grid-template-rows:none;overflow:hidden}
-      .view{display:grid;gap:12px;min-height:0;height:100%;overflow:hidden}
+      .mode-workspace{grid-template-rows:none;overflow:auto}
+      .view{display:grid;gap:12px;min-height:100%;height:auto;overflow:visible;padding-right:2px}
       .view-scroll{overflow:auto;min-height:0}
       .kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
-      .kpi-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,rgba(15,20,29,.96),rgba(6,8,12,.96));padding:14px;min-height:104px}
+      .kpi-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,rgba(15,20,29,.96),rgba(6,8,12,.96));padding:14px;min-height:104px;box-shadow:inset 0 1px 0 rgba(255,255,255,.03)}
       .kpi-card span{display:block;color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:800}.kpi-card strong{display:block;color:#fff;font-size:30px;margin-top:10px}.kpi-card p{color:var(--muted);font-size:12px;line-height:1.35;margin:6px 0 0}
-      .dashboard-view{grid-template-rows:auto 1fr 1fr}.dashboard-grid-main{display:grid;grid-template-columns:1.15fr .85fr;gap:12px;min-height:0}.dashboard-grid-secondary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;min-height:0}
-      .feature-preview{position:relative;min-height:260px}.feature-preview .hero{inset:42px 0 0}.feature-copy{position:absolute;left:18px;right:18px;bottom:18px;z-index:3}.feature-copy h2{font-size:28px;margin:0 0 8px}.feature-copy p{color:#c7d1df;margin:0}
+      .dashboard-view{grid-template-rows:auto auto minmax(280px,1fr) minmax(180px,.7fr)}
+      .dashboard-view>.kpi-grid{grid-template-columns:repeat(8,minmax(0,1fr))}
+      .dashboard-view>.kpi-grid .kpi-card{min-height:96px;padding:13px}
+      .dashboard-view>.kpi-grid .kpi-card strong{font-size:25px}
+      .dashboard-grid-main{display:grid;grid-template-columns:1.35fr .65fr;gap:12px;min-height:0}
+      .dashboard-grid-secondary{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;min-height:0}
+      .client-workflow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.workflow-step{border:1px solid var(--line);border-radius:12px;background:linear-gradient(180deg,#101722,#070a0e);padding:12px;min-height:94px}.workflow-step span{color:#778394;font-size:10px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}.workflow-step strong{display:block;font-size:14px;margin:8px 0;color:#f4f7fb}.workflow-step p{color:#9aa7b7;font-size:12px;line-height:1.35;margin:0}.workflow-step.completed{border-color:rgba(84,224,120,.4)}.workflow-step.current{border-color:rgba(239,51,71,.65);box-shadow:0 0 0 1px rgba(239,51,71,.12),0 18px 50px rgba(239,51,71,.08)}.workflow-step.next{opacity:.72}.client-action-panel{display:grid;gap:12px}.client-action-panel h2{margin:0;font-size:20px}.client-action-panel p{margin:0;color:#c7d1df}.client-progress{border:1px solid var(--line);border-radius:999px;height:10px;overflow:hidden;background:#111722}.client-progress div{height:100%;background:linear-gradient(90deg,var(--accent),#ff7a82)}
+      .feature-preview{position:relative;min-height:300px}.feature-preview .hero{inset:42px 0 0}.feature-copy{position:absolute;left:18px;right:18px;bottom:18px;z-index:3}.feature-copy h2{font-size:28px;margin:0 0 8px}.feature-copy p{color:#c7d1df;margin:0}
       .data-table{width:100%;border-collapse:collapse;font-size:12px}.data-table th{color:var(--muted);font-size:11px;letter-spacing:.1em;text-transform:uppercase;text-align:left;padding:10px;border-bottom:1px solid var(--line)}.data-table td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,.06);color:#dce5f1;vertical-align:middle}.data-table tr{cursor:pointer}.data-table tr:hover,.data-table tr.active{background:rgba(242,53,63,.09)}
       .table-thumb{width:58px;height:34px;border-radius:6px;background:#101824;overflow:hidden;border:1px solid var(--line)}.table-thumb img{width:100%;height:100%;object-fit:cover}
-      .queue-view{grid-template-rows:auto auto 1fr;grid-template-columns:1fr 360px}.queue-view .kpi-grid,.queue-toolbar{grid-column:1 / 3}.queue-table-panel{min-height:0}.queue-detail{min-height:0}
+      .queue-view{grid-template-rows:auto auto minmax(0,1fr);grid-template-columns:minmax(520px,1fr) 420px}.queue-view .kpi-grid,.queue-toolbar{grid-column:1 / 3}.queue-view>.kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.queue-table-panel{min-height:0}.queue-detail{min-height:0}
       .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.toolbar-tabs{display:flex;gap:8px;margin-right:auto}.toolbar-tabs .btn.active{border-color:#ff5862;background:rgba(242,53,63,.18)}
       .media-view{grid-template-rows:auto 320px 1fr}.media-library-head{display:flex;justify-content:space-between;align-items:center}.asset-preview{display:grid;grid-template-columns:minmax(320px,1fr) 360px;gap:12px;min-height:0}.asset-stage{position:relative;background:#02050a;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:grid;place-items:center}.asset-stage video{width:100%;height:100%;object-fit:contain}.asset-stage img{width:100%;height:100%;object-fit:cover}
-      .intelligence-view{grid-template-rows:auto 1fr 160px}.inner-tabs{display:flex;gap:8px;overflow:auto}.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}.chart-bars{height:160px;display:flex;align-items:end;gap:6px}.chart-bar{flex:1;background:linear-gradient(180deg,#ff4b55,#65121a);border-radius:5px 5px 0 0;min-height:8px}.breakdown-row{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center;margin:10px 0}.breakdown-track{height:8px;background:#253142;border-radius:999px;overflow:hidden}.breakdown-track div{height:100%;background:linear-gradient(90deg,var(--red),#ff7a82)}
-      .agents-view{grid-template-rows:auto 1fr 180px}.agent-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-height:0}.agent-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:14px}.graph-lane{display:flex;gap:10px;align-items:center;overflow:auto}.graph-step{min-width:150px;border:1px solid var(--line);border-radius:10px;padding:12px;background:#111a27}.graph-arrow{color:var(--dim)}
-      .analytics-view{grid-template-rows:auto 1fr 1fr}.analytics-charts{display:grid;grid-template-columns:1.2fr .8fr;gap:12px;min-height:0}.empty-state{display:grid;place-items:center;text-align:center;min-height:220px;color:var(--muted);padding:24px}.empty-state h2{color:#fff;margin:0 0 8px}
-      .social-view{grid-template-rows:auto 1fr 190px}.platform-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.platform-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:16px;display:grid;gap:10px}.platform-card h2{margin:0}.checklist{display:grid;gap:7px;color:#c9d4e3;font-size:13px}
+      .intelligence-view{grid-template-rows:auto minmax(0,1fr) auto auto}.inner-tabs{display:flex;gap:8px;overflow:auto}.inner-tabs .btn.active{border-color:#ff5862;background:rgba(242,53,63,.18)}.analysis-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}.chart-bars{height:160px;display:flex;align-items:end;gap:6px}.chart-bar{flex:1;background:linear-gradient(180deg,#ff4b55,#65121a);border-radius:5px 5px 0 0;min-height:8px}.breakdown-row{display:grid;grid-template-columns:120px 1fr 44px;gap:10px;align-items:center;margin:10px 0}.breakdown-track{height:8px;background:#253142;border-radius:999px;overflow:hidden}.breakdown-track div{height:100%;background:linear-gradient(90deg,var(--red),#ff7a82)}
+      .agents-view{grid-template-rows:auto minmax(0,1fr) 220px}.agents-view>.kpi-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.agent-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;min-height:0}.agent-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:14px}.graph-lane{display:flex;gap:10px;align-items:center;overflow:auto}.graph-step{min-width:150px;border:1px solid var(--line);border-radius:10px;padding:12px;background:#111a27}.graph-arrow{color:var(--dim)}
+      .analytics-view{grid-template-rows:auto minmax(300px,1fr) minmax(180px,.65fr)}.analytics-view>.kpi-grid{grid-template-columns:repeat(6,minmax(0,1fr))}.analytics-charts{display:grid;grid-template-columns:1.2fr .8fr;gap:12px;min-height:0}.empty-state{display:grid;place-items:center;text-align:center;min-height:220px;color:var(--muted);padding:24px}.empty-state h2{color:#fff;margin:0 0 8px}
+      .social-view{grid-template-rows:auto minmax(260px,1fr) 170px}.platform-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.platform-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:16px;display:grid;gap:10px;min-height:220px}.platform-card h2{margin:0}.checklist{display:grid;gap:7px;color:#c9d4e3;font-size:13px}
       .diagnostics-view{grid-template-rows:auto 1fr 190px}.diagnostics-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}.json-panel{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;white-space:pre-wrap;color:#c7d1df;overflow:auto;max-height:100%;background:#05080d;border:1px solid var(--line);border-radius:10px;padding:12px}
       .settings-view{grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr))}.settings-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:16px;overflow:auto}.settings-card h2{font-size:16px;margin:0 0 12px}.setting-row{display:flex;justify-content:space-between;gap:14px;color:#b9c4d2;border-top:1px solid rgba(255,255,255,.06);padding:10px 0}
       .mini-strip{display:flex;gap:10px;overflow:auto}.mini-clip{min-width:120px;border:1px solid var(--line);border-radius:10px;background:#0b1018;overflow:hidden}.mini-clip .thumb{height:70px;width:100%}.mini-clip div:last-child{padding:8px;font-size:11px;color:#dce5f1}
@@ -727,8 +749,9 @@
                   <stop offset="1" stop-color="#8d0913"></stop>
                 </linearGradient>
               </defs>
-              <path d="M10 18 L84 8 L63 35 L93 45 L28 91 L43 58 Z" fill="url(#hkRed)"></path>
-              <path d="M28 27 L66 19 L50 39 L72 45 L36 70 L44 52 Z" fill="#0a0d12" opacity=".75"></path>
+              <rect x="11" y="11" width="78" height="78" rx="14" fill="url(#hkRed)"></rect>
+              <rect x="14" y="14" width="72" height="72" rx="12" fill="none" stroke="rgba(255,255,255,.22)" stroke-width="2"></rect>
+              <text x="50" y="59" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,'SF Pro Display',Arial,sans-serif" font-size="33" font-weight="900" fill="#fff" letter-spacing="-2">HK</text>
             </svg>
           </div>
           <div>
@@ -756,7 +779,7 @@
         <div class="actions">
           <button class="btn red" id="importFootage">Import Footage</button>
           <button class="btn red" id="importAndProcess">Import & Process</button>
-          <button class="btn" id="runFullMediaPrep">Run Full Media Prep</button>
+          <button class="btn" id="runFullMediaPrep">Process Media</button>
           <button class="btn" id="exportApproved">Export Approved</button>
           <button class="btn" id="selectProject">Select Project</button>
           <button class="btn icon-btn" id="aboutApp">More</button>
@@ -825,6 +848,9 @@
       </footer>
 
       <div class="notice" id="notice"></div>
+      <div class="overlay" id="clientModalOverlay">
+        <div class="modal" id="clientModal"></div>
+      </div>
       <div class="hidden" id="projectStatus"></div>
       <button class="hidden" id="batchReject"></button>
       <button class="hidden" id="recoverSession"></button>
@@ -833,7 +859,7 @@
     <div class="overlay visible" id="startupOverlay">
       <div class="modal">
         <h2>Operator workspace loading</h2>
-        <p id="startupText">Reading local queue, metadata, analytics, and activity files.</p>
+        <p id="startupText">Preparing your local media workspace.</p>
         <div class="tools">
           <button id="closeStartup">Enter Workspace</button>
           <button id="startupRecover">Recover Last Clip</button>
@@ -870,6 +896,8 @@
         socialHistory: "../analytics/social_export_history.json",
         socialPresets: "../config/social_platform_presets.json",
         clientTasks: "../analytics/client_tasks.json",
+        clientWorkflow: "../analytics/client_workflow.json",
+        clientDemo: "../config/client_demo.json",
         localApiStatus: "../analytics/local_api_status.json"
       };
       const REVIEW_KEY = "higherkey.review_status.v1";
@@ -913,6 +941,8 @@
         socialHistory: null,
         socialPresets: null,
         clientTasks: null,
+        clientWorkflow: null,
+        clientDemo: null,
         localApiStatus: null,
         release: null,
         appInfo: null,
@@ -974,6 +1004,128 @@
             if (button.dataset.noticeAction === "run-full-media-prep") await runFullMediaPrep();
           };
         });
+      }
+      function showClientModal(title, body, actions = []) {
+        const overlay = $("clientModalOverlay");
+        const modal = $("clientModal");
+        if (!overlay || !modal) return;
+        modal.innerHTML = `<h2>${html(title)}</h2>${body}${actions.length ? `<div class="modal-actions">${actions.map((action) => `<button class="btn ${action.primary ? "red" : ""}" data-modal-action="${html(action.action)}">${html(action.label)}</button>`).join("")}</div>` : ""}`;
+        overlay.classList.add("visible");
+        document.querySelectorAll("[data-modal-action]").forEach((button) => {
+          button.onclick = async () => {
+            const action = button.dataset.modalAction;
+            if (action === "close") return closeClientModal();
+            closeClientModal();
+            if (action === "process-now") return runFullMediaPrep();
+            if (action === "import-more") return importFootage();
+            if (action === "import-footage") return importFootage();
+            if (action === "import-and-process") return importAndProcessFootage();
+            if (action === "review-clips") { state.mode = "queue"; persistWorkspace(); return render(); }
+            if (action === "open-social") { state.mode = "social"; persistWorkspace(); return render(); }
+            if (action === "open-inbox") return openInbox();
+            if (action === "reset-demo-soft") return resetDemoWorkspace();
+          };
+        });
+      }
+      function closeClientModal() {
+        $("clientModalOverlay")?.classList.remove("visible");
+      }
+      function demoChecklistHtml() {
+        const workflowChecks = state.clientWorkflow?.demo_checklist;
+        const entries = productionEntries();
+        const approved = approvedEntries().length;
+        const social = state.socialManifest?.count || 0;
+        const checks = Array.isArray(workflowChecks) && workflowChecks.length
+          ? workflowChecks.map((item) => [item.label, item.completed])
+          : [
+            ["Import one real video", entries.length > 0],
+            ["Run processing", entries.length > 0 && (state.status?.state || state.status?.status)],
+            ["Approve one clip", approved > 0],
+            ["Export social packs", social > 0],
+            ["Open export folder", social > 0]
+          ];
+        return `<div class="demo-checklist">${checks.map(([label, done]) => `<div class="demo-check ${done ? "done" : ""}"><span class="demo-dot">${done ? "✓" : ""}</span><span>${html(label)}</span></div>`).join("")}</div>`;
+      }
+      function betaReadinessChecklistHtml() {
+        const entries = productionEntries();
+        const checks = [
+          ["App launches", Boolean(state.appInfo || !window.higherkey)],
+          ["Project selected", Boolean(state.appInfo?.activeProjectRoot || state.clientWorkflow)],
+          ["Footage imported", entries.length > 0],
+          ["Clips generated", entries.length > 0],
+          ["Social packs exported", Boolean(state.socialManifest?.count)],
+          ["Diagnostics healthy", ["pass", "healthy", "warn"].includes(String(state.diagnostics?.status || "").toLowerCase())],
+          ["Handoff guide available", true]
+        ];
+        return `<div class="demo-checklist">${checks.map(([label, done]) => `<div class="demo-check ${done ? "done" : ""}"><span class="demo-dot">${done ? "✓" : ""}</span><span>${html(label)}</span></div>`).join("")}</div>`;
+      }
+      function firstRunGuardrailsHtml() {
+        const project = state.appInfo?.activeProjectRoot || "";
+        const defaultEmpty = Boolean(window.higherkey && !productionEntries().length && /Application Support\/HigherKey Operator OS\/HigherKey Operator OS Project/.test(project));
+        if (!defaultEmpty) return "";
+        return `
+          <section class="panel onboarding-panel">
+            <div class="panel-head"><div class="panel-title">Choose where this project should live</div><div>Client beta setup</div></div>
+            <div class="empty-state">
+              <h2>Choose a project folder before importing footage.</h2>
+              <p>HigherKey keeps footage, clips, captions, exports, and reports inside the selected local project folder.</p>
+              <div class="toolbar">
+                <button class="btn red" data-desktop-action="create-demo-project">Create Demo Project</button>
+                <button class="btn" data-desktop-action="pick-project">Select Existing Project</button>
+                <button class="btn" data-desktop-action="use-default-project">Use Default Local Project</button>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+      function clientTroubleshootingHtml() {
+        return `
+          <div class="demo-checklist">
+            <div class="demo-check"><span class="demo-dot">?</span><span><strong>Import not working</strong><br><span class="muted">Launch the desktop app and choose MP4, MOV, or M4V files.</span></span></div>
+            <div class="demo-check"><span class="demo-dot">?</span><span><strong>Processing taking long</strong><br><span class="muted">Keep the app open until the progress says ready for review.</span></span></div>
+            <div class="demo-check"><span class="demo-dot">?</span><span><strong>No clips showing</strong><br><span class="muted">Import footage, then click Process Media.</span></span></div>
+            <div class="demo-check"><span class="demo-dot">?</span><span><strong>Export folder missing</strong><br><span class="muted">Generate social packs, then open the export folder.</span></span></div>
+            <button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button>
+            <button class="btn" data-desktop-action="create-issue-report">Create Support Package</button>
+            <button class="btn" data-desktop-action="open-issue-report">Open Support Package</button>
+          </div>
+        `;
+      }
+      function demoWizardHtml() {
+        return `
+          <section class="panel">
+            <div class="panel-head"><div class="panel-title">Demo Import Wizard</div><div>${state.clientDemo?.demo_mode_enabled === false ? "Client workflow" : "Client Demo Mode"} · Local-first · Manual upload</div></div>
+            ${clientWorkflowHtml().replace("<section class=\"panel\">", "<div>").replace("</section>", "</div>")}
+          </section>
+        `;
+      }
+      function showImportResultModal(result) {
+        const selected = (result?.importedFiles?.length || 0) + (result?.skipped?.length || 0) + (result?.errors?.length || 0);
+        const imported = result?.imported || result?.importedFiles?.length || 0;
+        const skipped = result?.skipped?.length || 0;
+        const errors = result?.errors?.length || 0;
+        const body = `
+          <p>${html(imported ? "Footage imported successfully. HigherKey is ready to process it into review clips." : result?.canceled ? "Import was cancelled." : "No supported videos were imported.")}</p>
+          <div class="modal-grid">
+            <div class="modal-stat"><span>Selected</span><strong>${html(selected)}</strong></div>
+            <div class="modal-stat"><span>Imported</span><strong>${html(imported)}</strong></div>
+            <div class="modal-stat"><span>Skipped</span><strong>${html(skipped + errors)}</strong></div>
+          </div>
+          ${errors ? `<p>Some files need attention. Open Diagnostics for details.</p>` : `<p>Ready to process. No terminal or external apps are needed.</p>`}
+        `;
+        showClientModal("Import Footage", body, [
+          { label: "Process Now", action: "process-now", primary: true },
+          { label: "Import More", action: "import-more" },
+          { label: "Close", action: "close" }
+        ]);
+      }
+      function showProcessingModal(current = "Preparing project", done = []) {
+        const stages = ["Preparing project", "Creating clips", "Building previews", "Analyzing video", "Analyzing color/audio", "Preparing social packs", "Ready for review"];
+        const body = `
+          <p>HigherKey is preparing local clips, previews, recommendations, and manual-upload export packs.</p>
+          <div class="processing-stages">${stages.map((stage) => `<div class="processing-stage ${done.includes(stage) ? "done" : stage === current ? "current" : ""}"><span class="demo-dot">${done.includes(stage) ? "✓" : ""}</span><span>${html(stage)}</span></div>`).join("")}</div>
+        `;
+        showClientModal("Processing Media", body, [{ label: "Run In Background", action: "close" }]);
       }
       function staticModeMessage() {
         return "Static browser mode: import buttons are disabled. Launch the desktop app with npm run app:open-latest to import footage.";
@@ -1120,6 +1272,70 @@
           <div class="kpi-card"><span>${html(label)}</span><strong>${html(value)}</strong><p>${html(note || "")}</p></div>
         `).join("")}</div>`;
       }
+      const CLIENT_WORKFLOW_FALLBACK = [
+        ["import_footage", "Import Footage"],
+        ["process_media", "Process Media"],
+        ["review_clips", "Review Clips"],
+        ["approve_clips", "Approve Best Clips"],
+        ["export_social_packs", "Export Social Packs"],
+        ["upload_manually", "Upload Manually"]
+      ];
+      function clientWorkflow() {
+        const workflow = state.clientWorkflow || {};
+        const steps = Array.isArray(workflow.steps) && workflow.steps.length
+          ? workflow.steps
+          : CLIENT_WORKFLOW_FALLBACK.map(([id, label], index) => ({ id, label, status: index === 0 ? "current" : "next", completed: false }));
+        return {
+          ...workflow,
+          steps,
+          current_step: workflow.current_step || steps.find((step) => step.status === "current")?.id || "import_footage",
+          next_action: workflow.next_action || "Import Footage",
+          client_message: workflow.client_message || "Import real footage to begin.",
+          warnings_summary: workflow.warnings_summary || []
+        };
+      }
+      function clientWorkflowHtml() {
+        const workflow = clientWorkflow();
+        const byId = Object.fromEntries(workflow.steps.map((step) => [step.id, step]));
+        const dashboardSteps = [
+          { id: "import_footage", label: "Import Footage", status: byId.import_footage?.status || "current", completed: byId.import_footage?.completed },
+          { id: "process_media", label: "Process Media", status: byId.process_media?.status || "next", completed: byId.process_media?.completed },
+          { id: "review_clips", label: "Review Clips", status: byId.approve_clips?.status === "current" ? "current" : byId.review_clips?.status || "next", completed: Boolean(byId.review_clips?.completed || byId.approve_clips?.completed) },
+          { id: "export_social_packs", label: "Export Social Packs", status: byId.export_social_packs?.status || "next", completed: byId.export_social_packs?.completed },
+          { id: "upload_manually", label: "Upload Manually", status: byId.upload_manually?.status || "next", completed: byId.upload_manually?.completed }
+        ];
+        const notes = {
+          import_footage: "Choose MP4, MOV, or M4V footage.",
+          process_media: "Create clips, previews, and recommendations.",
+          review_clips: "Review and approve the best clips.",
+          export_social_packs: "Prepare local platform packs.",
+          upload_manually: "Upload prepared files yourself."
+        };
+        return `
+          <section class="panel">
+            <div class="panel-head"><div class="panel-title">Client Workflow</div><div>${html(workflow.next_action)}</div></div>
+            <div class="client-workflow">
+              ${dashboardSteps.map((step, index) => `<div class="workflow-step ${html(step.status || "next")}"><span>Step ${index + 1}</span><strong>${html(step.label)}</strong><p>${html(notes[step.id] || "")}</p></div>`).join("")}
+            </div>
+          </section>
+        `;
+      }
+      function clientActionPanelHtml() {
+        const workflow = clientWorkflow();
+        const progress = Math.round(((workflow.completed_steps || []).length / CLIENT_WORKFLOW_FALLBACK.length) * 100);
+        return `
+          <div class="client-action-panel">
+            <div>
+              <span class="eyebrow">Next Action</span>
+              <h2>${html(workflow.next_action)}</h2>
+              <p>${html(workflow.client_message)}</p>
+            </div>
+            <div class="client-progress"><div style="width:${Math.max(4, Math.min(100, progress))}%"></div></div>
+            ${workflow.warnings_summary?.length ? `<div class="muted">${html(workflow.warnings_summary[0])}</div>` : ""}
+            ${quickActionsHtml()}
+          </div>
+        `;
+      }
       function clipThumb(entry, className = "thumb") {
         const cache = cacheFor(entry);
         if (cache?.thumbnail_path) return `<div class="${className}"><img src="../${html(cache.thumbnail_path)}" alt=""></div>`;
@@ -1171,12 +1387,12 @@
             <p>Choose MP4, MOV, or M4V files. HigherKey will generate clips, captions, thumbnails, intelligence, and social export packs.</p>
             </div>
             <ol>
-              <li>Open Content Inbox</li>
-              <li>Drop in MP4/MOV/M4V footage</li>
-              <li>Run Pipeline</li>
-              <li>Build Media Cache</li>
+              <li>Import Footage</li>
+              <li>Process Media</li>
               <li>Review Clips</li>
+              <li>Approve Best Clips</li>
               <li>Export Social Packs</li>
+              <li>Upload Manually</li>
             </ol>
             <div class="tools">
               <button class="btn red" data-desktop-action="import-footage">Import Footage</button>
@@ -1210,6 +1426,8 @@
         if (!entries.length) {
           return `
             <div class="view dashboard-view production-empty">
+              ${firstRunGuardrailsHtml()}
+              ${demoWizardHtml()}
               ${kpiCards([
                 ["Total Clips", state.entries.length, hiddenTestCount() ? `${hiddenTestCount()} test/generated hidden` : "No real clips yet"],
                 ["Approved", approved, "Operator decisions"],
@@ -1217,13 +1435,15 @@
                 ["Best Clip", 0, "Import real footage"],
                 ["Active Agents", agentCount(), state.agents?.execution_mode || "sequential"],
                 ["Last Pipeline Run", lastPipelineLabel(), state.status?.state || "idle"],
-                ["Health", compactHealthLabel(), "Diagnostics available"]
+                ["Health", compactHealthLabel(), "Diagnostics available"],
+                ["Demo Build", "Local-first", "Manual upload only"]
               ])}
               <section class="panel onboarding-panel">${realFootageOnboardingHtml()}</section>
               <div class="dashboard-grid-secondary">
-                <section class="small-panel"><div class="panel-title">Quick Actions</div>${quickActionsHtml()}</section>
-                <section class="small-panel"><div class="panel-title">Pipeline Activity</div>${activityRows(5)}</section>
-                <section class="small-panel"><div class="panel-title">Agent Activity</div>${agentRows(5)}</section>
+                <section class="small-panel"><div class="panel-title">Next Action</div>${clientActionPanelHtml()}</section>
+                <section class="small-panel"><div class="panel-title">Client Troubleshooting</div>${clientTroubleshootingHtml()}</section>
+                <section class="small-panel"><div class="panel-title">Demo Checklist</div>${demoChecklistHtml()}</section>
+                <section class="small-panel"><div class="panel-title">Beta Checklist</div>${betaReadinessChecklistHtml()}</section>
                 <section class="small-panel"><div class="panel-title">Health</div>${compactHealthHtml()}</section>
               </div>
             </div>
@@ -1231,6 +1451,7 @@
         }
         return `
           <div class="view dashboard-view">
+            ${demoWizardHtml()}
             ${kpiCards([
               ["Total Clips", entries.length, hiddenTestCount() ? `${hiddenTestCount()} test/generated hidden` : "Real clips ready for review"],
               ["Approved", approved, "Operator-approved clips"],
@@ -1238,7 +1459,8 @@
               ["Best Clip", best ? score(best) : 0, best ? title(best) : "No ranked clips yet"],
               ["Active Agents", agentCount(), state.agents?.execution_mode || "sequential"],
               ["Last Pipeline Run", lastPipelineLabel(), state.status?.state || "idle"],
-              ["Health", compactHealthLabel(), "Diagnostics available"]
+              ["Health", compactHealthLabel(), "Diagnostics available"],
+              ["Demo Build", "Local-first", "Manual upload only"]
             ])}
             <div class="dashboard-grid-main">
               ${previewCard(best)}
@@ -1246,9 +1468,10 @@
             </div>
             <div class="dashboard-grid-secondary">
               <section class="small-panel"><div class="panel-title">Recent Activity</div>${activityRows(5)}</section>
-              <section class="small-panel"><div class="panel-title">Hook Heatmap</div>${best ? heatmap(best) : emptyHeatmap()}</section>
-              <section class="small-panel"><div class="panel-title">Agent Activity</div>${agentRows(5)}</section>
-              <section class="small-panel"><div class="panel-title">Quick Actions</div>${quickActionsHtml()}</section>
+              <section class="small-panel"><div class="panel-title">Client Troubleshooting</div>${clientTroubleshootingHtml()}</section>
+              <section class="small-panel"><div class="panel-title">Demo Checklist</div>${demoChecklistHtml()}</section>
+              <section class="small-panel"><div class="panel-title">Beta Checklist</div>${betaReadinessChecklistHtml()}</section>
+              <section class="small-panel"><div class="panel-title">Next Action</div>${clientActionPanelHtml()}</section>
             </div>
           </div>
         `;
@@ -1256,6 +1479,9 @@
       function renderQueueView() {
         const entries = filteredEntries();
         const active = modeEntry();
+        const guidance = entries.length
+          ? "Review these clips, approve the best ones, then export approved clips when ready."
+          : (clientWorkflow().processing?.active ? "Processing is in progress. Clips will appear here when ready." : "No clips yet. Import footage, then process media to create review clips.");
         return `
           <div class="view queue-view">
             ${kpiCards([["Queued", productionEntries().length, state.production.hideTestMedia ? "Production media" : "All local entries"], ["Approved", approvedCount(), "Ready decisions"], ["Rejected", productionEntries().filter((e) => statusOf(e) === "rejected").length, "Filtered out"], ["High Priority", productionEntries().filter((e) => priorityOf(e) === "high").length, "Fast lane"]])}
@@ -1265,8 +1491,8 @@
               <select class="select" id="statusFilter"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
               <select class="select"><option>All Scores</option></select><select class="select"><option>All Priorities</option></select><select class="select"><option>Score Desc</option></select>
             </div>
-            <section class="panel queue-table-panel view-scroll"><div class="panel-head"><div class="panel-title">Review Queue</div></div>${queueTable(entries)}</section>
-            <section class="panel queue-detail view-scroll"><div class="panel-head"><div class="panel-title">Selected Clip</div></div>${selectedClipDetail(active)}</section>
+            <section class="panel queue-table-panel view-scroll"><div class="panel-head"><div class="panel-title">Review these clips</div><div>${html(guidance)}</div></div>${queueTable(entries)}</section>
+            <section class="panel queue-detail view-scroll"><div class="panel-head"><div class="panel-title">Approve the best ones</div></div>${selectedClipDetail(active)}</section>
           </div>
         `;
       }
@@ -1316,13 +1542,13 @@
       function renderAnalyticsView() {
         const hasMetrics = Boolean(state.learning?.record_count || state.patterns?.patterns?.length);
         if (!hasMetrics) {
-          return `<div class="view analytics-view"><div class="empty-state panel"><div><h2>Add local performance metrics to activate analytics.</h2><p>Place local performance JSON/CSV files in analytics, then run npm run qa:full or the learning scripts. Everything remains local.</p></div></div></div>`;
+          return `<div class="view analytics-view"><div class="empty-state panel"><div><h2>Import performance metrics to activate analytics.</h2><p>Add local performance files, then run the local learning tools. Everything remains on this machine.</p></div></div></div>`;
         }
         return `<div class="view analytics-view" data-note="manual upload">${kpiCards([["Total Views","local", "Import required"],["Engagement Rate", state.learning?.avg_learning_delta || 0, "Learning delta"],["Total Engagements","local", "Import required"],["Avg Watch Time","local", "Import required"],["Clip Completion","local", "Import required"],["New Followers","local", "Import required"]])}<div class="analytics-charts"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Performance Over Time</div></div><div class="chart-bars">${chartBars([12,30,18,55,42,70,61,84,58,74,68,90])}</div></section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Top Content Patterns</div></div>${patternsHtml()}</section></div><div class="dashboard-grid-secondary"><section class="small-panel"><div class="panel-title">Learning Deltas</div>${diagnosticRows(state.learning || {})}</section><section class="small-panel"><div class="panel-title">Top Clips</div>${miniClipStrip(productionEntries().slice(0,5))}</section><section class="small-panel"><div class="panel-title">Export Performance</div>${socialExportsSummaryHtml()}</section><section class="small-panel"><div class="panel-title">Audience Growth</div><div class="muted">Awaiting imported metrics.</div></section></div></div>`;
       }
       function renderSocialExportsView() {
         const manifest = state.socialManifest || {};
-        return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Export Assets / Packages</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Prep Checklist</div></div><div class="checklist"><span>✓ Review generated caption.txt</span><span>✓ Confirm hashtags.txt and title.txt</span><span>✓ Check thumbnail.jpg when available</span><span>✓ Upload manually from local files.</span></div></section></div>`;
+        return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Social Export Folders</div><div>HigherKey prepares posts. You upload manually.</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Checklist</div><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button></div><div class="checklist"><span>✓ Open the TikTok, Instagram Reels, YouTube Shorts, or Facebook Reels folder.</span><span>✓ Review caption.txt, hashtags.txt, title.txt, and posting_notes.txt.</span><span>✓ Confirm thumbnail.jpg when available.</span><span>✓ Upload manually. HigherKey does not post directly.</span></div></section></div>`;
       }
       function renderDiagnosticsView() {
         return `<div class="view diagnostics-view">${kpiCards([["Diagnostics", state.diagnostics?.status || "not run", "analytics/diagnostics.json"],["Full QA", state.qaReport?.status || "not run", "analytics/qa_report.json"],["Build Guard", state.appInfo?.buildWarnings?.length ? "warning" : "aligned", "Version checks"],["Test Media", testEntries().length, state.production.hideTestMedia ? "Hidden in Production" : "Visible"]])}<div class="diagnostics-grid"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Health Checks</div></div>${diagnosticsHtml()}${productionModeControlsHtml()}<div class="toolbar"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button></div></section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Diagnostics JSON</div></div><pre class="json-panel">${html(JSON.stringify(state.diagnostics || {}, null, 2))}</pre></section></div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Project Repair Report</div></div><pre class="json-panel">${html(JSON.stringify(state.repairReport || {}, null, 2))}</pre></section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">QA Report Summary</div></div><pre class="json-panel">${html(JSON.stringify(state.qaReport || {}, null, 2))}</pre></section></div>`;
@@ -1391,7 +1617,7 @@
       }
       function platformCard(key, label, manifest) {
         const count = (manifest.exports || []).filter((item) => item.platform === key || (item.platforms || []).includes(key)).length || manifest.count || 0;
-        return `<div class="platform-card" data-note="manual upload"><h2>${html(label)}</h2><div class="summary-row"><span>Ready count</span><strong>${html(count)}</strong></div><div class="checklist"><span>✓ Format optimized</span><span>✓ Captions</span><span>✓ Thumbnail</span><span>✓ Hashtags</span><span>✓ Manifest</span></div><button class="btn" data-social-export="${html(key)}">Prepare More</button><button class="btn">View Exports</button></div>`;
+        return `<div class="platform-card" data-note="manual upload"><h2>${html(label)} Pack</h2><div class="summary-row"><span>Ready count</span><strong>${html(count)}</strong></div><div class="checklist"><span>✓ Format optimized</span><span>✓ Captions</span><span>✓ Thumbnail</span><span>✓ Hashtags</span><span>✓ Manifest</span></div><button class="btn" data-social-export="${html(key)}">Prepare More</button><button class="btn" data-desktop-action="open-social-exports">View Exports</button></div>`;
       }
       function settingsCard(titleText, rows) {
         return `<section class="settings-card"><h2>${html(titleText)}</h2>${rows.map(([label, value]) => `<div class="setting-row"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join("")}</section>`;
@@ -1404,7 +1630,7 @@
         return (state.agents?.agents || []).slice(0, limit).map((agent) => `<div class="agent-row"><span>${html(agent.name || agent.id)}</span><strong>${html(agent.state || "idle")}</strong></div>`).join("") || `<div class="muted">No agent status yet.</div>`;
       }
       function quickActionsHtml() {
-        return `<div class="toolbar" data-note="manual upload"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button><button class="btn" data-desktop-action="go-queue">Review Queue</button><button class="btn" data-desktop-action="go-social">Export Social Packs</button><button class="btn" data-desktop-action="open-inbox">Open Inbox Folder</button></div>`;
+        return `<div class="toolbar" data-note="manual upload"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Process Media</button><button class="btn" data-desktop-action="go-queue">Review Clips</button><button class="btn" data-desktop-action="go-social">Export Social Packs</button><button class="btn" data-desktop-action="reset-demo-workspace">Reset Demo Workspace</button><button class="btn" data-desktop-action="open-inbox">Open Inbox Folder</button></div>`;
       }
       function emptyHeatmap() { return `<div class="heatmap">${Array.from({ length: 24 }, () => `<span class="heat"></span>`).join("")}</div>`; }
       function compactHealthLabel() {
@@ -1443,14 +1669,14 @@
           ["Approved", approved],
           ["Indexed", indexed],
           ["Cache", `${cached}/${visible.length || state.entries.length}`],
-          ["API", apiState === "running" ? "online" : apiState === "health_checked" ? "checked" : "offline"],
+          ["Service", apiState === "running" ? "online" : apiState === "health_checked" ? "checked" : "offline"],
           ["Agents", runningAgents ? `${runningAgents} active` : (state.agents?.execution_mode || "idle")]
         ].map(([label, value]) => `<div class="system-row"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join("");
         $("versionBadge").textContent = versionLabel();
         if ($("footerVersion")) $("footerVersion").textContent = versionLabel();
         const project = state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static project root";
         const inbox = state.appInfo?.contentInbox || "content_inbox";
-        $("sessionLine").textContent = `${window.higherkey ? "Electron bridge online" : "Static browser mode"} · ${visible.length} production clips${hiddenTestCount() ? ` · ${hiddenTestCount()} hidden` : ""}`;
+        $("sessionLine").textContent = `Demo Build · Local-first · Manual upload · ${window.higherkey ? "Desktop app" : "Static browser mode"} · ${visible.length} production clips${hiddenTestCount() ? ` · ${hiddenTestCount()} hidden` : ""}`;
         $("headerProjectPath").textContent = project;
         $("headerPipelineState").textContent = pipeline.label;
         $("headerHealthState").textContent = pipeline.state === "failed" ? "Failed" : pipeline.state === "needs_attention" ? "Needs Attention" : (health === "pass" ? "Healthy" : health);
@@ -1917,9 +2143,10 @@
             <div class="metric"><span>Approved clips</span><strong>${html(approved.length)}</strong></div>
             <div class="metric"><span>Latest exports</span><strong>${html(manifest.count || 0)}</strong></div>
             <div class="metric"><span>Output</span><strong>${html(manifest.output_dir || "out/social_exports")}</strong></div>
-            <div class="muted">Manual upload workflow only. No direct posting integrations are configured.</div>
+            <div class="muted">HigherKey prepares local upload folders. You upload manually; no direct posting integrations are configured.</div>
             <div class="tools" style="margin-top:10px">
               <button data-social-export="all" class="primary">Export All Platforms</button>
+              <button data-desktop-action="open-social-exports">Open Social Exports</button>
               ${SOCIAL_PLATFORMS.map(([key, label]) => `<button data-social-export="${html(key)}">${html(label)}</button>`).join("")}
             </div>
             <div class="muted" style="margin-top:8px">${window.higherkey ? "Electron exports use approved clips from this workspace." : "Static mode: run python3 scripts/export_social_packs.py after saving approved reviews."}</div>
@@ -2078,8 +2305,7 @@
         const approved = approvedCount(entries);
         const hidden = hiddenTestCount();
         const pipeline = pipelineUiState();
-        const nextAction = !entries.length ? "Import real footage" : approved ? "Prepare social export packs" : "Review highest-scoring clips";
-        const taskControls = window.higherkey ? `<button class="btn" data-desktop-action="enqueue-full-media-prep">Enqueue Full Media Prep</button><button class="btn" data-desktop-action="run-task-worker-once">Run Task Worker Once</button>` : "";
+        const workflow = clientWorkflow();
         return `
           <section class="inspector-section"><h3>Command Status</h3>
             <div class="metric"><span>Mode</span><strong>Production</strong></div>
@@ -2089,9 +2315,9 @@
           <section class="inspector-section"><h3>Best Clip Recommendation</h3>
             ${best ? `<div class="metric"><span>Clip</span><strong>${html(best.clip_id || title(best))}</strong></div><div class="metric"><span>Score</span><strong>${html(score(best))}</strong></div><div class="copy">${html((state.recommendations?.recommendations?.[0]?.reason || best.package?.caption || "Highest local score among visible production clips.").slice(0, 220))}</div>` : `<div class="muted">No real clip selected.</div>`}
           </section>
-          ${pipeline.state === "needs_attention" ? `<section class="inspector-section"><h3>Pipeline Needs Attention</h3><div class="copy">${html(pipeline.message)}</div><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button><button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button></div></section>` : ""}
-          <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(nextAction)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Run Full Media Prep</button>${taskControls}</div></section>
-          <section class="inspector-section"><h3>Task Queue</h3><div class="copy">${html(state.clientTasks?.current_task || "No task running.")}</div><div class="metric"><span>Queued</span><strong>${html(state.clientTasks?.queued_count || 0)}</strong></div><div class="metric"><span>Completed</span><strong>${html(state.clientTasks?.completed_count || 0)}</strong></div></section>
+          ${pipeline.state === "needs_attention" ? `<section class="inspector-section"><h3>Pipeline Needs Attention</h3><div class="copy">${html(pipeline.message)}</div><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button><button class="btn" data-desktop-action="run-full-media-prep">Process Media</button><button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button></div></section>` : ""}
+          <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(workflow.client_message)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-footage">Import Footage</button><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Process Media</button></div></section>
+          <section class="inspector-section"><h3>Workflow Progress</h3><div class="copy">${html(workflow.processing?.active ? workflow.processing.message || "Processing media." : workflow.next_action)}</div><div class="metric"><span>Current step</span><strong>${html((workflow.steps || []).find((step) => step.id === workflow.current_step)?.label || workflow.next_action)}</strong></div><div class="metric"><span>Completed steps</span><strong>${html((workflow.completed_steps || []).length)}</strong></div></section>
           <section class="inspector-section"><h3>Social Readiness</h3>${socialExportsSummaryHtml()}</section>
           <section class="inspector-section"><h3>Compact Health</h3>${compactHealthHtml()}</section>
         `;
@@ -2163,29 +2389,15 @@
       }
 
       function renderModeDetails() {
-        if (state.mode === "analytics") {
-          setNotice(`Analytics: ${state.learning?.record_count || 0} performance records, avg delta ${state.learning?.avg_learning_delta || 0}.`);
-        } else if (state.mode === "clusters") {
-          setNotice(`Clusters: ${(state.metadata.clusters || []).length} local narrative groups.`);
-        } else if (state.mode === "agents") {
-          setNotice(`Agents: ${(state.agents?.agents || []).length} local workers, ${state.agents?.execution_mode || "sequential"} execution.`);
-        } else if (state.mode === "diagnostics") {
-          setNotice(`Diagnostics: ${state.diagnostics?.status || "not run"} · Full QA: ${state.qaReport?.status || "not run"}.`);
-        } else if (state.mode === "social") {
-          setNotice(`Social Exports: ${state.socialManifest?.count || 0} manual-upload packs, ${approvedEntries().length} approved clips available.`);
-        } else if (state.mode === "dashboard") {
-          setNotice(window.higherkey ? "" : staticModeMessage());
-        } else if (state.mode === "queue") {
-          setNotice(state.mediaCache ? `Media cache: ${state.mediaCache?.status_counts?.cached || 0} cached, ${state.mediaCache?.status_counts?.error || 0} errors.` : "");
-        } else if (state.mode === "exports") {
-          setNotice(`Exports: ${state.exports?.count || 0} approved posts in local manifest.`);
-        } else if (state.mode === "settings") {
-          setNotice("Settings: desktop bridge controls appear in the inspector when running under Electron.");
-        } else if (state.mode === "search") {
-          setNotice("Search mode filters the media bin by text, tags, labels, cluster, status, and priority.");
-        } else {
-          setNotice("");
+        const pipeline = pipelineDisplay();
+        if (!window.higherkey) return setNotice(staticModeMessage());
+        if (pipeline.state === "needs_attention") {
+          return setNotice(pipeline.message || "Pipeline needs attention.", [
+            { action: "repair-project", label: "Repair Project Media" },
+            { action: "go-diagnostics", label: "Open Diagnostics" }
+          ]);
         }
+        setNotice("");
       }
 
       function render() {
@@ -2276,7 +2488,7 @@
         const selected = await window.higherkey.pickDirectory("project");
         if (!selected) return setNotice("Project selection cancelled.");
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
-        setNotice(`Active project set to ${state.appInfo?.activeProjectRoot || selected}. Refreshing local JSON.`);
+        setNotice("Active project updated. Refreshing local project data.");
         await refreshLiveData();
       }
 
@@ -2299,7 +2511,7 @@
         if (result.code === 0) {
           setNotice(`Archived ${parsed.moved_count ?? 0} test/generated files to ${parsed.archive_root || "out/archived_test_media"}.`);
         } else {
-          setNotice(`Archive Test Media failed: ${(result.stderr || result.stdout || "unknown error").slice(-700)}`);
+          setNotice("Archive Test Media needs attention. Open Diagnostics for technical details.", [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
         }
       }
 
@@ -2320,10 +2532,31 @@
         }
       }
 
+      async function resetDemoWorkspace() {
+        if (!window.higherkey?.resetDemoWorkspace) {
+          return setNotice("Static browser mode: run python3 scripts/reset_demo_workspace.py --soft --dry-run to preview a safe reset.");
+        }
+        const confirmed = window.confirm("Reset generated demo/test workspace data? Real imported footage, project settings, and app configuration are preserved.");
+        if (!confirmed) return setNotice("Demo reset cancelled.");
+        setNotice("Resetting generated demo workspace data...");
+        const result = await window.higherkey.resetDemoWorkspace({ confirmed: true, hard: false, archiveFirst: false });
+        await refreshLiveData();
+        if (result.code === 0 || result.status === "pass") {
+          setNotice("Demo workspace reset complete. Import footage to start a clean client demo.");
+          showClientModal("Demo Workspace Reset", `<p>Generated demo/test data was cleared safely. Imported footage and project configuration were preserved.</p><div class="modal-actions"></div>`, [
+            { label: "Import Footage", action: "import-footage", primary: true },
+            { label: "Close", action: "close" }
+          ]);
+        } else {
+          setNotice("Demo reset needs attention. Open Diagnostics for details.", [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
+        }
+        return result;
+      }
+
       function pipelineNoticeActions() {
         return [
           { label: "Repair Project Media", action: "repair-project" },
-          { label: "Run Full Media Prep", action: "run-full-media-prep" },
+          { label: "Process Media", action: "run-full-media-prep" },
           { label: "Open Diagnostics", action: "go-diagnostics" }
         ];
       }
@@ -2356,8 +2589,10 @@
         setNotice("Importing footage...");
         const result = await window.higherkey.importFootage();
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
         await refreshLiveData();
         setNotice(summarizeImport(result));
+        showImportResultModal(result);
         return result;
       }
 
@@ -2365,6 +2600,8 @@
         if (!window.higherkey?.importAndProcessFootage) {
           return setNotice(staticModeMessage());
         }
+        setNotice("Preparing project...");
+        showProcessingModal("Preparing project", []);
         setNotice("Importing footage...");
         const result = await window.higherkey.importAndProcessFootage();
         const imported = result.imported || {};
@@ -2374,14 +2611,13 @@
         }
         if ((imported.imported || 0) === 0) {
           setNotice(summarizeImport(imported));
+          showImportResultModal(imported);
           return result;
         }
-        setNotice("Creating clips...");
-        setNotice("Scoring clips...");
-        setNotice("Building thumbnails...");
-        setNotice("Indexing metadata...");
-        setNotice("Updating agents...");
+        setNotice("Creating clips, building previews, analyzing color/audio, and preparing recommendations...");
+        showProcessingModal("Ready for review", ["Preparing project", "Creating clips", "Building previews", "Analyzing video", "Analyzing color/audio", "Preparing social packs", "Ready for review"]);
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
         await refreshLiveData();
         if (result.code === 0) {
           showPipelineResultNotice(`${imported.imported} video${imported.imported === 1 ? "" : "s"} imported and processed. Ready for review.`);
@@ -2433,20 +2669,23 @@
         if (!window.higherkey) {
           return setNotice(staticModeMessage());
         }
-        setNotice("Creating clips...");
+        setNotice("Preparing project...");
+        showProcessingModal("Preparing project", []);
         let result = null;
         if (window.higherkey.runFullMediaPrep) {
+          setNotice("Creating clips, building previews, analyzing color/audio, and preparing recommendations...");
+          showProcessingModal("Creating clips", ["Preparing project"]);
           result = await window.higherkey.runFullMediaPrep();
         } else {
           await window.higherkey.runPipelineOnce();
-          setNotice("Scoring clips...");
           await window.higherkey.runOrchestratorOnce();
-          setNotice("Building thumbnails...");
           await window.higherkey.buildMediaCache();
           result = { code: 0, steps: [] };
         }
-        setNotice("Indexing metadata...");
+        setNotice("Ready for review.");
+        showProcessingModal("Ready for review", ["Preparing project", "Creating clips", "Building previews", "Analyzing video", "Analyzing color/audio", "Preparing social packs", "Ready for review"]);
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+        if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
         await refreshLiveData();
         if (result.code === 0) {
           showPipelineResultNotice("Ready for review. Pipeline, metadata, thumbnails, and local agents completed.");
@@ -2505,7 +2744,7 @@
           setNotice(`Social export packs complete: ${result.parsed?.count ?? 0} filesets in ${result.parsed?.output_dir || "out/social_exports"}.`);
           render();
         } else {
-          setNotice(`Social export failed: ${(result.stderr || result.stdout || "unknown error").slice(-800)}`);
+          setNotice("Social export needs attention. Open Diagnostics for technical details.", [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
         }
       }
 
@@ -2527,6 +2766,7 @@
             if (action === "import-footage") return importFootage();
             if (action === "import-and-process") return importAndProcessFootage();
             if (action === "run-full-media-prep") return runFullMediaPrep();
+            if (action === "reset-demo-workspace") return resetDemoWorkspace();
             if (action === "repair-project") return repairProjectMedia();
             if (action === "run-color-school") return runSchool("color");
             if (action === "run-audio-school") return runSchool("audio");
@@ -2534,6 +2774,21 @@
             if (action === "copy-audio-notes") return copySchoolNotes("audio");
             if (action === "refresh-school-reports") { await refreshLiveData(); return setNotice("School reports refreshed."); }
             if (!window.higherkey) return setNotice(staticModeMessage());
+            if (action === "create-demo-project") {
+              const result = await window.higherkey.createDemoProject?.();
+              await refreshLiveData();
+              return setNotice(result?.code === 0 ? "Demo project is ready. Import footage when you are ready." : "Demo project setup needs attention. Open Diagnostics for details.");
+            }
+            if (action === "use-default-project") return setNotice("Default local project selected. Import footage when you are ready.");
+            if (action === "create-issue-report") {
+              setNotice("Creating client-safe support package...");
+              const result = await window.higherkey.createIssueReport?.();
+              return setNotice(result?.code === 0 ? "Support package created. It excludes original footage by default." : "Support package needs attention. Open Diagnostics for details.");
+            }
+            if (action === "open-issue-report") {
+              await window.higherkey.openIssueReportFolder?.();
+              return setNotice("Support package folder opened.");
+            }
             if (action === "enqueue-full-media-prep") {
               const result = await window.higherkey.enqueueFullMediaPrep();
               await refreshLiveData();
@@ -2548,6 +2803,10 @@
             if (action === "use-current-repo") await useCurrentRepoProject();
             if (action === "pick-content") await window.higherkey.pickDirectory("contentInbox");
             if (action === "open-inbox") await window.higherkey.openContentInbox();
+            if (action === "open-social-exports") {
+              if (window.higherkey.openSocialExports) await window.higherkey.openSocialExports();
+              return setNotice("Social exports folder opened. Upload prepared files manually.");
+            }
             if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
             if (action === "first-run-setup") await window.higherkey.runFirstRunSetup();
             if (action === "start-watcher") await window.higherkey.startWatcher();
@@ -2570,7 +2829,7 @@
 
       async function loadDashboard() {
         try {
-          $("startupText").textContent = "Reading queue, metadata, analytics, and live pipeline files.";
+          $("startupText").textContent = "Preparing clips, recommendations, and export status.";
           state.queue = await optionalJson(PATHS.queue, { entries: [] });
           state.learning = await optionalJson(PATHS.learning, null);
           state.patterns = await optionalJson(PATHS.patterns, null);
@@ -2597,6 +2856,8 @@
           state.socialHistory = await optionalJson(PATHS.socialHistory, null);
           state.socialPresets = await optionalJson(PATHS.socialPresets, null);
           state.clientTasks = await optionalJson(PATHS.clientTasks, null);
+          state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, null);
+          state.clientDemo = await optionalJson(PATHS.clientDemo, null);
           state.localApiStatus = window.higherkey?.getLocalApiStatus ? await window.higherkey.getLocalApiStatus().catch(() => null) : await optionalJson(PATHS.localApiStatus, null);
           state.release = await optionalJson(PATHS.release, null);
           state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => null) : null;
@@ -2615,10 +2876,10 @@
           if (state.production.hideTestMedia && state.activeId && isTestEntry(state.entries.find((entry) => entry.id === state.activeId))) {
             state.activeId = bestEntry(realEntries())?.id || null;
           }
-          $("startupText").textContent = state.activeId ? "Recovered local workspace session." : "No queue items found yet.";
+          $("startupText").textContent = state.activeId ? "Recovered local workspace session." : "Import footage to begin.";
           render();
         } catch (error) {
-          $("startupText").textContent = "Could not load local dashboard data. Start the local server from the project root and try again.";
+          $("startupText").textContent = "Could not load the local workspace. Open Diagnostics for details.";
           setNotice(String(error.message || error));
         }
       }
@@ -2655,6 +2916,8 @@
           state.socialHistory = await optionalJson(PATHS.socialHistory, state.socialHistory);
           state.socialPresets = await optionalJson(PATHS.socialPresets, state.socialPresets);
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
+          state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);
+          state.clientDemo = await optionalJson(PATHS.clientDemo, state.clientDemo);
           state.localApiStatus = window.higherkey?.getLocalApiStatus ? await window.higherkey.getLocalApiStatus().catch(() => state.localApiStatus) : await optionalJson(PATHS.localApiStatus, state.localApiStatus);
           state.release = await optionalJson(PATHS.release, state.release);
           state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => state.appInfo) : state.appInfo;

@@ -62,6 +62,7 @@ JSON_CHECKS = (
     ("analytics", "cleanup_plan.json", True),
     ("analytics", "cleanup_history.json", True),
     ("analytics", "client_storage.json", True),
+    ("analytics", "client_workflow.json", True),
     ("analytics", "archive_manifest.json", True),
     ("analytics", "archive_history.json", True),
     ("analytics", "upgrade_plan.json", True),

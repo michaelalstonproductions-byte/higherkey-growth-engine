@@ -744,6 +744,130 @@ Local API upgrade endpoints:
 
 Maintenance now includes upgrade check, data contract validation, and launch preflight in dry-run mode.
 
+## V4.0 Client Workflow
+
+V4.0 adds a client-facing workflow layer over the V3.9 local runtime. The infrastructure remains available in Diagnostics and Settings, while the main Dashboard focuses on a simple production path:
+
+1. Import Footage
+2. Process Media
+3. Review Clips
+4. Approve Best Clips
+5. Export Social Packs
+6. Upload Manually
+
+Build the workflow snapshot:
+
+```bash
+python3 scripts/build_client_workflow.py
+```
+
+Generated file:
+
+- `analytics/client_workflow.json`: client-safe workflow state with current step, completed steps, next action, message, warnings summary, and local counts.
+
+Client usage:
+
+- Click `Import Footage` to choose local `.mp4`, `.mov`, or `.m4v` files. The app copies them into the active project.
+- Click `Import & Process` to import files and run local media preparation.
+- Click `Process Media` to create clips, previews, color/audio analysis, and recommendations from existing imported footage.
+- Review clips in Queue or Media, approve the best clips, then export social packs.
+- Upload manually from the prepared local folders. No direct posting APIs are configured.
+
+Technical runtime details such as runtime DB, task queue, local API, reconciliation, upgrade checks, storage retention, and security remain in Diagnostics/Settings.
+
+## V4.1 Client Demo Workflow
+
+V4.1 adds demo-ready workflow polish on top of the V4.0 client layer. The main app now emphasizes a five-step demo path:
+
+1. Import Footage
+2. Process Media
+3. Review Clips
+4. Export Social Packs
+5. Upload Manually
+
+Client demo controls:
+
+- `Import Footage`: opens the native desktop file picker and copies supported videos into the active project.
+- `Import & Process`: imports selected videos and runs local preparation.
+- `Process Media`: runs local clip creation, previews, color/audio analysis, recommendations, and social-pack prep.
+- `Reset Demo Workspace`: safely clears generated demo/test outputs while preserving imported footage and project configuration.
+- `Open Social Exports`: opens the prepared manual-upload folders.
+
+The Dashboard includes a Demo Import Wizard, import success modal, processing progress modal, and demo checklist. Technical logs remain in Diagnostics/Settings.
+
+## V4.2 Client Handoff
+
+V4.2 adds a clean client handoff package and demo-project setup tools.
+
+Create a clean demo project folder:
+
+```bash
+python3 scripts/create_demo_project.py --target out/demo_project_handoff
+```
+
+Preview the demo project setup without writing files:
+
+```bash
+python3 scripts/create_demo_project.py --dry-run
+```
+
+Build a client handoff package:
+
+```bash
+python3 scripts/package_client_handoff.py
+```
+
+Preview the handoff package:
+
+```bash
+python3 scripts/package_client_handoff.py --dry-run
+```
+
+Generated handoff folder:
+
+- `out/client_handoff/CLIENT_HANDOFF_GUIDE.md`
+- `out/client_handoff/BETA_READINESS_CHECKLIST.md`
+- `out/client_handoff/DEMO_CHECKLIST.md`
+- `out/client_handoff/RELEASE_NOTES.md`
+- `out/client_handoff/app_info.json`
+- `out/client_handoff/latest_dmg_pointer.json`
+- `out/client_handoff/quick_start.txt`
+- `out/client_handoff/support_note.txt`
+
+Client demo mode defaults live in `config/client_demo.json`. The handoff package points to the newest DMG in `dist/` and does not copy private runtime data or source footage by default.
+
+## V4.3 Client Beta Handoff
+
+V4.3 prepares a real client beta handoff without adding cloud services or direct posting.
+
+Client beta files:
+
+- `BETA_READINESS_CHECKLIST.md`: install, launch, import, process, review, export, upload, diagnostics, and feedback checklist.
+- `CLIENT_HANDOFF_GUIDE.md`: client-safe guide for opening the app and running the manual-upload workflow.
+- `out/client_handoff/`: generated handoff package with quick start, release notes, checklist docs, app info, latest DMG pointer, and support note.
+
+Capture local beta feedback:
+
+```bash
+python3 scripts/collect_client_feedback.py --dry-run
+python3 scripts/collect_client_feedback.py --client-name "Client Name" --overall-rating 5 --notes "Demo notes"
+```
+
+Create a client-safe support package:
+
+```bash
+python3 scripts/create_issue_report.py --dry-run
+python3 scripts/create_issue_report.py
+```
+
+Generated support folder:
+
+- `out/client_issue_report/issue_report.json`
+- `out/client_issue_report/issue_report.txt`
+- client-safe state summaries when available
+
+Issue reports exclude original footage, private generated media, full logs, runtime DB files, and local tokens by default. In the app, use `Create Support Package` and `Open Support Package` from client troubleshooting areas.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

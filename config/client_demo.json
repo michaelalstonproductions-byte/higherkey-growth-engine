@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "local_only": true,
+  "demo_mode_enabled": true,
+  "show_simplified_workflow": true,
+  "hide_technical_panels_default": true,
+  "first_run_completed": false,
+  "last_demo_reset": null,
+  "beta_handoff_enabled": true,
+  "support_package_enabled": true,
+  "feedback_capture_enabled": true,
+  "client_labels": {
+    "import": "Import Footage",
+    "process": "Process Media",
+    "review": "Review Clips",
+    "export": "Export Social Packs",
+    "upload": "Upload Manually"
+  }
+}

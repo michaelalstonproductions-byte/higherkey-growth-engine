@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "3.9.0",
-  "release_version": "V3.9",
+  "app_version": "4.3.0",
+  "release_version": "V4.3",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -17,6 +17,30 @@
       "to": "V3.9",
       "safe": true,
       "notes": "Add upgrade reports, launch preflight, data contract validation, and rollback plan metadata."
+    },
+    {
+      "from": "V3.9",
+      "to": "V4.0",
+      "safe": true,
+      "notes": "Add client-facing workflow snapshots and product workflow labels while preserving infrastructure."
+    },
+    {
+      "from": "V4.0",
+      "to": "V4.1",
+      "safe": true,
+      "notes": "Add client-demo reset, import success, processing progress, review guidance, and manual upload workflow polish."
+    },
+    {
+      "from": "V4.1",
+      "to": "V4.2",
+      "safe": true,
+      "notes": "Add client handoff guide, demo project setup, handoff package generation, and client demo mode configuration."
+    },
+    {
+      "from": "V4.2",
+      "to": "V4.3",
+      "safe": true,
+      "notes": "Add beta readiness checklist, local feedback capture, client-safe issue reports, and support package actions."
     }
   ],
   "required_runtime_files": [
@@ -24,6 +48,7 @@
     "analytics/events.jsonl",
     "analytics/client_state.json",
     "analytics/client_tasks.json",
+    "analytics/client_workflow.json",
     "analytics/client_metrics.json",
     "analytics/client_integrity.json",
     "analytics/client_storage.json"
@@ -47,11 +72,12 @@
     "audit_events"
   ],
   "required_config_files": [
-    "config/project_manifest.json",
+    "config/project_manifest.example.json",
     "config/state_contract.json",
     "config/security_policy.json",
     "config/retention_policy.json",
     "config/error_taxonomy.json",
+    "config/client_demo.json",
     "config/release.json"
   ],
   "required_scripts": [
@@ -64,7 +90,12 @@
     "scripts/manage_storage.py",
     "scripts/upgrade_project.py",
     "scripts/validate_data_contract.py",
-    "scripts/run_launch_preflight.py"
+    "scripts/run_launch_preflight.py",
+    "scripts/build_client_workflow.py",
+    "scripts/create_demo_project.py",
+    "scripts/package_client_handoff.py",
+    "scripts/collect_client_feedback.py",
+    "scripts/create_issue_report.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"
