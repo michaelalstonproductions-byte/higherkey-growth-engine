@@ -85,11 +85,14 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "BETA_READINESS_CHECKLIST.md" in hit["path"]
             or "TRIAL_LIMITATIONS.md" in hit["path"]
             or "TRIAL_DELIVERY_CHECKLIST.md" in hit["path"]
+            or "CLIENT_TRIAL_QA_SUMMARY.md" in hit["path"]
             or "scripts/run_full_qa.py" in hit["path"]
             or "scripts/package_client_handoff.py" in hit["path"]
             or "scripts/package_trial_release.py" in hit["path"]
             or "scripts/validate_trial_package.py" in hit["path"]
             or "scripts/build_trial_readiness_report.py" in hit["path"]
+            or "scripts/run_client_trial_qa.py" in hit["path"]
+            or "scripts/check_client_language.py" in hit["path"]
             or "scripts/collect_client_feedback.py" in hit["path"]
             or "scripts/create_issue_report.py" in hit["path"]
             or "growth_engine/local_api.py" in hit["path"]
@@ -302,9 +305,12 @@ def trial_package_check(root: Path) -> dict[str, object]:
         root / "CLIENT_QUICK_START.md",
         root / "TRIAL_LIMITATIONS.md",
         root / "TRIAL_DELIVERY_CHECKLIST.md",
+        root / "CLIENT_TRIAL_QA_SUMMARY.md",
         root / "scripts" / "package_trial_release.py",
         root / "scripts" / "validate_trial_package.py",
         root / "scripts" / "build_trial_readiness_report.py",
+        root / "scripts" / "run_client_trial_qa.py",
+        root / "scripts" / "check_client_language.py",
     ]
     missing = [relative_path(path, root) for path in required if not path.exists()]
     try:
@@ -317,7 +323,7 @@ def trial_package_check(root: Path) -> dict[str, object]:
     required_limitations = ["No cloud", "No social", "manual", "MP4", "MOV", "M4V"]
     missing_quick_start = [item for item in required_quick_start if item.lower() not in quick_start.lower()]
     missing_limitations = [item for item in required_limitations if item.lower() not in limitations.lower()]
-    script_flags_ok = "--include-dmg" in package_script and "--dry-run" in package_script
+    script_flags_ok = "--include-dmg" in package_script and "--dry-run" in package_script and "CLIENT_TRIAL_QA_SUMMARY.md" in package_script
     status = "pass" if not missing and not missing_quick_start and not missing_limitations and script_flags_ok else "fail"
     return {
         "name": "trial_package_validation",
@@ -572,6 +578,8 @@ def main() -> int:
     append_stage(results, qa_stage("validate_trial_package", ["python3", "scripts/validate_trial_package.py"], root, timeout=60), config)
     append_stage(results, qa_stage("collect_client_feedback_template", ["python3", "scripts/collect_client_feedback.py", "--template"], root, timeout=60), config)
     append_stage(results, qa_stage("create_issue_report_client_safe_dry_run", ["python3", "scripts/create_issue_report.py", "--dry-run", "--client-safe"], root, timeout=60), config)
+    append_stage(results, qa_stage("client_language_scan", ["python3", "scripts/check_client_language.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("client_trial_qa", ["python3", "scripts/run_client_trial_qa.py"], root, timeout=60), config)
     append_stage(results, qa_stage("trial_readiness_report", ["python3", "scripts/build_trial_readiness_report.py"], root, timeout=60), config)
     append_stage(results, qa_stage("schedule_tasks_dry_run", ["python3", "scripts/schedule_tasks.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("full_media_prep_chain_dry_run", ["python3", "scripts/enqueue_full_media_prep.py", "--dry-run"], root, timeout=60), config)

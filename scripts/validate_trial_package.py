@@ -32,6 +32,7 @@ def validate_trial_package(root: Path, package_dir: Path, dry_run: bool = False)
         "BETA_READINESS_CHECKLIST.md",
         "TRIAL_DELIVERY_CHECKLIST.md",
         "TRIAL_LIMITATIONS.md",
+        "CLIENT_TRIAL_QA_SUMMARY.md",
         "latest_dmg_pointer.json",
         "app_info.json",
         "support_note.txt",

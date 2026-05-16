@@ -948,7 +948,7 @@ python3 scripts/build_trial_readiness_report.py
 
 What to send:
 
-- `dist/HigherKey Operator OS-4.6.0-arm64.dmg`
+- the newest `dist/HigherKey Operator OS-*-arm64.dmg`
 - `out/trial_release/`
 - `CLIENT_QUICK_START.md`
 - `TRIAL_LIMITATIONS.md`
@@ -969,6 +969,54 @@ python3 scripts/create_issue_report.py --client-safe
 ```
 
 Support packages exclude original footage, social exports, imported media, full runtime databases, private tokens, and unredacted local paths by default. HigherKey remains local-first with manual upload only.
+
+## V4.7 Final Client Trial QA
+
+V4.7 adds a final handoff verification layer for client trials. It does not add cloud services, social APIs, direct posting, or new runtime behavior.
+
+Final trial QA:
+
+```bash
+python3 scripts/run_client_trial_qa.py
+python3 scripts/check_client_language.py
+python3 scripts/build_trial_readiness_report.py
+```
+
+Build and validate the trial package:
+
+```bash
+npm run dist:unsigned
+python3 scripts/package_trial_release.py
+python3 scripts/validate_trial_package.py
+```
+
+What to send to a client:
+
+- `dist/HigherKey Operator OS-4.7.0-arm64.dmg`
+- `out/trial_release/`
+- `CLIENT_QUICK_START.md`
+- `CLIENT_HANDOFF_GUIDE.md`
+- `TRIAL_LIMITATIONS.md`
+- `TRIAL_DELIVERY_CHECKLIST.md`
+- `CLIENT_TRIAL_QA_SUMMARY.md`
+
+Support package:
+
+```bash
+python3 scripts/create_issue_report.py --client-safe
+```
+
+Feedback collection:
+
+```bash
+python3 scripts/collect_client_feedback.py --template
+python3 scripts/collect_client_feedback.py --interactive
+python3 scripts/collect_client_feedback.py --export-summary
+```
+
+Known non-blocking warning: sandboxed macOS launch checks can fail when the sandbox cannot write Application Support settings. Use `npm run app:open-latest` in the normal GUI environment to verify the packaged app. Trial readiness may also show `needs_attention` for non-blocking QA or storage cleanup warnings.
+
+Manual upload reminder: HigherKey prepares local platform folders. The client uploads manually. No cloud APIs, social APIs, or direct posting APIs are configured.
 
 ## Smoke Test
 

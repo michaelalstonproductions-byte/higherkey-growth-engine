@@ -11,6 +11,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SENSITIVE_KEYS = {"token", "secret", "password", "auth", "authorization"}
 MEDIA_EXTENSIONS = {".mp4", ".mov", ".m4v"}
+FORBIDDEN_REPORT_NAMES = {"runtime_state.db", "events.jsonl", "audit_log.jsonl", "higherkey-local-api-token.txt"}
+FORBIDDEN_REPORT_DIRS = {"content_inbox", "clips", "captions", "social_exports", "approved_posts", "media_cache"}
 
 
 def utc_now() -> str:
@@ -93,10 +95,18 @@ def issue_report(
     included = [name for name, source in source_files.items() if source.exists()]
     missing = [name for name, source in source_files.items() if not source.exists()]
     forbidden = []
-    forbidden_roots = [root / "content_inbox", root / "clips", root / "out" / "social_exports", root / "out" / "approved_posts"]
+    forbidden_roots = [
+        root / "content_inbox",
+        root / "clips",
+        root / "captions",
+        root / "out" / "social_exports",
+        root / "out" / "approved_posts",
+        root / "out" / "media_cache",
+        root / "analytics" / "runtime_state.db",
+    ]
     for folder in forbidden_roots:
-      if output == folder or folder in output.parents:
-          forbidden.append(str(folder))
+        if output == folder or folder in output.parents:
+            forbidden.append(str(folder))
     summary = {
         "created_at": utc_now(),
         "product": "HigherKey Operator OS",
@@ -106,6 +116,11 @@ def issue_report(
         "includes_original_footage": False,
         "includes_private_media": False,
         "includes_runtime_db": False,
+        "includes_content_inbox": False,
+        "includes_clips": False,
+        "includes_captions": False,
+        "includes_social_exports": False,
+        "includes_tokens": False,
         "include_logs_requested": include_logs,
         "include_runtime_requested": include_runtime,
         "included_files": included,
@@ -144,6 +159,15 @@ def issue_report(
                     payload = redact_paths(payload, root)
                 write_json(output / name, payload)
 
+    output_forbidden = []
+    if output.exists():
+        for path in output.rglob("*"):
+            if not path.is_file():
+                continue
+            parts = set(path.relative_to(output).parts)
+            if path.name in FORBIDDEN_REPORT_NAMES or parts.intersection(FORBIDDEN_REPORT_DIRS) or path.suffix.lower() in MEDIA_EXTENSIONS:
+                output_forbidden.append(str(path.relative_to(output)))
+
     return {
         "status": status,
         "dry_run": dry_run,
@@ -154,10 +178,12 @@ def issue_report(
         "client_safe": client_safe,
         "redact_paths": redact_path_values,
         "forbidden_output_targets": forbidden,
+        "forbidden_in_report": output_forbidden,
         "private_media_included": False,
         "source_media_included": False,
         "social_exports_included": False,
         "runtime_db_included": False,
+        "tokens_included": False,
     }
 
 

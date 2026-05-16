@@ -52,8 +52,8 @@ def summarize_component(name: str, status: str, message: str = "") -> dict[str, 
 def build_report(root: Path) -> dict[str, object]:
     package = load_json(root / "package.json")
     release = load_json(root / "config" / "release.json")
-    version = str(package.get("version") or "4.5.0")
-    release_version = str(release.get("version") or "V4.5")
+    version = str(package.get("version") or "4.7.0")
+    release_version = str(release.get("version") or "V4.7")
     dmg_path = root / "dist" / latest_dmg_name(version)
 
     analytics = root / "analytics"
@@ -66,6 +66,8 @@ def build_report(root: Path) -> dict[str, object]:
     integrity = load_json(analytics / "client_integrity.json")
     trial_validation = load_json(analytics / "trial_package_validation.json")
     feedback_summary = load_json(analytics / "client_feedback_summary.json")
+    client_trial_qa = load_json(analytics / "client_trial_qa_report.json")
+    client_language = load_json(analytics / "client_language_report.json")
 
     docs = [
         "CLIENT_HANDOFF_GUIDE.md",
@@ -75,6 +77,7 @@ def build_report(root: Path) -> dict[str, object]:
         "RELEASE_NOTES.md",
         "TRIAL_LIMITATIONS.md",
         "TRIAL_DELIVERY_CHECKLIST.md",
+        "CLIENT_TRIAL_QA_SUMMARY.md",
     ]
     doc_status = {name: (root / name).exists() for name in docs}
     trial_package = root / "out" / "trial_release"
@@ -104,6 +107,9 @@ def build_report(root: Path) -> dict[str, object]:
         summarize_component("feedback_summary", "pass" if feedback_summary else "warn", "Latest local feedback summary."),
         summarize_component("support_package_capability", "pass" if (root / "scripts" / "create_issue_report.py").exists() else "fail", "Client-safe support package script."),
         summarize_component("version_alignment", "pass" if release_version.lstrip("V") in version or version.startswith(release_version.lstrip("V")) else "warn", "package.json and config/release.json version alignment."),
+        summarize_component("client_trial_qa", status_from(client_trial_qa, "status"), "Final client trial QA report status."),
+        summarize_component("client_language", status_from(client_language, "status"), "Client-facing language scan status."),
+        summarize_component("support_package_safety", "pass" if (root / "scripts" / "create_issue_report.py").exists() else "fail", "Client-safe support package defaults are available."),
     ]
 
     failures = [item for item in components if item["status"] == "fail"]
@@ -145,6 +151,9 @@ def build_report(root: Path) -> dict[str, object]:
         "feedback_workflow_status": "pass" if (root / "scripts" / "collect_client_feedback.py").exists() else "fail",
         "feedback_summary_exists": bool(feedback_summary),
         "support_package_status": "pass" if (root / "scripts" / "create_issue_report.py").exists() else "fail",
+        "support_package_safety_status": "pass" if (root / "scripts" / "create_issue_report.py").exists() else "fail",
+        "client_trial_qa_status": status_from(client_trial_qa, "status"),
+        "client_language_status": status_from(client_language, "status"),
         "version_alignment_status": "pass" if release_version.lstrip("V") in version or version.startswith(release_version.lstrip("V")) else "warn",
         "support_package_capability_exists": (root / "scripts" / "create_issue_report.py").exists(),
         "docs": doc_status,

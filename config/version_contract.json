@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "4.6.0",
-  "release_version": "V4.6",
+  "app_version": "4.7.0",
+  "release_version": "V4.7",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -59,6 +59,12 @@
       "to": "V4.6",
       "safe": true,
       "notes": "Polish the client-facing media intake UI, simplify visible workflow language, and preserve existing local runtime behavior."
+    },
+    {
+      "from": "V4.6",
+      "to": "V4.7",
+      "safe": true,
+      "notes": "Add final client trial QA reporting, package validation, language scan, and release handoff checks without changing runtime behavior."
     }
   ],
   "required_runtime_files": [
@@ -115,6 +121,8 @@
     "scripts/package_trial_release.py",
     "scripts/validate_trial_package.py",
     "scripts/build_trial_readiness_report.py",
+    "scripts/run_client_trial_qa.py",
+    "scripts/check_client_language.py",
     "scripts/collect_client_feedback.py",
     "scripts/create_issue_report.py"
   ],
