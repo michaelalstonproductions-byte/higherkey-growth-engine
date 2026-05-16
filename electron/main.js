@@ -852,6 +852,29 @@ async function openIssueReportFolder() {
   return { path: reportDir, activeProjectRoot };
 }
 
+async function buildTrialPackage() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  return runPython(["scripts/package_trial_release.py"]);
+}
+
+async function openTrialPackageFolder() {
+  const trialDir = path.join(activeProjectRoot, "out", "trial_release");
+  await fsp.mkdir(trialDir, { recursive: true });
+  await shell.openPath(trialDir);
+  return { ok: true, path: trialDir, activeProjectRoot };
+}
+
+async function getTrialReadiness() {
+  const profile = await currentProfile();
+  return {
+    ok: true,
+    activeProjectRoot,
+    path: path.join(profile.projectRoot, "analytics", "trial_readiness_report.json"),
+    readiness: await readAnalyticsJson("trial_readiness_report.json", {})
+  };
+}
+
 async function getStorageReport() {
   const profile = await currentProfile();
   return { ok: true, activeProjectRoot, report: await readAnalyticsJson("cache_report.json", {}), path: path.join(profile.projectRoot, "analytics", "cache_report.json") };
@@ -1440,6 +1463,9 @@ function registerIpc() {
   ipcMain.handle("feedback:collectClient", (_event, options = {}) => collectClientFeedback(options));
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);
+  ipcMain.handle("trial:buildPackage", buildTrialPackage);
+  ipcMain.handle("trial:openPackageFolder", openTrialPackageFolder);
+  ipcMain.handle("trial:getReadiness", getTrialReadiness);
   ipcMain.handle("storage:getReport", getStorageReport);
   ipcMain.handle("storage:getClient", getClientStorage);
   ipcMain.handle("storage:buildCleanupPlan", (_event, options = {}) => buildCleanupPlan(options));

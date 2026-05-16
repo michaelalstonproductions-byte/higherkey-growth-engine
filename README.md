@@ -868,6 +868,71 @@ Generated support folder:
 
 Issue reports exclude original footage, private generated media, full logs, runtime DB files, and local tokens by default. In the app, use `Create Support Package` and `Open Support Package` from client troubleshooting areas.
 
+## V4.4 Client Trial Package
+
+V4.4 prepares a clean local trial package for a real client without copying private footage or runtime media.
+
+Build the trial package:
+
+```bash
+python3 scripts/package_trial_release.py
+```
+
+Preview the package without writing files:
+
+```bash
+python3 scripts/package_trial_release.py --dry-run
+```
+
+Optionally copy the newest DMG into the package:
+
+```bash
+python3 scripts/package_trial_release.py --include-dmg
+```
+
+Generated trial folder:
+
+- `out/trial_release/CLIENT_HANDOFF_GUIDE.md`
+- `out/trial_release/CLIENT_QUICK_START.md`
+- `out/trial_release/BETA_READINESS_CHECKLIST.md`
+- `out/trial_release/DEMO_CHECKLIST.md`
+- `out/trial_release/RELEASE_NOTES.md`
+- `out/trial_release/TRIAL_LIMITATIONS.md`
+- `out/trial_release/app_info.json`
+- `out/trial_release/latest_dmg_pointer.json`
+- `out/trial_release/quick_start.txt`
+- `out/trial_release/support_note.txt`
+- `out/trial_release/trial_limitations.txt`
+- `out/trial_release/client_feedback_template.json`
+
+Build a readiness report:
+
+```bash
+python3 scripts/build_trial_readiness_report.py
+```
+
+Generated readiness file:
+
+- `analytics/trial_readiness_report.json`
+
+What to send to a client:
+
+- the newest DMG from `dist/`
+- the contents of `out/trial_release/`
+- `CLIENT_QUICK_START.md`
+- `TRIAL_LIMITATIONS.md`
+
+Trial workflow reminder:
+
+1. Open the app.
+2. Import footage.
+3. Import & Process.
+4. Review and approve clips.
+5. Export social packs.
+6. Upload manually.
+
+HigherKey remains local-first. No cloud APIs, social APIs, or direct posting APIs are configured.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

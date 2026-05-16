@@ -920,6 +920,7 @@
         clientTasks: "../analytics/client_tasks.json",
         clientWorkflow: "../analytics/client_workflow.json",
         clientDemo: "../config/client_demo.json",
+        trialReadiness: "../analytics/trial_readiness_report.json",
         localApiStatus: "../analytics/local_api_status.json"
       };
       const REVIEW_KEY = "higherkey.review_status.v1";
@@ -1597,7 +1598,7 @@
       }
       function renderSettingsView() {
         const info = state.appInfo || {};
-        return `<div class="view settings-view">${settingsCard("Project Preferences", [["Active Project", info.activeProjectRoot || info.projectRoot || "static"],["Content Inbox", info.contentInbox || "content_inbox"],["Export Folder", info.exportDirectory || "out/approved_posts"]])}${settingsCard("Runtime Folders", [["Analytics", info.analyticsDirectory || "analytics"],["App Root", info.appRoot || "static browser"],["Mode", info.packaged ? "packaged" : window.higherkey ? "dev electron" : "static"]])}${settingsCard("Theme & Appearance", [["Theme", "Red / black / graphite"],["Density", "Cinematic desktop"],["Logo", "Inline HigherKey mark"]])}${settingsCard("Startup & Launch", [["Launcher", "npm run app:open-latest"],["Version", versionLabel()],["Build", info.build?.buildStatus || "release-candidate"]])}${settingsCard("Production Mode", [["Hide Test Media", state.production.hideTestMedia ? "on" : "off"],["Detected Test Media", testEntries().length],["Real Clips", realEntries().length]])}${settingsCard("Watcher & Pipeline", [["Pipeline", state.status?.state || "idle"],["Last CWD", info.lastPipeline?.cwd || "not run"],["Watcher", "manual"]])}<section class="settings-card"><h2>Advanced</h2>${desktopBridgeHtml()}<div class="toolbar"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button></div></section></div>`;
+        return `<div class="view settings-view">${settingsCard("Project Preferences", [["Active Project", info.activeProjectRoot || info.projectRoot || "static"],["Content Inbox", info.contentInbox || "content_inbox"],["Export Folder", info.exportDirectory || "out/approved_posts"]])}${settingsCard("Runtime Folders", [["Analytics", info.analyticsDirectory || "analytics"],["App Root", info.appRoot || "static browser"],["Mode", info.packaged ? "packaged" : window.higherkey ? "dev electron" : "static"]])}${settingsCard("Theme & Appearance", [["Theme", "Red / black / graphite"],["Density", "Cinematic desktop"],["Logo", "Inline HigherKey mark"]])}${settingsCard("Startup & Launch", [["Launcher", "npm run app:open-latest"],["Version", versionLabel()],["Build", info.build?.buildStatus || "release-candidate"]])}${settingsCard("Trial Package", [["Status", trialStatusLabel()],["DMG", state.trialReadiness?.dmg_exists ? "available" : "needs build"],["Manual Upload", "only"]])}${settingsCard("Production Mode", [["Hide Test Media", state.production.hideTestMedia ? "on" : "off"],["Detected Test Media", testEntries().length],["Real Clips", realEntries().length]])}${settingsCard("Watcher & Pipeline", [["Pipeline", state.status?.state || "idle"],["Last CWD", info.lastPipeline?.cwd || "not run"],["Watcher", "manual"]])}<section class="settings-card"><h2>Advanced</h2>${desktopBridgeHtml()}<div class="toolbar"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button></div></section></div>`;
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
@@ -2248,6 +2249,8 @@
             <button data-desktop-action="run-audio-school">Run Audio School</button>
             <button data-desktop-action="run-diagnostics">Diagnostics</button>
             <button data-desktop-action="run-full-qa">Full QA</button>
+            <button data-desktop-action="build-trial-package">Build Trial Package</button>
+            <button data-desktop-action="open-trial-package">Open Trial Package</button>
             <button data-desktop-action="notify-test">Notify</button>
           </div>
           <div class="muted">${window.higherkey ? "Available" : "Static browser mode"}</div>
@@ -2359,8 +2362,29 @@
           ${pipeline.state === "needs_attention" ? `<section class="inspector-section"><h3>Needs Attention</h3><div class="copy">Some older references need cleanup, but usable clips can still be reviewed.</div><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="repair-project">Repair Project</button><button class="btn" data-desktop-action="go-diagnostics">Open Support</button></div></section>` : ""}
           <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(workflow.client_message)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Let AI Process</button></div></section>
           <section class="inspector-section"><h3>Workflow Progress</h3><div class="copy">${html(workflow.processing?.active ? workflow.processing.message || "Processing media." : workflow.next_action)}</div><div class="metric"><span>Current step</span><strong>${html((workflow.steps || []).find((step) => step.id === workflow.current_step)?.label || workflow.next_action)}</strong></div><div class="metric"><span>Completed steps</span><strong>${html((workflow.completed_steps || []).length)}</strong></div></section>
+          <section class="inspector-section"><h3>Trial Status</h3>${trialReadinessHtml()}</section>
           <section class="inspector-section"><h3>Social Readiness</h3>${socialExportsSummaryHtml()}</section>
           <section class="inspector-section"><h3>Compact Health</h3>${compactHealthHtml()}</section>
+        `;
+      }
+
+      function trialStatusLabel() {
+        const status = state.trialReadiness?.overall_readiness || "not checked";
+        if (status === "ready") return "Trial Ready";
+        if (status === "needs_attention") return "Trial Needs Attention";
+        if (status === "not_ready") return "Trial Not Ready";
+        return "Trial Not Checked";
+      }
+
+      function trialReadinessHtml() {
+        return `
+          <div class="metric"><span>Status</span><strong>${html(trialStatusLabel())}</strong></div>
+          <div class="metric"><span>DMG</span><strong>${state.trialReadiness?.dmg_exists ? "available" : "needs build"}</strong></div>
+          <div class="copy">Trial package contains docs, quick start, support notes, and a DMG pointer. It does not include private footage.</div>
+          <div class="toolbar" style="margin-top:10px">
+            <button class="btn" data-desktop-action="build-trial-package">Build Trial Package</button>
+            <button class="btn" data-desktop-action="open-trial-package">Open Trial Package</button>
+          </div>
         `;
       }
 
@@ -2831,6 +2855,17 @@
               await window.higherkey.openIssueReportFolder?.();
               return setNotice("Support package folder opened.");
             }
+            if (action === "build-trial-package") {
+              setNotice("Building client trial package...");
+              const result = await window.higherkey.buildTrialPackage?.();
+              state.trialReadiness = window.higherkey.getTrialReadiness ? (await window.higherkey.getTrialReadiness().catch(() => null))?.readiness || state.trialReadiness : state.trialReadiness;
+              await refreshLiveData();
+              return setNotice(result?.code === 0 ? "Trial package ready. It excludes private footage by default." : "Trial package needs attention. Open Diagnostics for details.");
+            }
+            if (action === "open-trial-package") {
+              await window.higherkey.openTrialPackageFolder?.();
+              return setNotice("Trial package folder opened.");
+            }
             if (action === "enqueue-full-media-prep") {
               const result = await window.higherkey.enqueueFullMediaPrep();
               await refreshLiveData();
@@ -2900,6 +2935,7 @@
           state.clientTasks = await optionalJson(PATHS.clientTasks, null);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, null);
           state.clientDemo = await optionalJson(PATHS.clientDemo, null);
+          state.trialReadiness = window.higherkey?.getTrialReadiness ? (await window.higherkey.getTrialReadiness().catch(() => null))?.readiness || await optionalJson(PATHS.trialReadiness, null) : await optionalJson(PATHS.trialReadiness, null);
           state.localApiStatus = window.higherkey?.getLocalApiStatus ? await window.higherkey.getLocalApiStatus().catch(() => null) : await optionalJson(PATHS.localApiStatus, null);
           state.release = await optionalJson(PATHS.release, null);
           state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => null) : null;
@@ -2960,6 +2996,7 @@
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);
           state.clientDemo = await optionalJson(PATHS.clientDemo, state.clientDemo);
+          state.trialReadiness = window.higherkey?.getTrialReadiness ? (await window.higherkey.getTrialReadiness().catch(() => null))?.readiness || await optionalJson(PATHS.trialReadiness, state.trialReadiness) : await optionalJson(PATHS.trialReadiness, state.trialReadiness);
           state.localApiStatus = window.higherkey?.getLocalApiStatus ? await window.higherkey.getLocalApiStatus().catch(() => state.localApiStatus) : await optionalJson(PATHS.localApiStatus, state.localApiStatus);
           state.release = await optionalJson(PATHS.release, state.release);
           state.appInfo = window.higherkey ? await window.higherkey.getAppInfo().catch(() => state.appInfo) : state.appInfo;

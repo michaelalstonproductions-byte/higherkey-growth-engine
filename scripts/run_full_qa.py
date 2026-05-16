@@ -81,9 +81,13 @@ def external_api_scan(root: Path) -> dict[str, object]:
         if not (
             "README.md" in hit["path"]
             or "CLIENT_HANDOFF_GUIDE.md" in hit["path"]
+            or "CLIENT_QUICK_START.md" in hit["path"]
             or "BETA_READINESS_CHECKLIST.md" in hit["path"]
+            or "TRIAL_LIMITATIONS.md" in hit["path"]
             or "scripts/run_full_qa.py" in hit["path"]
             or "scripts/package_client_handoff.py" in hit["path"]
+            or "scripts/package_trial_release.py" in hit["path"]
+            or "scripts/build_trial_readiness_report.py" in hit["path"]
             or "scripts/collect_client_feedback.py" in hit["path"]
             or "scripts/create_issue_report.py" in hit["path"]
             or "growth_engine/local_api.py" in hit["path"]
@@ -289,6 +293,36 @@ def client_handoff_check(root: Path) -> dict[str, object]:
     flags_ok = bool(demo_config.get("demo_mode_enabled")) and bool(demo_config.get("show_simplified_workflow"))
     status = "pass" if not missing and flags_ok else "fail"
     return {"name": "client_handoff_validation", "status": status, "missing": missing, "flags_ok": flags_ok}
+
+
+def trial_package_check(root: Path) -> dict[str, object]:
+    required = [
+        root / "CLIENT_QUICK_START.md",
+        root / "TRIAL_LIMITATIONS.md",
+        root / "scripts" / "package_trial_release.py",
+        root / "scripts" / "build_trial_readiness_report.py",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    try:
+        quick_start = (root / "CLIENT_QUICK_START.md").read_text(encoding="utf-8")
+        limitations = (root / "TRIAL_LIMITATIONS.md").read_text(encoding="utf-8")
+        package_script = (root / "scripts" / "package_trial_release.py").read_text(encoding="utf-8")
+    except Exception as error:
+        return {"name": "trial_package_validation", "status": "fail", "message": str(error), "missing": missing}
+    required_quick_start = ["Import Footage", "Import & Process", "Review", "Export", "Upload"]
+    required_limitations = ["No cloud", "No social", "manual", "MP4", "MOV", "M4V"]
+    missing_quick_start = [item for item in required_quick_start if item.lower() not in quick_start.lower()]
+    missing_limitations = [item for item in required_limitations if item.lower() not in limitations.lower()]
+    script_flags_ok = "--include-dmg" in package_script and "--dry-run" in package_script
+    status = "pass" if not missing and not missing_quick_start and not missing_limitations and script_flags_ok else "fail"
+    return {
+        "name": "trial_package_validation",
+        "status": status,
+        "missing": missing,
+        "missing_quick_start": missing_quick_start,
+        "missing_limitations": missing_limitations,
+        "script_flags_ok": script_flags_ok,
+    }
 
 
 def beta_checklist_check(root: Path) -> dict[str, object]:
@@ -530,8 +564,10 @@ def main() -> int:
     append_stage(results, qa_stage("client_workflow_build", ["python3", "scripts/build_client_workflow.py"], root, timeout=60), config)
     append_stage(results, qa_stage("create_demo_project_dry_run", ["python3", "scripts/create_demo_project.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("package_client_handoff_dry_run", ["python3", "scripts/package_client_handoff.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("package_trial_release_dry_run", ["python3", "scripts/package_trial_release.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("collect_client_feedback_dry_run", ["python3", "scripts/collect_client_feedback.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("create_issue_report_dry_run", ["python3", "scripts/create_issue_report.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("trial_readiness_report", ["python3", "scripts/build_trial_readiness_report.py"], root, timeout=60), config)
     append_stage(results, qa_stage("schedule_tasks_dry_run", ["python3", "scripts/schedule_tasks.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("full_media_prep_chain_dry_run", ["python3", "scripts/enqueue_full_media_prep.py", "--dry-run"], root, timeout=60), config)
     print("[qa] worker_runtime_validation", flush=True)
@@ -579,6 +615,8 @@ def main() -> int:
     append_stage(results, client_handoff_check(root), config)
     print("[qa] beta_checklist_validation", flush=True)
     append_stage(results, beta_checklist_check(root), config)
+    print("[qa] trial_package_validation", flush=True)
+    append_stage(results, trial_package_check(root), config)
     print("[qa] upgrade_plan_fixture", flush=True)
     append_stage(results, upgrade_fixture_check(root), config)
     print("[qa] storage_apply_archive_fixture", flush=True)
