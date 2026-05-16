@@ -756,6 +756,210 @@
       .settings-view{grid-template-columns:1fr 1fr;grid-template-rows:repeat(3,minmax(0,1fr))}.settings-card{border:1px solid var(--line);border-radius:var(--radius);background:linear-gradient(180deg,#101722,#070a0e);padding:16px;overflow:auto}.settings-card h2{font-size:16px;margin:0 0 12px}.setting-row{display:flex;justify-content:space-between;gap:14px;color:#b9c4d2;border-top:1px solid rgba(255,255,255,.06);padding:10px 0}
       .mini-strip{display:flex;gap:10px;overflow:auto}.mini-clip{min-width:120px;border:1px solid var(--line);border-radius:10px;background:#0b1018;overflow:hidden}.mini-clip .thumb{height:70px;width:100%}.mini-clip div:last-child{padding:8px;font-size:11px;color:#dce5f1}
       @media(max-width:1300px){.app{grid-template-columns:230px minmax(600px,1fr) 330px}.clip-grid{grid-template-columns:repeat(3,1fr)}.project-line{grid-template-columns:1fr;gap:6px}.actions{flex-wrap:wrap;justify-content:flex-end}.topbar{grid-template-columns:240px 1fr auto}}
+
+      /* V4.6 client-demo polish: premium shell, cleaner hierarchy, client-safe pages */
+      :root{
+        --bg:#05070a;
+        --panel:#0b1017;
+        --panel-elevated:#101722;
+        --card:#121a26;
+        --border:#263241;
+        --border-strong:#364253;
+        --text-primary:#f3f6fb;
+        --text-secondary:#9aa7b7;
+        --text-dim:#657284;
+        --red:#f2353f;
+        --red-dark:#9b111c;
+        --green:#49d766;
+        --yellow:#f2b84b;
+        --blue:#458cff;
+        --bg2:#080b10;
+        --line:var(--border);
+        --ink:var(--text-primary);
+        --muted:var(--text-secondary);
+        --accent:var(--red);
+        --accent-2:var(--red-dark);
+        --good:var(--green);
+        --warn:var(--yellow);
+        --radius:14px;
+      }
+      body{
+        background:radial-gradient(circle at 18% -10%,rgba(242,53,63,.16),transparent 30%),linear-gradient(180deg,#080b10,#05070a);
+        color:var(--text-primary);
+      }
+      button,input,select{
+        border-color:var(--border);
+        background:linear-gradient(180deg,#121a26,#080c12);
+        border-radius:10px;
+        color:var(--text-primary);
+      }
+      .app{
+        grid-template-columns:250px minmax(720px,1fr) minmax(340px,390px);
+        grid-template-rows:78px 1fr 28px;
+        gap:12px;
+        padding:10px;
+      }
+      .topbar{
+        min-height:0;
+        padding:0 16px;
+        border-radius:16px;
+        background:linear-gradient(180deg,rgba(16,23,34,.96),rgba(7,10,15,.98));
+        box-shadow:0 24px 80px rgba(0,0,0,.42);
+      }
+      .brand{min-width:260px}
+      .logo{width:38px;height:38px}
+      .brand-title{font-size:14px;letter-spacing:.13em}
+      .brand-title span,.session-line{font-size:11px;color:var(--text-secondary)}
+      .badge,.version-badge{
+        height:23px;
+        display:inline-flex;
+        align-items:center;
+        border-color:rgba(69,140,255,.55);
+        color:#a9d3ff;
+        background:#0b1623;
+      }
+      .project-line{
+        grid-template-columns:minmax(0,1fr) 132px 116px;
+        gap:16px;
+      }
+      .kicker{font-size:10px;color:#b5c0cf}
+      .path{max-width:100%;font-size:12px;color:#e9f0fb}
+      .status-green{font-size:12px;color:var(--green)}
+      .actions{gap:8px;flex-wrap:nowrap}
+      .btn,button{
+        min-height:36px;
+        border-radius:9px;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+      }
+      .btn.red,button.primary{
+        background:linear-gradient(180deg,#f25059,#9b111c);
+        border-color:#ff6970;
+      }
+      .left,.right,.panel,.small-panel,.kpi-card,.settings-card,.platform-card,.agent-card{
+        background:linear-gradient(180deg,rgba(16,23,34,.96),rgba(7,10,15,.98));
+        border-color:var(--border);
+        box-shadow:0 12px 36px rgba(0,0,0,.22);
+      }
+      .left{grid-template-rows:auto 1fr auto}
+      .nav{gap:6px}
+      .nav-item{
+        height:46px;
+        border-radius:11px;
+        font-weight:750;
+        color:#d9e1ed;
+      }
+      .nav-item.active{
+        background:linear-gradient(90deg,rgba(242,53,63,.28),rgba(242,53,63,.05));
+        border-color:rgba(242,53,63,.7);
+        box-shadow:inset 3px 0 0 var(--red);
+      }
+      .technical-tab{display:none!important}
+      .system{padding:14px;border-radius:14px;background:rgba(18,26,38,.78)}
+      .system-row{font-size:12px}
+      .system-row strong{color:var(--green)}
+      .operator-card{display:none}
+      .main{min-height:0}
+      .view{gap:14px;overflow:auto}
+      .panel-head{
+        min-height:42px;
+        height:auto;
+        padding:10px 16px;
+      }
+      .panel-title,.section-title,.inspector h3,.card h3{
+        color:#f5f8ff;
+        letter-spacing:.14em;
+      }
+      .kpi-grid{gap:12px}
+      .kpi-card{
+        min-height:108px;
+        border-radius:14px;
+        padding:16px;
+      }
+      .kpi-card strong{font-size:28px}
+      .dashboard-view>.kpi-grid{
+        grid-template-columns:repeat(3,minmax(0,1fr));
+      }
+      .dashboard-simple{grid-template-rows:auto auto auto minmax(270px,1fr) auto}
+      .ai-drop-panel{
+        grid-template-columns:minmax(420px,1.15fr) minmax(280px,.85fr);
+        padding:16px;
+        min-height:250px;
+      }
+      .drop-zone{
+        min-height:218px;
+        padding:26px;
+        border-radius:18px;
+        background:radial-gradient(circle at 20% 10%,rgba(242,53,63,.28),transparent 30%),linear-gradient(180deg,#121a26,#070a0f);
+      }
+      .drop-zone h1{font-size:40px;max-width:720px}
+      .drop-zone p{font-size:15px;color:#c7d2e2}
+      .promise-card{border-radius:14px;background:linear-gradient(180deg,#121a26,#090d13)}
+      .client-workflow{grid-template-columns:repeat(5,minmax(130px,1fr))}
+      .workflow-step{
+        min-height:116px;
+        border-radius:14px;
+        padding:14px;
+      }
+      .workflow-step strong{font-size:15px}
+      .workflow-step p{font-size:12px;color:#aab6c7}
+      .client-dashboard-grid{grid-template-columns:minmax(460px,1.12fr) minmax(300px,.88fr)}
+      .dashboard-grid-secondary{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .feature-preview{min-height:320px}
+      .feature-preview .hero{inset:42px 0 0}
+      .stats{left:24px;right:24px;bottom:22px;gap:12px}
+      .stat-card{padding:12px;background:rgba(0,0,0,.62)}
+      .stat-card strong{font-size:24px}
+      .queue-view{grid-template-columns:minmax(520px,1fr) minmax(320px,390px)}
+      .data-table th,.data-table td{padding:10px 12px}
+      .asset-preview{grid-template-columns:minmax(360px,1fr) minmax(280px,360px)}
+      .clip-grid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+      .analysis-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .social-view{grid-template-rows:auto auto minmax(190px,1fr)}
+      .platform-grid{grid-template-columns:repeat(4,minmax(180px,1fr))}
+      .diagnostics-view,.support-view{grid-template-rows:auto minmax(0,1fr) auto}
+      .diagnostics-grid,.support-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;min-height:0}
+      .settings-view{grid-template-columns:1fr 1fr;grid-template-rows:auto auto auto}
+      .setting-row strong,.metric strong{
+        max-width:100%;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+      .right{
+        grid-template-columns:1fr;
+        background:linear-gradient(180deg,#101722,#070a0e);
+      }
+      .side-icons{display:none}
+      .inspector-section,.card{
+        padding:18px;
+        border-bottom:1px solid rgba(255,255,255,.07);
+      }
+      .copy{color:#d8e1ee}
+      .json-panel{max-height:260px}
+      .advanced-details{
+        border:1px solid var(--border);
+        border-radius:14px;
+        background:rgba(5,8,13,.55);
+        padding:12px 14px;
+      }
+      .advanced-details summary{
+        cursor:pointer;
+        color:#dce6f4;
+        font-weight:800;
+      }
+      .advanced-details[open] summary{margin-bottom:12px}
+      .support-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .support-actions .btn{justify-content:center}
+      .notice{left:280px;right:420px}
+      .footer{font-size:11px;overflow:hidden}
+      .footer span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      @media(max-width:1320px){
+        .app{grid-template-columns:218px minmax(620px,1fr) 330px}
+        .actions{flex-wrap:wrap;justify-content:flex-end}
+        .dashboard-view>.kpi-grid,.dashboard-grid-secondary{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .client-workflow,.platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .ai-drop-panel,.client-dashboard-grid,.asset-preview,.queue-view,.diagnostics-grid,.support-grid{grid-template-columns:1fr}
+      }
     </style>
   </head>
   <body>
@@ -1108,7 +1312,7 @@
             <div class="demo-check"><span class="demo-dot">?</span><span><strong>Processing taking long</strong><br><span class="muted">Keep the app open until the progress says ready for review.</span></span></div>
             <div class="demo-check"><span class="demo-dot">?</span><span><strong>No clips showing</strong><br><span class="muted">Import footage, then click Process Media.</span></span></div>
             <div class="demo-check"><span class="demo-dot">?</span><span><strong>Export folder missing</strong><br><span class="muted">Generate social packs, then open the export folder.</span></span></div>
-            <button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button>
+            <button class="btn" data-desktop-action="go-diagnostics">Open Support</button>
             <button class="btn" data-desktop-action="create-issue-report">Create Support Package</button>
             <button class="btn" data-desktop-action="open-issue-report">Open Support Package</button>
           </div>
@@ -1134,7 +1338,7 @@
             <div class="modal-stat"><span>Imported</span><strong>${html(imported)}</strong></div>
             <div class="modal-stat"><span>Skipped</span><strong>${html(skipped + errors)}</strong></div>
           </div>
-          ${errors ? `<p>Some files need attention. Open Diagnostics for details.</p>` : `<p>Ready to process. No terminal or external apps are needed.</p>`}
+          ${errors ? `<p>Some files need attention. Open Support for details.</p>` : `<p>Ready to process. No terminal or external apps are needed.</p>`}
         `;
         showClientModal("Import Footage", body, [
           { label: "Process Now", action: "process-now", primary: true },
@@ -1594,11 +1798,93 @@
         return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Social Export Folders</div><div>HigherKey prepares posts. You upload manually.</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Checklist</div><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button></div><div class="checklist"><span>✓ Open the TikTok, Instagram Reels, YouTube Shorts, or Facebook Reels folder.</span><span>✓ Review caption.txt, hashtags.txt, title.txt, and posting_notes.txt.</span><span>✓ Confirm thumbnail.jpg when available.</span><span>✓ Upload manually. HigherKey does not post directly.</span></div></section></div>`;
       }
       function renderDiagnosticsView() {
-        return `<div class="view diagnostics-view">${kpiCards([["Diagnostics", state.diagnostics?.status || "not run", "analytics/diagnostics.json"],["Full QA", state.qaReport?.status || "not run", "analytics/qa_report.json"],["Build Guard", state.appInfo?.buildWarnings?.length ? "warning" : "aligned", "Version checks"],["Test Media", testEntries().length, state.production.hideTestMedia ? "Hidden in Production" : "Visible"]])}<div class="diagnostics-grid"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Health Checks</div></div>${diagnosticsHtml()}${productionModeControlsHtml()}<div class="toolbar"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button></div></section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Diagnostics JSON</div></div><pre class="json-panel">${html(JSON.stringify(state.diagnostics || {}, null, 2))}</pre></section></div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Project Repair Report</div></div><pre class="json-panel">${html(JSON.stringify(state.repairReport || {}, null, 2))}</pre></section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">QA Report Summary</div></div><pre class="json-panel">${html(JSON.stringify(state.qaReport || {}, null, 2))}</pre></section></div>`;
+        const diagnosticsStatus = state.diagnostics?.status || "not run";
+        const qaStatus = state.qaReport?.status || "not run";
+        return `
+          <div class="view diagnostics-view support-view">
+            ${kpiCards([
+              ["Support Status", compactHealthLabel(), "Client-safe help"],
+              ["Diagnostics", diagnosticsStatus, "Available on request"],
+              ["Trial Package", trialStatusLabel(), "Client handoff"],
+              ["Hidden Test Media", testEntries().length, state.production.hideTestMedia ? "Not shown in workflow" : "Visible"]
+            ])}
+            <div class="support-grid">
+              <section class="panel view-scroll">
+                <div class="panel-head"><div class="panel-title">Support Package</div><div>Local only</div></div>
+                <div style="padding:16px;display:grid;gap:14px">
+                  <p class="copy">Create a client-safe support package that excludes original footage, imported media, private tokens, and full runtime databases by default.</p>
+                  <div class="support-actions">
+                    <button class="btn red" data-desktop-action="create-issue-report">Create Support Package</button>
+                    <button class="btn" data-desktop-action="open-issue-report">Open Support Package</button>
+                    <button class="btn" data-desktop-action="leave-feedback">Leave Feedback</button>
+                    <button class="btn" data-desktop-action="open-feedback-folder">Open Feedback Folder</button>
+                  </div>
+                </div>
+              </section>
+              <section class="panel view-scroll">
+                <div class="panel-head"><div class="panel-title">Troubleshooting</div><div>Client guide</div></div>
+                <div style="padding:16px">${clientTroubleshootingHtml()}</div>
+              </section>
+              <section class="panel view-scroll">
+                <div class="panel-head"><div class="panel-title">Health Summary</div><div>${html(qaStatus)}</div></div>
+                <div style="padding:16px">${diagnosticsHtml()}<div class="toolbar" style="margin-top:12px"><button class="btn" data-desktop-action="run-diagnostics">Run Diagnostics</button><button class="btn" data-desktop-action="repair-project">Repair Project Media</button></div></div>
+              </section>
+              <section class="panel view-scroll">
+                <div class="panel-head"><div class="panel-title">Trial Readiness</div><div>${html(trialStatusLabel())}</div></div>
+                <div style="padding:16px">${trialReadinessHtml()}</div>
+              </section>
+            </div>
+            <details class="advanced-details">
+              <summary>Advanced technical reports</summary>
+              <div class="diagnostics-grid">
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Diagnostics Detail</div></div><pre class="json-panel">${html(JSON.stringify(state.diagnostics || {}, null, 2))}</pre></section>
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">QA Detail</div></div><pre class="json-panel">${html(JSON.stringify(state.qaReport || {}, null, 2))}</pre></section>
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Repair Detail</div></div><pre class="json-panel">${html(JSON.stringify(state.repairReport || {}, null, 2))}</pre></section>
+              </div>
+            </details>
+          </div>
+        `;
       }
       function renderSettingsView() {
         const info = state.appInfo || {};
-        return `<div class="view settings-view">${settingsCard("Project Preferences", [["Active Project", info.activeProjectRoot || info.projectRoot || "static"],["Content Inbox", info.contentInbox || "content_inbox"],["Export Folder", info.exportDirectory || "out/approved_posts"]])}${settingsCard("Runtime Folders", [["Analytics", info.analyticsDirectory || "analytics"],["App Root", info.appRoot || "static browser"],["Mode", info.packaged ? "packaged" : window.higherkey ? "dev electron" : "static"]])}${settingsCard("Theme & Appearance", [["Theme", "Red / black / graphite"],["Density", "Cinematic desktop"],["Logo", "Inline HigherKey mark"]])}${settingsCard("Startup & Launch", [["Launcher", "npm run app:open-latest"],["Version", versionLabel()],["Build", info.build?.buildStatus || "release-candidate"]])}${settingsCard("Trial Package", [["Status", trialStatusLabel()],["DMG", state.trialReadiness?.dmg_exists ? "available" : "needs build"],["Manual Upload", "only"]])}${settingsCard("Production Mode", [["Hide Test Media", state.production.hideTestMedia ? "on" : "off"],["Detected Test Media", testEntries().length],["Real Clips", realEntries().length]])}${settingsCard("Watcher & Pipeline", [["Pipeline", state.status?.state || "idle"],["Last CWD", info.lastPipeline?.cwd || "not run"],["Watcher", "manual"]])}<section class="settings-card"><h2>Advanced</h2>${desktopBridgeHtml()}<div class="toolbar"><button class="btn" data-desktop-action="repair-project">Repair Project Media</button></div></section></div>`;
+        return `
+          <div class="view settings-view">
+            ${settingsCard("Project Folder", [["Active Project", info.activeProjectRoot || info.projectRoot || "static"],["Content Folder", info.contentInbox || "content_inbox"],["Export Folder", info.exportDirectory || "out/approved_posts"]])}
+            ${settingsCard("App & Build", [["Version", versionLabel()],["Build", info.build?.buildStatus || "client demo"],["Manual Upload", "enabled"]])}
+            ${settingsCard("Theme & Appearance", [["Theme", "Red / black / graphite"],["Density", "Cinematic desktop"],["Logo", "HigherKey inline mark"]])}
+            ${settingsCard("Production Mode", [["Hide Test Media", state.production.hideTestMedia ? "on" : "off"],["Detected Test Media", testEntries().length],["Real Clips", realEntries().length]])}
+            <section class="settings-card">
+              <h2>Client Actions</h2>
+              <div class="support-actions">
+                <button class="btn red" data-desktop-action="import-and-process">Import & Process</button>
+                <button class="btn" data-desktop-action="import-footage">Import Footage</button>
+                <button class="btn" data-desktop-action="pick-project">Select Project</button>
+                <button class="btn" data-desktop-action="open-inbox">Open Inbox Folder</button>
+                <button class="btn" data-desktop-action="build-trial-package">Build Trial Package</button>
+                <button class="btn" data-desktop-action="open-trial-package">Open Trial Package</button>
+              </div>
+            </section>
+            <section class="settings-card">
+              <h2>Advanced Tools</h2>
+              <details class="advanced-details">
+                <summary>Show advanced local controls</summary>
+                ${desktopBridgeHtml()}
+                <div class="toolbar" style="margin-top:12px">
+                  <button class="btn" data-desktop-action="go-agents">Open Agent Status</button>
+                  <button class="btn" data-desktop-action="go-analytics">Open Analytics</button>
+                  <button class="btn" data-desktop-action="repair-project">Repair Project Media</button>
+                </div>
+              </details>
+            </section>
+            <section class="settings-card">
+              <h2>Technical Runtime</h2>
+              <details class="advanced-details">
+                <summary>Show runtime details</summary>
+                ${projectRuntimeHtml()}
+              </details>
+            </section>
+          </div>
+        `;
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
@@ -1612,7 +1898,7 @@
             <td><input type="checkbox" data-select-id="${html(entry.id)}" ${state.selected.has(entry.id) ? "checked" : ""}></td>
             <td><div class="row">${clipThumb(entry, "table-thumb")}<span>${html(entry.clip_id || title(entry))}</span></div></td>
             <td>${html(score(entry))}</td><td>${html(statusOf(entry))}</td><td>${html(priorityOf(entry))}</td>
-            <td>${html(entry.source_path || "local")}</td><td>${html(formatTime(entry.duration || entry.package?.duration || 0))}</td><td>${cacheFor(entry)?.status === "cached" ? "ready" : "pending"}</td>
+            <td>${html(isTestEntry(entry) ? "test hidden" : "local footage")}</td><td>${html(formatTime(entry.duration || entry.package?.duration || 0))}</td><td>${cacheFor(entry)?.status === "cached" ? "ready" : "pending"}</td>
           </tr>
         `).join("") || `<tr><td colspan="8">${zeroQueueCtaHtml()}</td></tr>`}</tbody></table>`;
       }
@@ -1690,7 +1976,7 @@
           <div class="health-compact">
             <strong>${html(compactHealthLabel())}</strong>
             <span>${html(state.diagnostics?.status || state.qaReport?.status || "not run")}</span>
-            <button class="btn" data-desktop-action="go-diagnostics">Open Diagnostics</button>
+            <button class="btn" data-desktop-action="go-diagnostics">Open Support</button>
             <button class="btn" data-desktop-action="repair-project">Repair Project Media</button>
           </div>
         `;
@@ -1700,19 +1986,15 @@
         const visible = productionEntries();
         const approved = visible.filter((entry) => statusOf(entry) === "approved").length;
         const exported = state.exports?.count || 0;
-        const indexed = state.metadata?.count || state.metadata?.items?.length || 0;
-        const runningAgents = (state.agents?.agents || []).filter((agent) => ["assigned", "running"].includes(agent.state)).length;
-        const cached = state.mediaCache?.status_counts?.cached || 0;
         const health = state.diagnostics?.status || state.qaReport?.status || "unknown";
         const pipeline = pipelineUiState();
         const apiState = state.localApiStatus?.state || (state.localApiStatus?.running ? "running" : "offline");
         $("systemStatus").innerHTML = [
           ["Footage", visible.length],
-          ["Ready Clips", visible.length],
+          ["Clips Ready", visible.length],
           ["Approved", approved],
-          ["Exports", exported || state.socialManifest?.count || 0],
-          ["AI Prep", pipeline.state === "needs_attention" ? "check needed" : pipeline.state === "failed" ? "needs support" : "ready"],
-          ["Health", pipeline.state === "failed" ? "support" : pipeline.state === "needs_attention" ? "review" : "good"]
+          ["Packs Ready", exported || state.socialManifest?.count || 0],
+          ["Health", pipeline.state === "failed" ? "Support" : pipeline.state === "needs_attention" ? "Review" : "Ready"]
         ].map(([label, value]) => `<div class="system-row"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join("");
         $("versionBadge").textContent = versionLabel();
         if ($("footerVersion")) $("footerVersion").textContent = versionLabel();
@@ -2002,7 +2284,7 @@
             <button data-desktop-action="copy-audio-notes">Copy Audio Notes</button>
             <button data-desktop-action="refresh-school-reports">Refresh School Reports</button>
           </div>
-          <div class="muted" style="padding:0 12px 12px">${window.higherkey ? "Local read-only analysis. Reports are written to analytics and previews to out." : "Static mode commands: python3 scripts/run_color_school.py · python3 scripts/run_audio_school.py"}</div>
+          <div class="muted" style="padding:0 12px 12px">${window.higherkey ? "Local read-only analysis. Safe recommendations update this workspace." : "Static mode commands: python3 scripts/run_color_school.py · python3 scripts/run_audio_school.py"}</div>
         `;
       }
 
@@ -2232,30 +2514,35 @@
 
       function desktopBridgeHtml() {
         return `
-          <div class="tools">
+          <div class="tools client-tools">
             <button data-desktop-action="import-footage">Import Footage</button>
             <button data-desktop-action="import-and-process">Import & Process</button>
             <button data-desktop-action="pick-project">Select Project</button>
-            ${state.appInfo?.devMode ? `<button data-desktop-action="use-current-repo">Use Current Repo</button>` : ""}
             <button data-desktop-action="open-inbox">Open Inbox Folder</button>
-            <button data-desktop-action="pick-export">Export</button>
-            <button data-desktop-action="first-run-setup">Setup</button>
-            <button data-desktop-action="start-watcher">Start Watcher</button>
-            <button data-desktop-action="run-once">Process Media</button>
-            <button data-desktop-action="run-full-media-prep">Run Full Media Prep</button>
-            <button data-desktop-action="run-orchestrator">Run Agents</button>
-            <button data-desktop-action="build-media-cache">Re-cache Media</button>
-            <button data-desktop-action="run-color-school">Run Color School</button>
-            <button data-desktop-action="run-audio-school">Run Audio School</button>
-            <button data-desktop-action="run-diagnostics">Diagnostics</button>
-            <button data-desktop-action="run-full-qa">Full QA</button>
             <button data-desktop-action="build-trial-package">Build Trial Package</button>
             <button data-desktop-action="open-trial-package">Open Trial Package</button>
             <button data-desktop-action="leave-feedback">Leave Feedback</button>
             <button data-desktop-action="open-feedback-folder">Open Feedback Folder</button>
-            <button data-desktop-action="notify-test">Notify</button>
           </div>
-          <div class="muted">${window.higherkey ? "Available" : "Static browser mode"}</div>
+          <details class="advanced-details" style="margin-top:12px">
+            <summary>Advanced local controls</summary>
+            <div class="tools">
+              ${state.appInfo?.devMode ? `<button data-desktop-action="use-current-repo">Use Current Repo</button>` : ""}
+              <button data-desktop-action="pick-export">Export Folder</button>
+              <button data-desktop-action="first-run-setup">Setup</button>
+              <button data-desktop-action="start-watcher">Start Watcher</button>
+              <button data-desktop-action="run-once">Process Media Once</button>
+              <button data-desktop-action="run-full-media-prep">Run Full Media Prep</button>
+              <button data-desktop-action="run-orchestrator">Run Agents</button>
+              <button data-desktop-action="build-media-cache">Re-cache Media</button>
+              <button data-desktop-action="run-color-school">Run Color School</button>
+              <button data-desktop-action="run-audio-school">Run Audio School</button>
+              <button data-desktop-action="run-diagnostics">Diagnostics</button>
+              <button data-desktop-action="run-full-qa">Full QA</button>
+              <button data-desktop-action="notify-test">Notify</button>
+            </div>
+          </details>
+          <div class="muted" style="margin-top:8px">${window.higherkey ? "Desktop actions available." : "Static browser mode."}</div>
         `;
       }
 
@@ -2270,7 +2557,7 @@
           <div class="small-panel">
             <div class="panel-title">Pipeline Activity</div>
             ${events.slice(0, 6).map((event) => `
-              <div class="timeline-row"><span class="dot">✓</span><span>${html((event.at || "").slice(11, 19) || "--:--")}</span><span>${html(event.message || event.event || event.source_path || "")}</span></div>
+              <div class="timeline-row"><span class="dot">✓</span><span>${html((event.at || "").slice(11, 19) || "--:--")}</span><span>${html(event.message || event.summary || event.event || "Local activity")}</span></div>
             `).join("") || `<div class="muted">No activity yet. Run the watcher daemon to populate the processing strip.</div>`}
           </div>
           <div class="small-panel">
@@ -2331,14 +2618,14 @@
         } else if (mode === "search") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section>${schoolCompactHtml(entry)}<section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div>${schoolControlsHtml()}</section>`;
         } else if (mode === "agents") {
-          $("inspector").innerHTML = `<section class="inspector-section"><h3>Selected Agent Details</h3>${agentHealthHtml()}</section><section class="inspector-section"><h3>Performance</h3>${orchestrationGraphHtml()}</section><section class="inspector-section"><h3>Diagnostics</h3>${diagnosticsHtml()}</section>`;
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>AI Processing</h3><div class="copy">Local AI steps run sequentially on this project.</div>${agentHealthHtml()}</section><section class="inspector-section"><h3>Processing Flow</h3>${orchestrationGraphHtml()}</section>`;
         } else if (mode === "social") {
           $("inspector").innerHTML = socialExportsHtml();
           wireSocialExportActions();
         } else if (mode === "diagnostics") {
-          $("inspector").innerHTML = `<section class="inspector-section"><h3>Build Guard</h3>${diagnosticsHtml()}</section><section class="inspector-section"><h3>Runtime Info</h3>${projectRuntimeHtml()}</section><section class="inspector-section"><h3>Quick Actions</h3><div class="toolbar"><button class="btn" data-desktop-action="run-diagnostics">Re-run Diagnostics</button><button class="btn" data-desktop-action="run-full-qa">Full QA</button><button class="btn" data-desktop-action="pick-export">Export Report</button></div></section>`;
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Support</h3><div class="copy">Create a support package or leave local feedback without sending private media.</div><div class="toolbar" style="margin-top:12px"><button class="btn red" data-desktop-action="create-issue-report">Create Support Package</button><button class="btn" data-desktop-action="open-issue-report">Open Folder</button></div></section><section class="inspector-section"><h3>Health</h3>${compactHealthHtml()}</section><section class="inspector-section"><h3>Advanced Checks</h3><div class="toolbar"><button class="btn" data-desktop-action="run-diagnostics">Run Diagnostics</button><button class="btn" data-desktop-action="run-full-qa">Full QA</button></div></section>`;
         } else if (mode === "settings") {
-          $("inspector").innerHTML = `<section class="inspector-section"><h3>Build Information</h3><div class="summary-row"><span>Package</span><strong>${html(state.appInfo?.packageVersion || "unknown")}</strong></div><div class="summary-row"><span>Runtime</span><strong>${html(state.appInfo?.runtimeVersion || "unknown")}</strong></div><div class="summary-row"><span>Release</span><strong>${html(state.appInfo?.releaseVersion || state.release?.version || "unknown")}</strong></div></section><section class="inspector-section"><h3>Runtime Environment</h3>${projectRuntimeHtml()}</section><section class="inspector-section"><h3>Production Mode</h3>${productionModeControlsHtml()}</section><section class="inspector-section"><h3>Help</h3><div class="copy">Use app:open-latest for development testing. Runtime outputs stay in writable local project paths.</div></section>`;
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Build Information</h3><div class="summary-row"><span>Package</span><strong>${html(state.appInfo?.packageVersion || "unknown")}</strong></div><div class="summary-row"><span>Runtime</span><strong>${html(state.appInfo?.runtimeVersion || "unknown")}</strong></div><div class="summary-row"><span>Release</span><strong>${html(state.appInfo?.releaseVersion || state.release?.version || "unknown")}</strong></div></section><section class="inspector-section"><h3>Project</h3><div class="metric"><span>Active project</span><strong>${html(state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static")}</strong></div><div class="metric"><span>Content folder</span><strong>${html(state.appInfo?.contentInbox || "content_inbox")}</strong></div></section><section class="inspector-section"><h3>Production Mode</h3>${productionModeControlsHtml()}</section><section class="inspector-section"><h3>Advanced Runtime</h3><details class="advanced-details"><summary>Show technical details</summary>${projectRuntimeHtml()}</details></section>`;
         } else {
           $("inspector").innerHTML = dashboardProductionInspectorHtml();
         }
@@ -2456,12 +2743,12 @@
       }
 
       function renderModeDetails() {
-        const pipeline = pipelineDisplay();
+        const pipeline = pipelineUiState();
         if (!window.higherkey) return setNotice(staticModeMessage());
         if (pipeline.state === "needs_attention") {
           return setNotice(pipeline.message || "Pipeline needs attention.", [
             { action: "repair-project", label: "Repair Project Media" },
-            { action: "go-diagnostics", label: "Open Diagnostics" }
+            { action: "go-diagnostics", label: "Open Support" }
           ]);
         }
         setNotice("");
@@ -2578,7 +2865,7 @@
         if (result.code === 0) {
           setNotice(`Archived ${parsed.moved_count ?? 0} test/generated files to ${parsed.archive_root || "out/archived_test_media"}.`);
         } else {
-          setNotice("Archive Test Media needs attention. Open Diagnostics for technical details.", [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
+          setNotice("Archive Test Media needs attention. Open Support for details.", [{ label: "Open Support", action: "go-diagnostics" }]);
         }
       }
 
@@ -2595,7 +2882,7 @@
           const stale = counts.stale_queue_entries || 0;
           setNotice(missing || stale ? `Project repaired. ${missing} missing source reference${missing === 1 ? "" : "s"} and ${stale} stale queue item${stale === 1 ? "" : "s"} were reported.` : "Project media references are healthy.");
         } else {
-          setNotice("Project repair needs attention. Open Diagnostics for details.");
+          setNotice("Project repair needs attention. Open Support for details.");
         }
       }
 
@@ -2615,7 +2902,7 @@
             { label: "Close", action: "close" }
           ]);
         } else {
-          setNotice("Demo reset needs attention. Open Diagnostics for details.", [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
+          setNotice("Demo reset needs attention. Open Support for details.", [{ label: "Open Support", action: "go-diagnostics" }]);
         }
         return result;
       }
@@ -2624,7 +2911,7 @@
         return [
           { label: "Repair Project Media", action: "repair-project" },
           { label: "Process Media", action: "run-full-media-prep" },
-          { label: "Open Diagnostics", action: "go-diagnostics" }
+          { label: "Open Support", action: "go-diagnostics" }
         ];
       }
 
@@ -2634,7 +2921,7 @@
           return setNotice(pipeline.message, pipelineNoticeActions());
         }
         if (pipeline.state === "failed") {
-          return setNotice(pipeline.message, [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
+          return setNotice(pipeline.message, [{ label: "Open Support", action: "go-diagnostics" }]);
         }
         return setNotice(defaultSuccess);
       }
@@ -2775,7 +3062,7 @@
         if (result.code === 0) {
           setNotice(`${label} report updated. Safe recommendations are ready.`);
         } else {
-          setNotice(`${label} needs attention. Open Diagnostics for technical details.`, [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
+          setNotice(`${label} needs attention. Open Support for details.`, [{ label: "Open Support", action: "go-diagnostics" }]);
         }
       }
 
@@ -2812,7 +3099,7 @@
           setNotice(`Social export packs complete: ${result.parsed?.count ?? 0} filesets in ${result.parsed?.output_dir || "out/social_exports"}.`);
           render();
         } else {
-          setNotice("Social export needs attention. Open Diagnostics for technical details.", [{ label: "Open Diagnostics", action: "go-diagnostics" }]);
+          setNotice("Social export needs attention. Open Support for details.", [{ label: "Open Support", action: "go-diagnostics" }]);
         }
       }
 
@@ -2831,6 +3118,8 @@
             if (action === "go-queue") { state.mode = "queue"; persistWorkspace(); return render(); }
             if (action === "go-social") { state.mode = "social"; persistWorkspace(); return render(); }
             if (action === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); return render(); }
+            if (action === "go-agents") { state.mode = "agents"; persistWorkspace(); return render(); }
+            if (action === "go-analytics") { state.mode = "analytics"; persistWorkspace(); return render(); }
             if (action === "import-footage") return importFootage();
             if (action === "import-and-process") return importAndProcessFootage();
             if (action === "run-full-media-prep") return runFullMediaPrep();
@@ -2845,13 +3134,13 @@
             if (action === "create-demo-project") {
               const result = await window.higherkey.createDemoProject?.();
               await refreshLiveData();
-              return setNotice(result?.code === 0 ? "Demo project is ready. Import footage when you are ready." : "Demo project setup needs attention. Open Diagnostics for details.");
+              return setNotice(result?.code === 0 ? "Demo project is ready. Import footage when you are ready." : "Demo project setup needs attention. Open Support for details.");
             }
             if (action === "use-default-project") return setNotice("Default local project selected. Import footage when you are ready.");
             if (action === "create-issue-report") {
               setNotice("Creating client-safe support package...");
               const result = await window.higherkey.createIssueReport?.();
-              return setNotice(result?.code === 0 ? "Support package created. It excludes original footage by default." : "Support package needs attention. Open Diagnostics for details.");
+              return setNotice(result?.code === 0 ? "Support package created. It excludes original footage by default." : "Support package needs attention. Open Support for details.");
             }
             if (action === "open-issue-report") {
               await window.higherkey.openIssueReportFolder?.();
@@ -2862,7 +3151,7 @@
               const result = await window.higherkey.buildTrialPackage?.();
               state.trialReadiness = window.higherkey.getTrialReadiness ? (await window.higherkey.getTrialReadiness().catch(() => null))?.readiness || state.trialReadiness : state.trialReadiness;
               await refreshLiveData();
-              return setNotice(result?.code === 0 ? "Trial package ready. It excludes private footage by default." : "Trial package needs attention. Open Diagnostics for details.");
+              return setNotice(result?.code === 0 ? "Trial package ready. It excludes private footage by default." : "Trial package needs attention. Open Support for details.");
             }
             if (action === "open-trial-package") {
               await window.higherkey.openTrialPackageFolder?.();
@@ -2871,7 +3160,7 @@
             if (action === "leave-feedback") {
               setNotice("Preparing local feedback template...");
               const result = await window.higherkey.collectClientFeedback?.({ template: true });
-              return setNotice(result?.code === 0 ? "Feedback template ready. Open the feedback folder to complete it locally." : "Feedback template needs attention. Open Diagnostics for details.");
+              return setNotice(result?.code === 0 ? "Feedback template ready. Open the feedback folder to complete it locally." : "Feedback template needs attention. Open Support for details.");
             }
             if (action === "open-feedback-folder") {
               await window.higherkey.openFeedbackFolder?.();
@@ -2968,7 +3257,7 @@
           $("startupText").textContent = state.activeId ? "Recovered local workspace session." : "Import footage to begin.";
           render();
         } catch (error) {
-          $("startupText").textContent = "Could not load the local workspace. Open Diagnostics for details.";
+          $("startupText").textContent = "Could not load the local workspace. Open Support for details.";
           setNotice(String(error.message || error));
         }
       }

@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "4.5.0",
-  "release_version": "V4.5",
+  "app_version": "4.6.0",
+  "release_version": "V4.6",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -53,6 +53,12 @@
       "to": "V4.5",
       "safe": true,
       "notes": "Add trial delivery checklist, local feedback loop, trial package validation, and client-safe support package controls."
+    },
+    {
+      "from": "V4.5",
+      "to": "V4.6",
+      "safe": true,
+      "notes": "Polish the client-facing media intake UI, simplify visible workflow language, and preserve existing local runtime behavior."
     }
   ],
   "required_runtime_files": [

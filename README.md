@@ -948,7 +948,7 @@ python3 scripts/build_trial_readiness_report.py
 
 What to send:
 
-- `dist/HigherKey Operator OS-4.5.0-arm64.dmg`
+- `dist/HigherKey Operator OS-4.6.0-arm64.dmg`
 - `out/trial_release/`
 - `CLIENT_QUICK_START.md`
 - `TRIAL_LIMITATIONS.md`

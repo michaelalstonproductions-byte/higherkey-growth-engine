@@ -1,6 +1,6 @@
 {
   "name": "higherkey-growth-engine",
-  "version": "4.5.0",
+  "version": "4.6.0",
   "productName": "HigherKey Operator OS",
   "description": "HigherKey local-first autonomous growth engine desktop shell",
   "main": "electron/main.js",
