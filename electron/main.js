@@ -824,6 +824,11 @@ async function createDemoProject() {
 
 async function collectClientFeedback(options = {}) {
   const args = ["scripts/collect_client_feedback.py"];
+  if (options.template) args.push("--template");
+  if (options.exportSummary) args.push("--export-summary");
+  if (options.json) args.push("--json");
+  if (options.interactive) args.push("--interactive");
+  if (options.dryRun) args.push("--dry-run");
   const fields = {
     clientName: "--client-name",
     sessionDate: "--session-date",
@@ -839,6 +844,13 @@ async function collectClientFeedback(options = {}) {
     if (options[key]) args.push(flag, String(options[key]));
   }
   return runPython(args);
+}
+
+async function openFeedbackFolder() {
+  const feedbackDir = path.join(activeProjectRoot, "analytics");
+  await fsp.mkdir(feedbackDir, { recursive: true });
+  await shell.openPath(feedbackDir);
+  return { ok: true, path: feedbackDir, activeProjectRoot };
 }
 
 async function createIssueReport() {
@@ -1461,6 +1473,7 @@ function registerIpc() {
   ipcMain.handle("workflow:getClient", getClientWorkflow);
   ipcMain.handle("workflow:createDemoProject", createDemoProject);
   ipcMain.handle("feedback:collectClient", (_event, options = {}) => collectClientFeedback(options));
+  ipcMain.handle("feedback:openFolder", openFeedbackFolder);
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);
   ipcMain.handle("trial:buildPackage", buildTrialPackage);

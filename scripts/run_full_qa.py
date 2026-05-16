@@ -84,9 +84,11 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "CLIENT_QUICK_START.md" in hit["path"]
             or "BETA_READINESS_CHECKLIST.md" in hit["path"]
             or "TRIAL_LIMITATIONS.md" in hit["path"]
+            or "TRIAL_DELIVERY_CHECKLIST.md" in hit["path"]
             or "scripts/run_full_qa.py" in hit["path"]
             or "scripts/package_client_handoff.py" in hit["path"]
             or "scripts/package_trial_release.py" in hit["path"]
+            or "scripts/validate_trial_package.py" in hit["path"]
             or "scripts/build_trial_readiness_report.py" in hit["path"]
             or "scripts/collect_client_feedback.py" in hit["path"]
             or "scripts/create_issue_report.py" in hit["path"]
@@ -299,7 +301,9 @@ def trial_package_check(root: Path) -> dict[str, object]:
     required = [
         root / "CLIENT_QUICK_START.md",
         root / "TRIAL_LIMITATIONS.md",
+        root / "TRIAL_DELIVERY_CHECKLIST.md",
         root / "scripts" / "package_trial_release.py",
+        root / "scripts" / "validate_trial_package.py",
         root / "scripts" / "build_trial_readiness_report.py",
     ]
     missing = [relative_path(path, root) for path in required if not path.exists()]
@@ -564,9 +568,10 @@ def main() -> int:
     append_stage(results, qa_stage("client_workflow_build", ["python3", "scripts/build_client_workflow.py"], root, timeout=60), config)
     append_stage(results, qa_stage("create_demo_project_dry_run", ["python3", "scripts/create_demo_project.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("package_client_handoff_dry_run", ["python3", "scripts/package_client_handoff.py", "--dry-run"], root, timeout=60), config)
-    append_stage(results, qa_stage("package_trial_release_dry_run", ["python3", "scripts/package_trial_release.py", "--dry-run"], root, timeout=60), config)
-    append_stage(results, qa_stage("collect_client_feedback_dry_run", ["python3", "scripts/collect_client_feedback.py", "--dry-run"], root, timeout=60), config)
-    append_stage(results, qa_stage("create_issue_report_dry_run", ["python3", "scripts/create_issue_report.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("package_trial_release", ["python3", "scripts/package_trial_release.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("validate_trial_package", ["python3", "scripts/validate_trial_package.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("collect_client_feedback_template", ["python3", "scripts/collect_client_feedback.py", "--template"], root, timeout=60), config)
+    append_stage(results, qa_stage("create_issue_report_client_safe_dry_run", ["python3", "scripts/create_issue_report.py", "--dry-run", "--client-safe"], root, timeout=60), config)
     append_stage(results, qa_stage("trial_readiness_report", ["python3", "scripts/build_trial_readiness_report.py"], root, timeout=60), config)
     append_stage(results, qa_stage("schedule_tasks_dry_run", ["python3", "scripts/schedule_tasks.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("full_media_prep_chain_dry_run", ["python3", "scripts/enqueue_full_media_prep.py", "--dry-run"], root, timeout=60), config)

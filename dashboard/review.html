@@ -2251,6 +2251,8 @@
             <button data-desktop-action="run-full-qa">Full QA</button>
             <button data-desktop-action="build-trial-package">Build Trial Package</button>
             <button data-desktop-action="open-trial-package">Open Trial Package</button>
+            <button data-desktop-action="leave-feedback">Leave Feedback</button>
+            <button data-desktop-action="open-feedback-folder">Open Feedback Folder</button>
             <button data-desktop-action="notify-test">Notify</button>
           </div>
           <div class="muted">${window.higherkey ? "Available" : "Static browser mode"}</div>
@@ -2865,6 +2867,15 @@
             if (action === "open-trial-package") {
               await window.higherkey.openTrialPackageFolder?.();
               return setNotice("Trial package folder opened.");
+            }
+            if (action === "leave-feedback") {
+              setNotice("Preparing local feedback template...");
+              const result = await window.higherkey.collectClientFeedback?.({ template: true });
+              return setNotice(result?.code === 0 ? "Feedback template ready. Open the feedback folder to complete it locally." : "Feedback template needs attention. Open Diagnostics for details.");
+            }
+            if (action === "open-feedback-folder") {
+              await window.higherkey.openFeedbackFolder?.();
+              return setNotice("Feedback folder opened.");
             }
             if (action === "enqueue-full-media-prep") {
               const result = await window.higherkey.enqueueFullMediaPrep();

@@ -52,8 +52,8 @@ def summarize_component(name: str, status: str, message: str = "") -> dict[str, 
 def build_report(root: Path) -> dict[str, object]:
     package = load_json(root / "package.json")
     release = load_json(root / "config" / "release.json")
-    version = str(package.get("version") or "4.4.0")
-    release_version = str(release.get("version") or "V4.4")
+    version = str(package.get("version") or "4.5.0")
+    release_version = str(release.get("version") or "V4.5")
     dmg_path = root / "dist" / latest_dmg_name(version)
 
     analytics = root / "analytics"
@@ -64,6 +64,8 @@ def build_report(root: Path) -> dict[str, object]:
     security = load_json(analytics / "security_report.json")
     storage = load_json(analytics / "client_storage.json")
     integrity = load_json(analytics / "client_integrity.json")
+    trial_validation = load_json(analytics / "trial_package_validation.json")
+    feedback_summary = load_json(analytics / "client_feedback_summary.json")
 
     docs = [
         "CLIENT_HANDOFF_GUIDE.md",
@@ -72,6 +74,7 @@ def build_report(root: Path) -> dict[str, object]:
         "DEMO_CHECKLIST.md",
         "RELEASE_NOTES.md",
         "TRIAL_LIMITATIONS.md",
+        "TRIAL_DELIVERY_CHECKLIST.md",
     ]
     doc_status = {name: (root / name).exists() for name in docs}
     trial_package = root / "out" / "trial_release"
@@ -96,12 +99,20 @@ def build_report(root: Path) -> dict[str, object]:
         summarize_component("integrity", status_from(integrity, "status", "integrity_status"), "State integrity status."),
         summarize_component("handoff_docs", "pass" if all(doc_status.values()) else "fail", "Required trial docs present."),
         summarize_component("trial_package", "pass" if trial_package.exists() and all(trial_file_status.values()) else "warn", "Trial package can be generated with scripts/package_trial_release.py."),
+        summarize_component("trial_package_validation", status_from(trial_validation, "status"), "Client trial package validation status."),
+        summarize_component("feedback_workflow", "pass" if (root / "scripts" / "collect_client_feedback.py").exists() else "fail", "Local feedback capture script."),
+        summarize_component("feedback_summary", "pass" if feedback_summary else "warn", "Latest local feedback summary."),
         summarize_component("support_package_capability", "pass" if (root / "scripts" / "create_issue_report.py").exists() else "fail", "Client-safe support package script."),
+        summarize_component("version_alignment", "pass" if release_version.lstrip("V") in version or version.startswith(release_version.lstrip("V")) else "warn", "package.json and config/release.json version alignment."),
     ]
 
     failures = [item for item in components if item["status"] == "fail"]
     warnings = [item for item in components if item["status"] in {"warn", "unknown"}]
-    critical_failures = [item for item in failures if item["name"] in {"handoff_docs", "support_package_capability"}]
+    critical_failures = [
+        item
+        for item in failures
+        if item["name"] in {"handoff_docs", "support_package_capability", "trial_package_validation", "feedback_workflow"}
+    ]
     if critical_failures:
         overall = "not_ready"
     elif failures or warnings:
@@ -130,6 +141,11 @@ def build_report(root: Path) -> dict[str, object]:
         "integrity_status": status_from(integrity, "status", "integrity_status"),
         "handoff_guide_exists": doc_status["CLIENT_HANDOFF_GUIDE.md"],
         "trial_package_exists": trial_package.exists(),
+        "trial_package_validation_status": status_from(trial_validation, "status"),
+        "feedback_workflow_status": "pass" if (root / "scripts" / "collect_client_feedback.py").exists() else "fail",
+        "feedback_summary_exists": bool(feedback_summary),
+        "support_package_status": "pass" if (root / "scripts" / "create_issue_report.py").exists() else "fail",
+        "version_alignment_status": "pass" if release_version.lstrip("V") in version or version.startswith(release_version.lstrip("V")) else "warn",
         "support_package_capability_exists": (root / "scripts" / "create_issue_report.py").exists(),
         "docs": doc_status,
         "trial_package_files": trial_file_status,

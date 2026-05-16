@@ -23,8 +23,8 @@ def latest_dmg_name(package_version: str) -> str:
 def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str, object]:
     package = load_json(root / "package.json", {})
     release = load_json(root / "config" / "release.json", {})
-    package_version = str(package.get("version") or "4.4.0")
-    release_version = str(release.get("version") or "V4.4")
+    package_version = str(package.get("version") or "4.5.0")
+    release_version = str(release.get("version") or "V4.5")
     dmg_path = root / "dist" / latest_dmg_name(package_version)
     output = output.expanduser()
     if not output.is_absolute():

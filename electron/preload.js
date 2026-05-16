@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld("higherkey", {
   getClientWorkflow: () => ipcRenderer.invoke("workflow:getClient"),
   createDemoProject: () => ipcRenderer.invoke("workflow:createDemoProject"),
   collectClientFeedback: (options) => ipcRenderer.invoke("feedback:collectClient", options),
+  openFeedbackFolder: () => ipcRenderer.invoke("feedback:openFolder"),
   createIssueReport: () => ipcRenderer.invoke("support:createIssueReport"),
   openIssueReportFolder: () => ipcRenderer.invoke("support:openIssueReportFolder"),
   buildTrialPackage: () => ipcRenderer.invoke("trial:buildPackage"),

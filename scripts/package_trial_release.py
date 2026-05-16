@@ -48,8 +48,8 @@ def feedback_template() -> dict[str, object]:
 def package_trial(root: Path, output: Path, dry_run: bool = False, include_dmg: bool = False) -> dict[str, object]:
     package = load_json(root / "package.json", {})
     release = load_json(root / "config" / "release.json", {})
-    package_version = str(package.get("version") or "4.4.0")
-    release_version = str(release.get("version") or "V4.4")
+    package_version = str(package.get("version") or "4.5.0")
+    release_version = str(release.get("version") or "V4.5")
     dmg_path = root / "dist" / latest_dmg_name(package_version)
     output = output.expanduser()
     if not output.is_absolute():
@@ -63,6 +63,7 @@ def package_trial(root: Path, output: Path, dry_run: bool = False, include_dmg: 
         "DEMO_CHECKLIST.md": root / "DEMO_CHECKLIST.md",
         "RELEASE_NOTES.md": root / "RELEASE_NOTES.md",
         "TRIAL_LIMITATIONS.md": root / "TRIAL_LIMITATIONS.md",
+        "TRIAL_DELIVERY_CHECKLIST.md": root / "TRIAL_DELIVERY_CHECKLIST.md",
     }
     missing_docs = [name for name, source in docs.items() if not source.exists()]
     app_info = {

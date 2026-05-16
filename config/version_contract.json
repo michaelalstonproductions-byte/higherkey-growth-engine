@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "4.4.0",
-  "release_version": "V4.4",
+  "app_version": "4.5.0",
+  "release_version": "V4.5",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -47,6 +47,12 @@
       "to": "V4.4",
       "safe": true,
       "notes": "Add client trial package generation, quick start documentation, trial limitations, and readiness reporting."
+    },
+    {
+      "from": "V4.4",
+      "to": "V4.5",
+      "safe": true,
+      "notes": "Add trial delivery checklist, local feedback loop, trial package validation, and client-safe support package controls."
     }
   ],
   "required_runtime_files": [
@@ -101,6 +107,7 @@
     "scripts/create_demo_project.py",
     "scripts/package_client_handoff.py",
     "scripts/package_trial_release.py",
+    "scripts/validate_trial_package.py",
     "scripts/build_trial_readiness_report.py",
     "scripts/collect_client_feedback.py",
     "scripts/create_issue_report.py"

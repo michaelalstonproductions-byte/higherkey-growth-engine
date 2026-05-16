@@ -1,0 +1,38 @@
+# HigherKey Operator OS Trial Delivery Checklist
+
+Use this checklist before handing a trial build to a client.
+
+## Build And QA
+
+- [ ] Rebuild the unsigned DMG with `npm run dist:unsigned`.
+- [ ] Run `npm run qa:full`.
+- [ ] Run `python3 scripts/build_trial_readiness_report.py`.
+- [ ] Generate the trial package with `python3 scripts/package_trial_release.py`.
+- [ ] Validate the trial package with `python3 scripts/validate_trial_package.py`.
+- [ ] Open the latest app with `npm run app:open-latest`.
+
+## Client Workflow Checks
+
+- [ ] Test **Import Footage** with one short MP4, MOV, or M4V.
+- [ ] Test **Import & Process**.
+- [ ] Review clips.
+- [ ] Approve at least one clip when available.
+- [ ] Test social export pack generation.
+- [ ] Open the social export folder.
+- [ ] Confirm manual upload language is visible.
+
+## Support And Safety
+
+- [ ] Create a support package.
+- [ ] Confirm the support package excludes original footage.
+- [ ] Confirm the trial package excludes private media and runtime DB files.
+- [ ] Confirm `latest_dmg_pointer.json` points to the current DMG.
+- [ ] Confirm no cloud APIs, social APIs, or direct posting APIs are configured.
+
+## Handoff
+
+- [ ] Send the newest DMG from `dist/`.
+- [ ] Send `out/trial_release/`.
+- [ ] Include `CLIENT_QUICK_START.md`.
+- [ ] Include `TRIAL_LIMITATIONS.md`.
+- [ ] Ask the client to capture feedback locally with the in-app feedback action.

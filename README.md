@@ -933,6 +933,43 @@ Trial workflow reminder:
 
 HigherKey remains local-first. No cloud APIs, social APIs, or direct posting APIs are configured.
 
+## V4.5 Trial Delivery and Feedback
+
+V4.5 adds the final local handoff loop for client trials: package validation, feedback capture, and client-safe support reports.
+
+Delivery checklist:
+
+```bash
+npm run dist:unsigned
+python3 scripts/package_trial_release.py
+python3 scripts/validate_trial_package.py
+python3 scripts/build_trial_readiness_report.py
+```
+
+What to send:
+
+- `dist/HigherKey Operator OS-4.5.0-arm64.dmg`
+- `out/trial_release/`
+- `CLIENT_QUICK_START.md`
+- `TRIAL_LIMITATIONS.md`
+- `TRIAL_DELIVERY_CHECKLIST.md`
+
+Client feedback stays local:
+
+```bash
+python3 scripts/collect_client_feedback.py --template
+python3 scripts/collect_client_feedback.py --interactive
+python3 scripts/collect_client_feedback.py --export-summary
+```
+
+Client-safe support package:
+
+```bash
+python3 scripts/create_issue_report.py --client-safe
+```
+
+Support packages exclude original footage, social exports, imported media, full runtime databases, private tokens, and unredacted local paths by default. HigherKey remains local-first with manual upload only.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.
