@@ -1257,6 +1257,47 @@ async function exportSocialPacks(_event, options = {}) {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function buildMarketingPlan() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_marketing_plan.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getMarketingBrief() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    brief: await readAnalyticsJson("marketing_brief.json", {}),
+    recommendations: await readAnalyticsJson("marketing_recommendations.json", {}),
+    audience: await readAnalyticsJson("audience_profile.json", {}),
+    attackPlan: await readAnalyticsJson("market_attack_plan.json", {})
+  };
+}
+
+async function openMarketingFolder() {
+  const folder = path.join(activeProjectRoot, "out", "marketing");
+  await fsp.mkdir(folder, { recursive: true });
+  await shell.openPath(folder);
+  return { ok: true, path: folder, activeProjectRoot };
+}
+
+async function importInstagramInsightsManual(_event, options = {}) {
+  const args = ["scripts/import_instagram_insights.py"];
+  if (options.input) args.push("--input", String(options.input));
+  if (options.dryRun !== false) args.push("--dry-run");
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function startWatcher() {
   if (watcherProcess) {
     return { running: true, pid: watcherProcess.pid };
@@ -1525,6 +1566,10 @@ function registerIpc() {
   ipcMain.handle("school:runColor", runColorSchool);
   ipcMain.handle("school:runAudio", runAudioSchool);
   ipcMain.handle("social:exportPacks", exportSocialPacks);
+  ipcMain.handle("marketing:buildPlan", buildMarketingPlan);
+  ipcMain.handle("marketing:getBrief", getMarketingBrief);
+  ipcMain.handle("marketing:openFolder", openMarketingFolder);
+  ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);
   ipcMain.handle("runtime:buildSnapshot", buildRuntimeSnapshot);

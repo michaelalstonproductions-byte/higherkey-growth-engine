@@ -1,0 +1,25 @@
+{
+  "local_only": true,
+  "instagram": {
+    "enabled": false,
+    "mode": "manual_import",
+    "live_api_enabled": false,
+    "token_storage": "not_configured",
+    "notes": "Live Instagram API integration requires Meta app setup, permissions, account authorization, and token storage. V5.1 supports local manual import only."
+  },
+  "tiktok": {
+    "enabled": false,
+    "mode": "manual_upload",
+    "live_api_enabled": false
+  },
+  "youtube": {
+    "enabled": false,
+    "mode": "manual_upload",
+    "live_api_enabled": false
+  },
+  "facebook": {
+    "enabled": false,
+    "mode": "manual_upload",
+    "live_api_enabled": false
+  }
+}

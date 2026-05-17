@@ -1032,6 +1032,39 @@ Client workflow:
 
 The UI hides technical runtime details from Home, Review, Media, AI Insights, and Exports. Support and Settings keep advanced diagnostics available when needed. HigherKey remains local-first: no cloud APIs, social APIs, or direct posting APIs are configured.
 
+## V5.1 Marketing Intelligence Studio
+
+V5.1 adds a local Marketing Studio for turning approved clips and social export packs into a market attack plan.
+
+Local marketing outputs:
+
+- `analytics/marketing_brief.json`
+- `analytics/audience_profile.json`
+- `analytics/market_attack_plan.json`
+- `analytics/content_strategy.json`
+- `analytics/platform_strategy.json`
+- `analytics/campaign_calendar.json`
+- `analytics/marketing_recommendations.json`
+- `out/marketing/marketing_brief.md`
+- `out/marketing/market_attack_plan.md`
+- `out/marketing/content_calendar.md`
+- `out/marketing/platform_strategy.md`
+
+Build the plan:
+
+```bash
+python3 scripts/build_marketing_plan.py
+```
+
+Optional Instagram insights import is manual and local-only:
+
+```bash
+python3 scripts/import_instagram_insights.py --input path/to/instagram_insights.json
+python3 scripts/import_instagram_insights.py --dry-run
+```
+
+No live Instagram API, OAuth, tokens, cloud APIs, social APIs, or direct posting APIs are configured in V5.1. HigherKey prepares local strategy and platform folders; the operator uploads manually.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

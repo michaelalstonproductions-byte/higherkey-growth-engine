@@ -1,0 +1,59 @@
+{
+  "brand_name": "HigherKey",
+  "brand_voice": "confident, direct, useful, cinematic",
+  "target_audience": "Creators, founders, coaches, and local businesses that need better short-form content from existing footage.",
+  "audience_segments": [
+    {
+      "name": "ambitious creators",
+      "description": "Creators who want more consistency, sharper hooks, and a clearer growth system.",
+      "age_ranges": ["18-24", "25-34"],
+      "motivations": ["growth", "identity", "momentum"],
+      "objections": ["I do not know where to start", "Editing takes too long"],
+      "cta_style": "save this and start today"
+    },
+    {
+      "name": "service business operators",
+      "description": "Operators who need proof-led content without becoming full-time editors.",
+      "age_ranges": ["25-34", "35-44", "45-54"],
+      "motivations": ["trust", "authority", "lead generation"],
+      "objections": ["I do not have time", "I do not know what to post"],
+      "cta_style": "book the next step"
+    },
+    {
+      "name": "fitness and performance audiences",
+      "description": "Viewers who respond to transformation, discipline, proof, and repeatable action.",
+      "age_ranges": ["18-24", "25-34", "35-44"],
+      "motivations": ["confidence", "progress", "discipline"],
+      "objections": ["It feels too hard", "I need proof it works"],
+      "cta_style": "try this today"
+    }
+  ],
+  "demographics": {
+    "age_ranges": ["18-24", "25-34", "35-44"],
+    "gender_focus": "all",
+    "locations": ["United States", "English-speaking markets"],
+    "income_level": "middle to high intent",
+    "interests": ["short-form video", "creator economy", "business growth", "fitness", "self-improvement"],
+    "creator_type": "solo creator or small team",
+    "buyer_type": "operator who values speed and clarity"
+  },
+  "psychographics": {
+    "motivations": ["growth", "confidence", "clarity", "proof", "speed"],
+    "fears": ["wasting time", "posting the wrong thing", "looking amateur"],
+    "desires": ["consistent content", "clear positioning", "better hooks", "more trust"],
+    "objections": ["too busy", "not enough ideas", "unclear ROI"],
+    "identity_signals": ["builder", "operator", "creator", "high-agency"]
+  },
+  "market_category": "local-first AI media operations",
+  "competitors": ["manual editing workflows", "generic social schedulers", "template-only clipping tools"],
+  "content_pillars": ["proof", "process", "transformation", "education", "behind the scenes"],
+  "offer": "Turn existing footage into review-ready clips and manual-upload social packs.",
+  "call_to_action_style": "clear next step, low friction, action-oriented",
+  "platforms": {
+    "TikTok": {"priority": "high", "role": "discovery"},
+    "Instagram Reels": {"priority": "high", "role": "trust and social proof"},
+    "YouTube Shorts": {"priority": "medium", "role": "searchable reach"},
+    "Facebook Reels": {"priority": "medium", "role": "local/community reach"}
+  },
+  "local_only": true
+}

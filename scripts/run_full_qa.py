@@ -93,8 +93,13 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "scripts/build_trial_readiness_report.py" in hit["path"]
             or "scripts/run_client_trial_qa.py" in hit["path"]
             or "scripts/check_client_language.py" in hit["path"]
+            or "scripts/build_marketing_plan.py" in hit["path"]
+            or "scripts/import_instagram_insights.py" in hit["path"]
             or "scripts/collect_client_feedback.py" in hit["path"]
             or "scripts/create_issue_report.py" in hit["path"]
+            or ("dashboard/review.html" in hit["path"] and "renderMarketingView" in hit["text"])
+            or ("dashboard/review.html" in hit["path"] and "renderSocialExportsView" in hit["text"])
+            or "growth_engine/marketing_intelligence.py" in hit["path"]
             or "growth_engine/local_api.py" in hit["path"]
             or "growth_engine/observability.py" in hit["path"]
             or "growth_engine/security.py" in hit["path"]
@@ -103,6 +108,8 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "scripts/manage_storage.py" in hit["path"]
             or "config/security_policy.json" in hit["path"]
             or "config/retention_policy.json" in hit["path"]
+            or "config/marketing_profile.example.json" in hit["path"]
+            or "config/social_connectors.example.json" in hit["path"]
             or "scripts/run_local_api.py" in hit["path"]
             or "run_local_api.py" in hit["text"]
             or "local api" in hit["text"].lower()
@@ -335,6 +342,48 @@ def trial_package_check(root: Path) -> dict[str, object]:
     }
 
 
+def marketing_intelligence_check(root: Path) -> dict[str, object]:
+    required = [
+        root / "config" / "marketing_profile.example.json",
+        root / "config" / "social_connectors.example.json",
+        root / "analytics" / "marketing_brief.json",
+        root / "analytics" / "audience_profile.json",
+        root / "analytics" / "market_attack_plan.json",
+        root / "analytics" / "content_strategy.json",
+        root / "analytics" / "platform_strategy.json",
+        root / "analytics" / "campaign_calendar.json",
+        root / "analytics" / "marketing_recommendations.json",
+        root / "out" / "marketing" / "marketing_brief.md",
+        root / "out" / "marketing" / "market_attack_plan.md",
+        root / "out" / "marketing" / "content_calendar.md",
+        root / "out" / "marketing" / "platform_strategy.md",
+        root / "out" / "marketing" / "clip_recommendations.json",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    token_hits = []
+    live_api_hits = []
+    for path in required:
+        if not path.exists() or not path.is_file():
+            continue
+        try:
+            text = path.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            continue
+        lowered = text.lower()
+        if any(term in lowered for term in ("access_token", "client_secret", "refresh_token")):
+            token_hits.append(relative_path(path, root))
+        if "live_api_enabled\": true" in lowered:
+            live_api_hits.append(relative_path(path, root))
+    status = "pass" if not missing and not token_hits and not live_api_hits else "fail"
+    return {
+        "name": "marketing_intelligence_validation",
+        "status": status,
+        "missing": missing,
+        "token_hits": token_hits,
+        "live_api_hits": live_api_hits,
+    }
+
+
 def beta_checklist_check(root: Path) -> dict[str, object]:
     path = root / "BETA_READINESS_CHECKLIST.md"
     try:
@@ -358,7 +407,7 @@ def upgrade_fixture_check(root: Path) -> dict[str, object]:
         "    root=Path(tmp)\n"
         "    config=load_config(root)\n"
         "    ensure_directories(config)\n"
-        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json','project_manifest.example.json','client_demo.json'):\n"
+        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json','project_manifest.example.json','client_demo.json','marketing_profile.example.json','social_connectors.example.json'):\n"
         "        shutil.copy(Path('config')/rel, root/'config'/rel)\n"
         "    save_json_file(root/'config'/'project_manifest.json', {'version':'V3.8','project_root':str(root),'local_only':True})\n"
         "    plan=build_upgrade_plan(config)\n"
@@ -580,6 +629,10 @@ def main() -> int:
     append_stage(results, qa_stage("create_issue_report_client_safe_dry_run", ["python3", "scripts/create_issue_report.py", "--dry-run", "--client-safe"], root, timeout=60), config)
     append_stage(results, qa_stage("client_language_scan", ["python3", "scripts/check_client_language.py"], root, timeout=60), config)
     append_stage(results, qa_stage("client_trial_qa", ["python3", "scripts/run_client_trial_qa.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("marketing_plan_build", ["python3", "scripts/build_marketing_plan.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)
+    print("[qa] marketing_intelligence_validation", flush=True)
+    append_stage(results, marketing_intelligence_check(root), config)
     append_stage(results, qa_stage("trial_readiness_report", ["python3", "scripts/build_trial_readiness_report.py"], root, timeout=60), config)
     append_stage(results, qa_stage("schedule_tasks_dry_run", ["python3", "scripts/schedule_tasks.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("full_media_prep_chain_dry_run", ["python3", "scripts/enqueue_full_media_prep.py", "--dry-run"], root, timeout=60), config)

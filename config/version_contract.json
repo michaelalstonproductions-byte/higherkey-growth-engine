@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.0.0",
-  "release_version": "V5.0",
+  "app_version": "5.1.0",
+  "release_version": "V5.1",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -71,6 +71,12 @@
       "to": "V5.0",
       "safe": true,
       "notes": "Polish the client-facing product shell, strengthen import and drag/drop flow, and preserve existing local runtime behavior."
+    },
+    {
+      "from": "V5.0",
+      "to": "V5.1",
+      "safe": true,
+      "notes": "Add local Marketing Intelligence Studio, manual Instagram insights import architecture, and campaign planning outputs without live APIs."
     }
   ],
   "required_runtime_files": [
@@ -108,6 +114,8 @@
     "config/retention_policy.json",
     "config/error_taxonomy.json",
     "config/client_demo.json",
+    "config/marketing_profile.example.json",
+    "config/social_connectors.example.json",
     "config/release.json"
   ],
   "required_scripts": [
@@ -129,6 +137,8 @@
     "scripts/build_trial_readiness_report.py",
     "scripts/run_client_trial_qa.py",
     "scripts/check_client_language.py",
+    "scripts/build_marketing_plan.py",
+    "scripts/import_instagram_insights.py",
     "scripts/collect_client_feedback.py",
     "scripts/create_issue_report.py"
   ],
