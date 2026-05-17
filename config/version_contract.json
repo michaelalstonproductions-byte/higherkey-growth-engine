@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.1.0",
-  "release_version": "V5.1",
+  "app_version": "5.2.0",
+  "release_version": "V5.2",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -77,6 +77,12 @@
       "to": "V5.1",
       "safe": true,
       "notes": "Add local Marketing Intelligence Studio, manual Instagram insights import architecture, and campaign planning outputs without live APIs."
+    },
+    {
+      "from": "V5.1",
+      "to": "V5.2",
+      "safe": true,
+      "notes": "Add local campaign board, posting schedule, campaign brief, and manual post status tracking without direct posting integrations."
     }
   ],
   "required_runtime_files": [
@@ -138,6 +144,8 @@
     "scripts/run_client_trial_qa.py",
     "scripts/check_client_language.py",
     "scripts/build_marketing_plan.py",
+    "scripts/build_campaign_plan.py",
+    "scripts/update_manual_post_status.py",
     "scripts/import_instagram_insights.py",
     "scripts/collect_client_feedback.py",
     "scripts/create_issue_report.py"

@@ -1268,6 +1268,17 @@ async function buildMarketingPlan() {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function buildCampaignPlan() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_campaign_plan.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function getMarketingBrief() {
   return {
     ok: true,
@@ -1276,6 +1287,17 @@ async function getMarketingBrief() {
     recommendations: await readAnalyticsJson("marketing_recommendations.json", {}),
     audience: await readAnalyticsJson("audience_profile.json", {}),
     attackPlan: await readAnalyticsJson("market_attack_plan.json", {})
+  };
+}
+
+async function getCampaignBoard() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    board: await readAnalyticsJson("campaign_board.json", {}),
+    schedule: await readAnalyticsJson("posting_schedule.json", {}),
+    brief: await readAnalyticsJson("campaign_brief.json", {}),
+    clientPlan: await readAnalyticsJson("client_campaign_plan.json", {})
   };
 }
 
@@ -1569,6 +1591,8 @@ function registerIpc() {
   ipcMain.handle("marketing:buildPlan", buildMarketingPlan);
   ipcMain.handle("marketing:getBrief", getMarketingBrief);
   ipcMain.handle("marketing:openFolder", openMarketingFolder);
+  ipcMain.handle("marketing:buildCampaignPlan", buildCampaignPlan);
+  ipcMain.handle("marketing:getCampaignBoard", getCampaignBoard);
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);

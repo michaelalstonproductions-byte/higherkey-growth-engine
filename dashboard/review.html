@@ -1063,6 +1063,18 @@
       .marketing-recommendation{display:grid;grid-template-columns:74px minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);padding:10px;margin-bottom:10px}
       .marketing-recommendation strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .marketing-recommendation p{margin:4px 0 0;color:var(--muted);font-size:12px;line-height:1.35}
+      .marketing-mode-tabs{display:flex;gap:8px;flex-wrap:wrap}
+      .campaign-board{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:10px;min-height:280px}
+      .campaign-column{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);min-width:0;overflow:hidden}
+      .campaign-column-head{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);font-weight:900}
+      .campaign-card{margin:10px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:linear-gradient(180deg,rgba(18,26,38,.96),rgba(7,10,15,.96));padding:10px;display:grid;gap:8px;cursor:pointer;transition:.16s ease}
+      .campaign-card:hover{border-color:rgba(242,53,63,.5);transform:translateY(-1px)}
+      .campaign-card strong{font-size:13px;line-height:1.25;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      .campaign-card p{margin:0;color:var(--muted);font-size:12px;line-height:1.35}
+      .campaign-meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+      .calendar-item{border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.025);padding:10px;margin-bottom:10px}
+      .calendar-item strong{display:block;margin-bottom:5px}
+      .calendar-item p{margin:0;color:var(--muted);line-height:1.35}
       .calendar-list{display:grid;gap:8px}
       .calendar-item{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#0b1017}
       .calendar-item strong{color:var(--text);font-size:13px}
@@ -1293,6 +1305,11 @@
         platformStrategy: "../analytics/platform_strategy.json",
         campaignCalendar: "../analytics/campaign_calendar.json",
         marketingRecommendations: "../analytics/marketing_recommendations.json",
+        campaignBoard: "../analytics/campaign_board.json",
+        postingSchedule: "../analytics/posting_schedule.json",
+        campaignBrief: "../analytics/campaign_brief.json",
+        clientCampaignPlan: "../analytics/client_campaign_plan.json",
+        manualPostStatus: "../analytics/manual_post_status.json",
         clientTasks: "../analytics/client_tasks.json",
         clientWorkflow: "../analytics/client_workflow.json",
         clientDemo: "../config/client_demo.json",
@@ -1346,6 +1363,11 @@
         platformStrategy: null,
         campaignCalendar: null,
         marketingRecommendations: null,
+        campaignBoard: null,
+        postingSchedule: null,
+        campaignBrief: null,
+        clientCampaignPlan: null,
+        manualPostStatus: null,
         clientTasks: null,
         clientWorkflow: null,
         clientDemo: null,
@@ -1964,6 +1986,10 @@
         const attack = state.marketAttackPlan || {};
         const audience = state.audienceProfile || {};
         const calendar = state.campaignCalendar || {};
+        const board = state.campaignBoard || {};
+        const schedule = state.postingSchedule || {};
+        const campaignBrief = state.campaignBrief || {};
+        const nextPost = state.clientCampaignPlan?.next_post || board.cards?.[0] || recs[0] || null;
         const top = recs[0] || null;
         return `
           <div class="view marketing-view">
@@ -1973,38 +1999,47 @@
                 <div style="padding:18px;display:grid;gap:14px">
                   <div>
                     <span class="eyebrow">Local marketing intelligence</span>
-                    <h2 style="font-size:34px;margin:8px 0 8px">Build the audience, angle, and posting plan.</h2>
+                    <h2 style="font-size:34px;margin:8px 0 8px">Plan the campaign, schedule the posts, upload manually.</h2>
                     <p class="copy">${html(brief.summary || "HigherKey reads approved clips and social packs to recommend audiences, CTAs, content pillars, and manual-upload posting order.")}</p>
                   </div>
                   <div class="toolbar">
-                    <button class="btn red" data-desktop-action="build-marketing-plan">Build Marketing Plan</button>
+                    <button class="btn red" data-desktop-action="build-campaign-plan">Build Campaign Plan</button>
                     <button class="btn" data-desktop-action="refresh-marketing">Refresh Marketing Intelligence</button>
                     <button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button>
-                    <button class="btn" data-desktop-action="open-marketing-folder">Export Marketing Brief</button>
+                    <button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button>
+                    <button class="btn" data-desktop-action="copy-7-day-plan">Copy 7-Day Plan</button>
+                    <button class="btn" data-desktop-action="copy-campaign-brief">Copy Campaign Brief</button>
                   </div>
                 </div>
               </section>
               <section class="panel view-scroll">
-                <div class="panel-head"><div class="panel-title">Next Best Post</div><div>${top ? html(top.platform_label) : "Build plan"}</div></div>
-                <div style="padding:16px">${top ? marketingRecommendationCard(top, true) : `<div class="empty-state"><h2>No plan yet</h2><p>Build Marketing Plan to create local audience and posting recommendations.</p></div>`}</div>
+                <div class="panel-head"><div class="panel-title">Next Post Recommendation</div><div>${nextPost ? html(nextPost.platform_label || nextPost.platform) : "Build plan"}</div></div>
+                <div style="padding:16px">${nextPost ? campaignCardHtml(nextPost, true) : `<div class="empty-state"><h2>No plan yet</h2><p>Build Campaign Plan to create the board, calendar, and posting order.</p></div>`}</div>
               </section>
+            </div>
+            <div class="marketing-mode-tabs">
+              ${["Strategy", "Campaign Board", "Calendar", "Clip Recommendations"].map((label, index) => `<button class="btn ${index === 1 ? "active" : ""}">${label}</button>`).join("")}
             </div>
             <div class="marketing-card-grid">
               ${marketingMetricCard("Audience Profile", audience.segments?.[0]?.name || "Local audience", audience.target_audience || "Clip-based segment fit")}
               ${marketingMetricCard("Market Position", attack.primary_market || "Primary market", attack.positioning_statement || "Positioning generated locally")}
               ${marketingMetricCard("Content Pillars", (attack.content_pillars || []).slice(0, 3).join(" · ") || "Proof · Process · Transformation", "Campaign pillars")}
               ${marketingMetricCard("Platform Strategy", `${state.platformStrategy?.manual_upload_only === false ? "Review" : "Manual upload"}`, "TikTok, Reels, Shorts, Facebook")}
-              ${marketingMetricCard("Campaign Plan", `${calendar.next_7_posts?.length || 0} next posts`, "7-day sequence")}
+              ${marketingMetricCard("Campaign Plan", `${schedule.seven_day_schedule?.length || calendar.next_7_posts?.length || 0} next posts`, "7-day sequence")}
               ${marketingMetricCard("Clip Recommendations", recs.length, "Approved and high-scoring clips")}
             </div>
+            <section class="panel view-scroll">
+              <div class="panel-head"><div class="panel-title">Campaign Board</div><div>${board.cards?.length || 0} campaign cards</div></div>
+              <div class="campaign-board" style="padding:12px">${campaignBoardHtml(board)}</div>
+            </section>
             <div class="marketing-panel-grid">
               <section class="panel view-scroll">
                 <div class="panel-head"><div class="panel-title">Audience Segments</div><div>Demographic fit</div></div>
                 <div style="padding:14px">${audienceSegmentsHtml()}</div>
               </section>
               <section class="panel view-scroll">
-                <div class="panel-head"><div class="panel-title">Market Attack Plan</div><div>Positioning and angle</div></div>
-                <div style="padding:14px">${marketAttackPlanHtml()}</div>
+                <div class="panel-head"><div class="panel-title">Campaign Brief</div><div>Positioning and angle</div></div>
+                <div style="padding:14px">${campaignBriefHtml(campaignBrief, attack)}</div>
               </section>
             </div>
             <section class="panel view-scroll">
@@ -2014,11 +2049,11 @@
             <div class="marketing-panel-grid">
               <section class="panel view-scroll">
                 <div class="panel-head"><div class="panel-title">7-Day Posting Plan</div><div>Manual upload</div></div>
-                <div class="calendar-list" style="padding:14px">${postingPlanHtml(calendar.next_7_posts || [])}</div>
+                <div class="calendar-list" style="padding:14px">${postingPlanHtml(schedule.seven_day_schedule || calendar.next_7_posts || [])}</div>
               </section>
               <section class="panel view-scroll">
                 <div class="panel-head"><div class="panel-title">30-Day Themes</div><div>Content pillars</div></div>
-                <div class="calendar-list" style="padding:14px">${themePlanHtml(calendar.next_30_day_content_themes || [])}</div>
+                <div class="calendar-list" style="padding:14px">${themePlanHtml(schedule.thirty_day_schedule || calendar.next_30_day_content_themes || [])}</div>
               </section>
             </div>
           </div>
@@ -2060,11 +2095,49 @@
           </div>
         `;
       }
+      function campaignBoardHtml(board) {
+        const columns = board?.columns || [];
+        if (!columns.length) return `<div class="empty-state" style="grid-column:1/-1"><h2>No campaign board yet</h2><p>Build Campaign Plan to group clips by posting readiness.</p></div>`;
+        return columns.filter((column) => ["Idea","Ready to Post","Scheduled","Posted Manually","Needs Revision"].includes(column.name)).map((column) => `
+          <div class="campaign-column">
+            <div class="campaign-column-head"><span>${html(column.name)}</span><strong>${html(column.count || 0)}</strong></div>
+            ${(column.cards || []).slice(0, 8).map((card) => campaignCardHtml(card)).join("") || `<div class="muted" style="padding:12px">No cards yet.</div>`}
+          </div>
+        `).join("");
+      }
+      function campaignCardHtml(card, large = false) {
+        const rec = card || {};
+        const entry = entryByClipId(rec.clip_id);
+        return `
+          <div class="campaign-card ${large ? "large" : ""}" data-entry-id="${html(entry?.id || "")}">
+            <div class="campaign-meta"><span class="badge">${html(rec.platform_label || rec.platform || "Platform")}</span><span class="badge">${html(rec.status || rec.campaign_role || "Plan")}</span></div>
+            <strong>${html(rec.title || rec.clip_id || "Campaign card")}</strong>
+            <p>${html(rec.audience || "Audience")} · ${html(rec.content_pillar || rec.campaign_role || "pillar")}</p>
+            <p>${html(rec.hook || rec.attack_angle || "Lead with the strongest hook.")}</p>
+            <p><strong>CTA:</strong> ${html(rec.CTA || rec.recommended_cta || "Save this and start today.")}</p>
+          </div>
+        `;
+      }
+      function campaignBriefHtml(brief, attack) {
+        return `
+          <div class="metric"><span>Campaign thesis</span><strong>${html(brief.campaign_thesis || attack.campaign_thesis || "Lead with proof and make the next action simple.")}</strong></div>
+          <div class="metric"><span>Audience</span><strong>${html(brief.audience || attack.primary_market || "Local audience")}</strong></div>
+          <div class="metric"><span>Positioning</span><strong>${html(brief.positioning || attack.positioning_statement || "HigherKey prepares social-ready clips for manual upload.")}</strong></div>
+          <div class="panel-title" style="margin-top:14px">Hook Bank</div>
+          <div class="pills">${chips((brief.hook_bank || attack.hook_bank || []).slice(0, 8))}</div>
+          <div class="panel-title" style="margin-top:14px">CTA Bank</div>
+          <div class="copy">${html((brief.CTA_bank || attack.cta_bank || ["Save this and start today."]).slice(0, 5).join(" · "))}</div>
+        `;
+      }
       function postingPlanHtml(items) {
-        return items.slice(0, 7).map((item) => `<div class="calendar-item"><strong>Day ${html(item.day)}</strong><p>${html(item.platform)} · ${html(item.clip_id)}<br>${html(item.hook)}<br><span class="muted">${html(item.cta)}</span></p></div>`).join("") || `<div class="empty-state">Build Marketing Plan to generate the 7-day posting plan.</div>`;
+        return items.slice(0, 7).map((item) => {
+          const ctaText = item.CTA || item.cta || "";
+          const exportFolder = item.export_folder || "out/social_exports";
+          return `<div class="calendar-item"><strong>Day ${html(item.day)}</strong><p>${html(item.platform)} · ${html(item.clip_id)}<br>${html(item.hook)}<br><span class="muted">${html(ctaText)}</span><br><span class="muted">${html(exportFolder)}</span></p></div>`;
+        }).join("") || `<div class="empty-state">Build Campaign Plan to generate the 7-day posting plan.</div>`;
       }
       function themePlanHtml(items) {
-        return items.slice(0, 10).map((item) => `<div class="calendar-item"><strong>Day ${html(item.day)}</strong><p>${html(item.content_pillar)} · ${html(item.topic)}<br><span class="muted">${html(item.goal)}</span></p></div>`).join("") || `<div class="empty-state">Build Marketing Plan to generate 30-day themes.</div>`;
+        return items.slice(0, 10).map((item) => `<div class="calendar-item"><strong>${item.week ? `Week ${html(item.week)}` : `Day ${html(item.day)}`}</strong><p>${html(item.content_pillar)} · ${html(item.theme || item.topic)}<br><span class="muted">${html(item.goal)}</span></p></div>`).join("") || `<div class="empty-state">Build Campaign Plan to generate 30-day themes.</div>`;
       }
       function renderAgentsView() {
         const agents = state.agents?.agents || [];
@@ -2972,26 +3045,27 @@
       }
 
       function marketingInspectorHtml() {
-        const rec = marketingRecs()[0];
+        const rec = state.clientCampaignPlan?.next_post || state.campaignBoard?.cards?.[0] || marketingRecs()[0];
         const attack = state.marketAttackPlan || {};
         const audience = state.audienceProfile || {};
         return `
           <section class="inspector-section"><h3>Marketing Studio</h3>
-            <div class="copy">Local audience and campaign planning for approved clips and manual social packs.</div>
+            <div class="copy">Campaign board, posting calendar, and manual upload plan for approved clips.</div>
             <div class="toolbar" style="margin-top:12px">
-              <button class="btn red" data-desktop-action="build-marketing-plan">Build Plan</button>
-              <button class="btn" data-desktop-action="open-marketing-folder">Open Brief</button>
+              <button class="btn red" data-desktop-action="build-campaign-plan">Build Campaign Plan</button>
+              <button class="btn" data-desktop-action="open-marketing-folder">Open Folder</button>
             </div>
           </section>
-          <section class="inspector-section"><h3>Selected Recommendation</h3>
+          <section class="inspector-section"><h3>Selected Campaign Card</h3>
             ${rec ? `
               <div class="metric"><span>Clip</span><strong>${html(rec.clip_id)}</strong></div>
               <div class="metric"><span>Audience</span><strong>${html(rec.audience || "Local audience")}</strong></div>
-              <div class="metric"><span>Platform</span><strong>${html(rec.platform || "TikTok / Reels")}</strong></div>
+              <div class="metric"><span>Platform</span><strong>${html(rec.platform_label || rec.platform || rec.best_platform || "TikTok / Reels")}</strong></div>
               <div class="metric"><span>Role</span><strong>${html(rec.campaign_role || "awareness")}</strong></div>
-              <div class="copy"><strong>Attack angle:</strong> ${html(rec.attack_angle || "Make the next action feel simple.")}</div>
-              <div class="copy"><strong>CTA:</strong> ${html(rec.recommended_cta || "Save this and start today.")}</div>
-            ` : `<div class="muted">Build Marketing Plan to create clip-level recommendations.</div>`}
+              <div class="copy"><strong>Attack angle:</strong> ${html(rec.attack_angle || rec.hook || "Make the next action feel simple.")}</div>
+              <div class="copy"><strong>CTA:</strong> ${html(rec.CTA || rec.recommended_cta || "Save this and start today.")}</div>
+              <div class="copy"><strong>Export folder:</strong> ${html(rec.export_folder || "out/social_exports")}</div>
+            ` : `<div class="muted">Build Campaign Plan to create clip-level recommendations.</div>`}
           </section>
           <section class="inspector-section"><h3>Audience</h3>
             <div class="metric"><span>Primary</span><strong>${html(audience.segments?.[0]?.name || attack.primary_market || "Clip-based segment")}</strong></div>
@@ -3002,7 +3076,7 @@
             <div class="copy"><strong>Manual upload:</strong> HigherKey prepares the files. You post them yourself.</div>
           </section>
           <section class="inspector-section"><h3>Actions</h3>
-            <div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Packs</button><button class="btn" data-desktop-action="refresh-marketing">Refresh</button></div>
+            <div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Packs</button><button class="btn" data-desktop-action="copy-7-day-plan">Copy 7-Day Plan</button><button class="btn" data-desktop-action="refresh-marketing">Refresh</button></div>
           </section>
         `;
       }
@@ -3470,6 +3544,33 @@
         }
         return setNotice("Marketing plan needs attention. Open Support for details.");
       }
+      async function buildCampaignPlan() {
+        if (!window.higherkey?.buildCampaignPlan) {
+          return setNotice("Static mode: run python3 scripts/build_campaign_plan.py to build the local campaign board.");
+        }
+        setNotice("Building campaign board, posting calendar, and campaign brief...");
+        const result = await window.higherkey.buildCampaignPlan();
+        await refreshLiveData();
+        if (result?.code === 0 || result?.parsed?.ok || result?.ok) {
+          state.mode = "marketing";
+          persistWorkspace();
+          render();
+          return setNotice(`Campaign plan ready: ${result.parsed?.cards ?? state.campaignBoard?.cards?.length ?? 0} cards and ${result.parsed?.scheduled_posts ?? state.postingSchedule?.seven_day_schedule?.length ?? 0} scheduled posts.`);
+        }
+        return setNotice("Campaign plan needs attention. Open Support for details.");
+      }
+      async function copyCampaignText(kind) {
+        const seven = (state.postingSchedule?.seven_day_schedule || []).map((item) => `Day ${item.day}: ${item.platform} · ${item.clip_id} · ${item.hook} · ${item.CTA}`).join("\n");
+        const brief = state.campaignBrief || {};
+        const text = kind === "brief"
+          ? `Campaign thesis: ${brief.campaign_thesis || ""}\nAudience: ${brief.audience || ""}\nPositioning: ${brief.positioning || ""}\nAttack angle: ${brief.attack_angle || ""}\nManual upload only.`
+          : (seven || "Build Campaign Plan to create the 7-day schedule.");
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          return setNotice(kind === "brief" ? "Campaign brief copied." : "7-day plan copied.");
+        }
+        return setNotice(text);
+      }
 
       function wireSocialExportActions() {
         document.querySelectorAll("[data-social-export]").forEach((button) => {
@@ -3501,6 +3602,9 @@
             if (action === "refresh-school-reports") { await refreshLiveData(); return setNotice("School reports refreshed."); }
             if (action === "refresh-marketing") { await refreshLiveData(); return setNotice("Marketing intelligence refreshed."); }
             if (action === "build-marketing-plan") return buildMarketingPlan();
+            if (action === "build-campaign-plan") return buildCampaignPlan();
+            if (action === "copy-7-day-plan") return copyCampaignText("7-day");
+            if (action === "copy-campaign-brief") return copyCampaignText("brief");
             if (action === "open-marketing-folder") {
               if (!window.higherkey?.openMarketingFolder) return setNotice("Static mode: run python3 scripts/build_marketing_plan.py, then open out/marketing.");
               await window.higherkey.openMarketingFolder();
@@ -3615,6 +3719,11 @@
           state.platformStrategy = await optionalJson(PATHS.platformStrategy, null);
           state.campaignCalendar = await optionalJson(PATHS.campaignCalendar, null);
           state.marketingRecommendations = await optionalJson(PATHS.marketingRecommendations, null);
+          state.campaignBoard = await optionalJson(PATHS.campaignBoard, null);
+          state.postingSchedule = await optionalJson(PATHS.postingSchedule, null);
+          state.campaignBrief = await optionalJson(PATHS.campaignBrief, null);
+          state.clientCampaignPlan = await optionalJson(PATHS.clientCampaignPlan, null);
+          state.manualPostStatus = await optionalJson(PATHS.manualPostStatus, null);
           state.clientTasks = await optionalJson(PATHS.clientTasks, null);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, null);
           state.clientDemo = await optionalJson(PATHS.clientDemo, null);
@@ -3683,6 +3792,11 @@
           state.platformStrategy = await optionalJson(PATHS.platformStrategy, state.platformStrategy);
           state.campaignCalendar = await optionalJson(PATHS.campaignCalendar, state.campaignCalendar);
           state.marketingRecommendations = await optionalJson(PATHS.marketingRecommendations, state.marketingRecommendations);
+          state.campaignBoard = await optionalJson(PATHS.campaignBoard, state.campaignBoard);
+          state.postingSchedule = await optionalJson(PATHS.postingSchedule, state.postingSchedule);
+          state.campaignBrief = await optionalJson(PATHS.campaignBrief, state.campaignBrief);
+          state.clientCampaignPlan = await optionalJson(PATHS.clientCampaignPlan, state.clientCampaignPlan);
+          state.manualPostStatus = await optionalJson(PATHS.manualPostStatus, state.manualPostStatus);
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);
           state.clientDemo = await optionalJson(PATHS.clientDemo, state.clientDemo);

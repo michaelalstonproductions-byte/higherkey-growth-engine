@@ -1065,6 +1065,45 @@ python3 scripts/import_instagram_insights.py --dry-run
 
 No live Instagram API, OAuth, tokens, cloud APIs, social APIs, or direct posting APIs are configured in V5.1. HigherKey prepares local strategy and platform folders; the operator uploads manually.
 
+## V5.2 Campaign Planning Board
+
+V5.2 turns Marketing Studio into a local campaign planning board. HigherKey groups approved and high-scoring clips by campaign readiness, recommends the audience and platform, and generates a manual-upload posting sequence.
+
+Local campaign outputs:
+
+- `analytics/campaign_board.json`
+- `analytics/posting_schedule.json`
+- `analytics/content_calendar_board.json`
+- `analytics/campaign_brief.json`
+- `analytics/client_campaign_plan.json`
+- `analytics/manual_post_status.json`
+- `out/marketing/posting_schedule.md`
+- `out/marketing/30_day_campaign_plan.md`
+- `out/marketing/campaign_brief.md`
+
+Build the campaign board:
+
+```bash
+python3 scripts/build_campaign_plan.py
+```
+
+Track manual posting status:
+
+```bash
+python3 scripts/update_manual_post_status.py --clip-id a2cd9a1b27c7037a_clip_01 --platform tiktok --status not_uploaded --notes "QA fixture"
+```
+
+Campaign board columns:
+
+- Idea
+- Ready to Edit
+- Ready to Post
+- Scheduled
+- Posted Manually
+- Needs Revision
+
+Marketing Studio now shows Strategy, Campaign Board, Calendar, and Clip Recommendations views. The campaign planner remains local-first and manual-upload only. No cloud APIs, live Instagram APIs, OAuth, tokens, social APIs, or direct posting APIs are configured.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.
