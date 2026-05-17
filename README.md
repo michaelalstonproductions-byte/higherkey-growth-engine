@@ -1018,6 +1018,20 @@ Known non-blocking warning: sandboxed macOS launch checks can fail when the sand
 
 Manual upload reminder: HigherKey prepares local platform folders. The client uploads manually. No cloud APIs, social APIs, or direct posting APIs are configured.
 
+## V5.0 Elite Product Experience
+
+V5.0 focuses the desktop app around a client-ready flow: drop footage, let HigherKey find the moments, review the best clips, export social packs, and upload manually.
+
+Client workflow:
+
+1. Import Footage or drag MP4, MOV, or M4V files into the app.
+2. Click Import & Process to create clips, previews, captions, color/audio notes, and recommendations locally.
+3. Review the best clips and approve the strongest moments.
+4. Export Social Packs for TikTok, Instagram Reels, YouTube Shorts, and Facebook Reels.
+5. Upload manually from the generated local folders.
+
+The UI hides technical runtime details from Home, Review, Media, AI Insights, and Exports. Support and Settings keep advanced diagnostics available when needed. HigherKey remains local-first: no cloud APIs, social APIs, or direct posting APIs are configured.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

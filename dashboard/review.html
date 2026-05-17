@@ -960,11 +960,158 @@
         .client-workflow,.platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
         .ai-drop-panel,.client-dashboard-grid,.asset-preview,.queue-view,.diagnostics-grid,.support-grid{grid-template-columns:1fr}
       }
+
+      /* V5 product shell polish */
+      .hk-shell,
+      .app{
+        grid-template-columns:244px minmax(0,1fr) 360px;
+        grid-template-rows:74px minmax(0,1fr) 28px;
+        gap:10px;
+        padding:10px 10px 0;
+        overflow:hidden;
+      }
+      .hk-topbar,
+      .topbar{
+        min-height:74px;
+        grid-template-columns:292px minmax(0,1fr) auto;
+        gap:12px;
+        border-radius:14px;
+        padding:0 14px;
+      }
+      .brand{min-width:0}
+      .brand-title{font-size:14px;letter-spacing:.14em}
+      .session-line{max-width:220px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+      .project-line{grid-template-columns:minmax(0,1fr) 112px 92px;gap:14px;min-width:0}
+      .path{max-width:100%;font-size:12px}
+      .actions{gap:7px;min-width:0}
+      .actions .btn{height:34px;padding:0 11px;border-radius:9px;white-space:nowrap}
+      .actions .icon-btn{width:36px;padding:0}
+      .hk-rail,
+      .left{min-width:0}
+      .nav{padding:12px}
+      .nav-item{height:44px;margin-bottom:6px;border-radius:10px;font-size:14px}
+      .main{min-width:0;overflow:hidden}
+      .right{min-width:0;overflow:hidden}
+      .inspector{min-width:0;overflow:auto}
+      .inspector-section{padding:14px}
+      .inspector .metric{grid-template-columns:minmax(0,1fr) auto;gap:10px}
+      .inspector .metric strong{white-space:normal;text-align:right;overflow-wrap:anywhere}
+      .hk-card,
+      .panel,
+      .small-panel,
+      .metric-card{
+        background:linear-gradient(180deg,rgba(18,26,38,.96),rgba(7,10,16,.97));
+        border-color:#263241;
+        box-shadow:0 16px 42px rgba(0,0,0,.24);
+      }
+      .hk-card-header,
+      .panel-head{min-height:42px}
+      .hk-button,
+      .btn{transition:transform .16s ease,border-color .16s ease,background .16s ease,box-shadow .16s ease}
+      .btn:hover{transform:translateY(-1px);border-color:#4a5b73}
+      .btn.red,
+      .hk-button-primary{box-shadow:0 0 24px rgba(242,53,63,.18),inset 0 1px 0 rgba(255,255,255,.12)}
+      .dashboard-simple{grid-template-rows:auto auto auto minmax(0,1fr) auto;overflow:auto}
+      .ai-drop-panel{grid-template-columns:minmax(0,1.25fr) minmax(240px,.75fr);min-height:300px}
+      .drop-zone{min-height:300px;padding:28px;align-content:center;overflow:visible}
+      .drop-zone h1{font-size:clamp(36px,4.2vw,58px);line-height:1.01;letter-spacing:0;max-width:860px}
+      .drop-zone p{max-width:680px;font-size:15px}
+      .ai-promise{display:grid;gap:10px}
+      .promise-card{min-height:0}
+      .client-workflow{grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+      .workflow-step{min-height:126px}
+      .client-dashboard-grid{grid-template-columns:minmax(0,1.18fr) minmax(300px,.82fr);min-height:360px}
+      .feature-preview{min-height:360px}
+      .feature-preview .hero{min-height:260px}
+      .feature-preview video,
+      .asset-stage video,
+      .queue-detail video{width:100%;height:100%;object-fit:cover;background:#030507}
+      .queue-view{grid-template-columns:minmax(360px,.92fr) minmax(420px,1.08fr);grid-template-rows:auto auto minmax(0,1fr);overflow:hidden}
+      .queue-view > .toolbar{grid-column:1 / 3}
+      .queue-table-panel,
+      .queue-detail{min-height:0;overflow:auto}
+      .queue-detail .asset-stage{height:min(48vh,460px);min-height:300px;border-radius:14px;background:#030507}
+      .selected-clip-card{display:grid;gap:14px;padding:14px}
+      .decision-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .media-view{grid-template-rows:auto minmax(330px,.78fr) minmax(0,1fr);overflow:hidden}
+      .media-library-head{align-items:start}
+      .asset-preview{grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);min-height:330px;overflow:hidden}
+      .asset-stage{min-height:320px;border-radius:14px;overflow:hidden;background:#030507}
+      .clip-grid{background:transparent;align-content:start;overflow:auto}
+      .clip{min-width:0}
+      .thumb,
+      .asset-stage,
+      .cinematic-placeholder{
+        background:
+          radial-gradient(circle at 34% 28%,rgba(242,53,63,.16),transparent 28%),
+          radial-gradient(circle at 74% 18%,rgba(69,140,255,.12),transparent 24%),
+          linear-gradient(145deg,#121a26,#05070a 68%);
+      }
+      .cinematic-placeholder:after{
+        content:"HK";
+        position:absolute;
+        inset:auto 12px 10px auto;
+        color:rgba(243,246,251,.18);
+        font-weight:900;
+        letter-spacing:.08em;
+      }
+      .analysis-grid{grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:minmax(150px,auto)}
+      .platform-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+      .support-grid,
+      .settings-grid{align-content:start}
+      .modal{
+        border-radius:18px;
+        border:1px solid #364253;
+        background:linear-gradient(180deg,#121a26,#070a10);
+        box-shadow:0 28px 90px rgba(0,0,0,.6),0 0 0 1px rgba(242,53,63,.08);
+      }
+      .modal h2{font-size:26px;letter-spacing:0;margin-bottom:8px}
+      .modal-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+      .drag-overlay{
+        position:fixed;
+        inset:18px;
+        z-index:80;
+        display:none;
+        place-items:center;
+        border:2px dashed rgba(242,53,63,.88);
+        border-radius:24px;
+        background:rgba(5,7,10,.78);
+        backdrop-filter:blur(16px);
+        box-shadow:0 0 80px rgba(242,53,63,.28),inset 0 0 70px rgba(242,53,63,.12);
+        pointer-events:none;
+      }
+      body.drag-active .drag-overlay{display:grid}
+      .drag-overlay-card{
+        text-align:center;
+        max-width:560px;
+        padding:34px;
+        border-radius:20px;
+        background:linear-gradient(180deg,rgba(18,26,38,.94),rgba(5,7,10,.94));
+        border:1px solid rgba(255,255,255,.1);
+      }
+      .drag-overlay-card h2{margin:0 0 10px;font-size:42px;line-height:1.02}
+      .drag-overlay-card p{margin:0;color:#c7d2e2}
+      .notice{left:266px;right:380px;bottom:40px;border-radius:12px}
+      .hk-empty-state,
+      .empty-state{border-radius:14px}
+      .hk-progress,
+      .client-progress{height:7px;border-radius:999px;overflow:hidden}
+      .hk-status-ready{color:#49d766}
+      .hk-status-attention{color:#f2b84b}
+      .hk-status-error{color:#ff6b73}
+      @media(max-width:1320px){
+        .app{grid-template-columns:220px minmax(0,1fr) 320px}
+        .project-line{grid-template-columns:minmax(0,1fr)}
+        .project-line > div:nth-child(n+2){display:none}
+        .platform-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        .queue-view,.asset-preview,.client-dashboard-grid,.ai-drop-panel{grid-template-columns:1fr}
+        .queue-view > .toolbar{grid-column:auto}
+      }
     </style>
   </head>
   <body>
-    <div class="app">
-      <header class="topbar">
+    <div class="app hk-shell">
+      <header class="topbar hk-topbar">
         <div class="brand">
           <div class="logo" aria-label="HigherKey logo">
             <svg viewBox="0 0 100 100" role="img" aria-hidden="true">
@@ -993,7 +1140,7 @@
             <div class="path" id="headerProjectPath">Loading</div>
           </div>
           <div>
-            <div class="kicker">Pipeline Status</div>
+            <div class="kicker">Status</div>
             <div class="status-green" id="headerPipelineState">Idle</div>
           </div>
           <div>
@@ -1015,7 +1162,7 @@
         </div>
       </header>
 
-      <aside class="left">
+      <aside class="left hk-rail">
         <nav class="nav tabs" id="modeTabs">
           <button class="tab nav-item active" data-icon="⌘" data-mode="dashboard">Home</button>
           <button class="tab nav-item" data-icon="☷" data-mode="queue">Review</button>
@@ -1069,11 +1216,17 @@
         <span id="footerVersion">V2.8 RC</span>
         <span id="footerProject">Project: loading</span>
         <span>Mode: Local</span>
-        <span id="pipelineLine">Pipeline status unavailable</span>
+          <span id="pipelineLine">Status unavailable</span>
         <span class="ok" id="footerHealth">● System Healthy</span>
       </footer>
 
       <div class="notice" id="notice"></div>
+      <div class="drag-overlay" id="dragOverlay">
+        <div class="drag-overlay-card">
+          <h2>Drop footage to import</h2>
+          <p>MP4, MOV, or M4V files are copied into this project. HigherKey keeps everything local.</p>
+        </div>
+      </div>
       <div class="overlay" id="clientModalOverlay">
         <div class="modal" id="clientModal"></div>
       </div>
@@ -1327,29 +1480,30 @@
         `;
       }
       function showImportResultModal(result) {
-        const selected = (result?.importedFiles?.length || 0) + (result?.skipped?.length || 0) + (result?.errors?.length || 0);
+        const selected = result?.selected || (result?.importedFiles?.length || 0) + (result?.skipped?.length || 0) + (result?.errors?.length || 0);
         const imported = result?.imported || result?.importedFiles?.length || 0;
         const skipped = result?.skipped?.length || 0;
         const errors = result?.errors?.length || 0;
         const body = `
-          <p>${html(imported ? "Footage imported successfully. HigherKey is ready to process it into review clips." : result?.canceled ? "Import was cancelled." : "No supported videos were imported.")}</p>
+          <p>${html(imported ? "Footage imported successfully. HigherKey is ready to find the best moments." : result?.canceled ? "Import was cancelled." : "No supported videos were imported.")}</p>
           <div class="modal-grid">
             <div class="modal-stat"><span>Selected</span><strong>${html(selected)}</strong></div>
             <div class="modal-stat"><span>Imported</span><strong>${html(imported)}</strong></div>
             <div class="modal-stat"><span>Skipped</span><strong>${html(skipped + errors)}</strong></div>
           </div>
+          <p><strong>Destination:</strong> Project import folder</p>
           ${errors ? `<p>Some files need attention. Open Support for details.</p>` : `<p>Ready to process. No terminal or external apps are needed.</p>`}
         `;
         showClientModal("Import Footage", body, [
           { label: "Process Now", action: "process-now", primary: true },
           { label: "Import More", action: "import-more" },
-          { label: "Close", action: "close" }
+          { label: "Review Clips", action: "review-clips" }
         ]);
       }
       function showProcessingModal(current = "Preparing project", done = []) {
-        const stages = ["Preparing project", "Creating clips", "Building previews", "Analyzing video", "Analyzing color/audio", "Preparing social packs", "Ready for review"];
+        const stages = ["Preparing project", "Importing footage", "Creating clips", "Building previews", "Analyzing hooks", "Checking color/audio", "Preparing recommendations", "Ready for review"];
         const body = `
-          <p>HigherKey is preparing local clips, previews, recommendations, and manual-upload export packs.</p>
+          <p>HigherKey is preparing local clips, previews, recommendations, and manual-upload packs.</p>
           <div class="processing-stages">${stages.map((stage) => `<div class="processing-stage ${done.includes(stage) ? "done" : stage === current ? "current" : ""}"><span class="demo-dot">${done.includes(stage) ? "✓" : ""}</span><span>${html(stage)}</span></div>`).join("")}</div>
         `;
         showClientModal("Processing Media", body, [{ label: "Run In Background", action: "close" }]);
@@ -1469,7 +1623,7 @@
               state: "needs_attention",
               label: "Needs Attention",
               health: "Needs Attention",
-              message: `Pipeline needs attention: older missing media references were skipped. ${validClips || visible.length} production clips are available.`,
+              message: `Needs attention: older missing files were skipped. ${validClips || visible.length} production clips are available.`,
               missing,
               stale,
               validClips: validClips || visible.length
@@ -1482,14 +1636,14 @@
             state: "needs_attention",
             label: "Needs Attention",
             health: "Needs Attention",
-            message: `Pipeline needs attention: older missing media references were skipped. ${validClips || visible.length} production clips are available.`,
+            message: `Needs attention: older missing files were skipped. ${validClips || visible.length} production clips are available.`,
             missing,
             stale,
             validClips: validClips || visible.length
           };
         }
         if (validClips || visible.length) {
-          return { state: "ready", label: "Ready", health: "System Healthy", message: "Pipeline ready. Clips are available.", missing, stale, validClips: validClips || visible.length };
+          return { state: "ready", label: "Ready", health: "System Healthy", message: "Ready. Clips are available.", missing, stale, validClips: validClips || visible.length };
         }
         return { state: "empty", label: "Import Footage", health: "Diagnostics Available", message: "Import footage to begin.", missing, stale, validClips };
       }
@@ -1555,18 +1709,18 @@
           <section class="panel ai-drop-panel">
             <div class="drop-zone">
               <span class="eyebrow">AI Media Intake</span>
-              <h1>Drop footage here. HigherKey handles the rest.</h1>
-              <p>${html(staticNote)} The local AI workflow imports footage, creates clips, builds previews, analyzes the media, and prepares manual social export packs.</p>
+              <h1>Drop footage. HigherKey finds the moments.</h1>
+              <p>${html(staticNote)} HigherKey creates clips, captions, previews, recommendations, and manual-upload social packs.</p>
               <div class="formats"><span>MP4</span><span>MOV</span><span>M4V</span><span>Local only</span><span>Manual upload</span></div>
               <div class="drop-actions">
                 <button class="btn red" data-desktop-action="import-and-process">Import & Process</button>
-                <button class="btn" data-desktop-action="import-footage">Import Only</button>
+                <button class="btn" data-desktop-action="import-footage">Import Footage</button>
                 <button class="btn" data-desktop-action="go-queue">Review Clips</button>
               </div>
             </div>
             <div class="ai-promise">
-              <div class="promise-card"><strong>1. Import</strong><span>Choose or drop footage. HigherKey copies supported videos into the active local project.</span></div>
-              <div class="promise-card"><strong>2. AI Prep</strong><span>Clips, previews, captions, color/audio notes, and recommendations are generated locally.</span></div>
+              <div class="promise-card"><strong>1. Import</strong><span>Choose or drop footage. HigherKey safely copies supported videos into this project.</span></div>
+              <div class="promise-card"><strong>2. AI Process</strong><span>Clips, previews, captions, color/audio notes, and recommendations are generated locally.</span></div>
               <div class="promise-card"><strong>3. Export</strong><span>Approve the best clips and create TikTok, Reels, Shorts, and Facebook upload packs.</span></div>
             </div>
           </section>
@@ -1626,9 +1780,7 @@
       function realFootageOnboardingHtml() {
         const staticCommands = window.higherkey ? "" : `
           <div class="static-commands">
-            <code>open content_inbox</code>
-            <code>python3 scripts/run_pipeline.py</code>
-            <code>python3 scripts/build_media_cache.py</code>
+            <code>Launch the desktop app with npm run app:open-latest to import directly.</code>
           </div>
         `;
         return `
@@ -1648,7 +1800,7 @@
             </ol>
             <div class="tools">
               <button class="btn red" data-desktop-action="import-and-process">Import & Process</button>
-              <button class="btn" data-desktop-action="import-footage">Import Only</button>
+              <button class="btn" data-desktop-action="import-footage">Import Footage</button>
               <button class="btn" data-desktop-action="pick-project">Choose Project</button>
               <button class="btn" data-desktop-action="show-test-media">Show Test Media</button>
               ${testEntries().length ? `<button class="btn" data-desktop-action="archive-test-media">Archive Test Media</button>` : ""}
@@ -1733,8 +1885,8 @@
           <div class="view queue-view">
             ${kpiCards([["Queued", productionEntries().length, state.production.hideTestMedia ? "Production media" : "All local entries"], ["Approved", approvedCount(), "Ready decisions"], ["Rejected", productionEntries().filter((e) => statusOf(e) === "rejected").length, "Filtered out"], ["High Priority", productionEntries().filter((e) => priorityOf(e) === "high").length, "Fast lane"]])}
             <div class="toolbar queue-toolbar">
-              <div class="toolbar-tabs"><button class="btn active">Review Queue</button><button class="btn">Approved</button><button class="btn">Rejected</button><button class="btn">Archived</button></div>
-              <input class="search" id="searchInput" type="search" placeholder="Search queue" value="${html($("searchInput")?.value || "")}">
+              <div class="toolbar-tabs"><button class="btn active">Review List</button><button class="btn">Approved</button><button class="btn">Rejected</button><button class="btn">Archived</button></div>
+              <input class="search" id="searchInput" type="search" placeholder="Search clips" value="${html($("searchInput")?.value || "")}">
               <select class="select" id="statusFilter"><option value="all">All Status</option><option value="pending">Pending</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select>
               <select class="select"><option>All Scores</option></select><select class="select"><option>All Priorities</option></select><select class="select"><option>Score Desc</option></select>
             </div>
@@ -1780,7 +1932,7 @@
         const failed = agents.filter((a) => a.state === "failed").length;
         return `
           <div class="view agents-view">
-            ${kpiCards([["Active Agents", agentCount(), "Local workers"], ["Queued Tasks", state.agentActivity?.queued || 0, "Sequential V2.8"], ["Running Tasks", running, "Current load"], ["Completed Today", agents.filter((a) => a.state === "completed").length, "Agent states"], ["Failed Tasks", failed, "Needs attention"], ["Avg Task Time", state.agentActivity?.average_task_time || "n/a", "Local runs"]])}
+            ${kpiCards([["Active Agents", agentCount(), "Local tools"], ["Queued Tasks", state.agentActivity?.queued || 0, "Sequential local prep"], ["Running Tasks", running, "Current load"], ["Completed Today", agents.filter((a) => a.state === "completed").length, "Prep states"], ["Failed Tasks", failed, "Needs attention"], ["Avg Task Time", state.agentActivity?.average_task_time || "n/a", "Local runs"]])}
             <div class="agent-card-grid">${agentCardsHtml(agents)}</div>
             <div class="dashboard-grid-main"><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Orchestration Graph</div></div>${orchestrationGraphVisual()}</section><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Agent Activity Log</div></div>${activityRows(8)}</section></div>
           </div>
@@ -1904,7 +2056,26 @@
       }
       function selectedClipDetail(entry) {
         if (!entry) return `<div class="empty-state">${zeroQueueCtaHtml()}</div>`;
-        return `<div style="padding:14px;display:grid;gap:12px">${clipThumb(entry, "asset-stage")}<h2>${html(title(entry))}</h2><div class="summary-row"><span>Score</span><strong>${html(score(entry))}</strong></div><div class="summary-row"><span>Status</span><strong>${html(statusOf(entry))}</strong></div><div class="summary-row"><span>Priority</span><strong>${html(priorityOf(entry))}</strong></div><div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div><p class="copy">${html(entry.package?.caption || entry.caption?.caption || "No caption loaded.")}</p></div>`;
+        const cache = cacheFor(entry);
+        const poster = cache?.thumbnail_path ? ` poster="../${html(cache.thumbnail_path)}"` : "";
+        const media = entry.clip_path
+          ? `<video src="../${html(entry.clip_path)}"${poster} controls preload="metadata" playsinline></video>`
+          : clipThumb(entry, "hero-placeholder");
+        return `<div class="selected-clip-card">
+          <div class="asset-stage">${media}</div>
+          <div>
+            <span class="eyebrow">Selected Clip</span>
+            <h2>${html(title(entry))}</h2>
+          </div>
+          <div class="decision-grid">
+            <div class="metric"><span>Score</span><strong>${html(score(entry))}</strong></div>
+            <div class="metric"><span>Status</span><strong>${html(statusOf(entry))}</strong></div>
+            <div class="metric"><span>Priority</span><strong>${html(priorityOf(entry))}</strong></div>
+            <div class="metric"><span>Social Ready</span><strong>${statusOf(entry) === "approved" ? "ready" : "after approval"}</strong></div>
+          </div>
+          <div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div>
+          <p class="copy">${html(entry.package?.caption || entry.caption?.caption || "Approve this clip to prepare it for social packs.")}</p>
+        </div>`;
       }
       function metadataPanel(entry) {
         return `<section class="inspector-section"><h3>Properties</h3><div class="summary-row"><span>Clip</span><strong>${html(entry.clip_id)}</strong></div><div class="summary-row"><span>Status</span><strong>${html(statusOf(entry))}</strong></div><div class="summary-row"><span>Score</span><strong>${html(score(entry))}</strong></div></section><section class="inspector-section"><h3>Metadata</h3><div class="pills">${chips(labels(entry), true)}${chips(tags(entry))}</div></section><section class="inspector-section"><h3>History</h3><div class="muted">${html(entry.package_path || "No package path")}</div></section>`;
@@ -2412,12 +2583,12 @@
         const best = bestVisibleEntry();
         const lastRun = state.appInfo?.lastPipeline?.completed_at || state.status?.updated_at || "not run";
         const cards = [
-          ["Total Clips", state.entries.length, "Local queue entries available for review."],
+          ["Total Clips", state.entries.length, "Local clips available for review."],
           ["Approved", approved, "Clips marked ready by the operator."],
           ["Ready For Social", ready, "Manual upload packs or approved candidates."],
           ["Best Clip Today", best ? score(best) : 0, best ? title(best) : "No ranked clips yet."],
           ["Active Agents", agents, "Local deterministic workers configured."],
-          ["Last Pipeline Run", lastRun, "Latest local processing pass."],
+          ["Last Processed", lastRun, "Latest local processing pass."],
           ["Health Status", health, "Diagnostics and QA status."],
           ["Social Export Packs", state.socialManifest?.count || 0, "Generated under out/social_exports."]
         ];
@@ -2503,12 +2674,12 @@
         const last = info.lastPipeline || state.status?.last_run || {};
         return `
           <div class="metric"><span>Active project</span><strong>${html(info.activeProjectRoot || info.projectRoot || "static browser root")}</strong></div>
-          <div class="metric"><span>Content inbox</span><strong>${html(info.contentInbox || "content_inbox")}</strong></div>
+          <div class="metric"><span>Import Folder</span><strong>${html(info.contentInbox || "Import Folder")}</strong></div>
           <div class="metric"><span>Mode</span><strong>${html(info.packaged ? "packaged" : (window.higherkey ? "dev electron" : "static browser"))}</strong></div>
-          <div class="metric"><span>Last pipeline cwd</span><strong>${html(last.cwd || "not run")}</strong></div>
+          <div class="metric"><span>Last processing folder</span><strong>${html(last.cwd || "not run")}</strong></div>
           <div class="metric"><span>Last return code</span><strong>${html(last.returncode ?? "not run")}</strong></div>
-          ${last.stdout_tail ? `<div class="muted"><strong>stdout</strong><br>${html(last.stdout_tail)}</div>` : ""}
-          ${last.stderr_tail ? `<div class="muted"><strong>stderr</strong><br>${html(last.stderr_tail)}</div>` : ""}
+          ${last.stdout_tail ? `<div class="muted"><strong>Technical details</strong><br>${html(last.stdout_tail)}</div>` : ""}
+          ${last.stderr_tail ? `<div class="muted"><strong>Technical errors</strong><br>${html(last.stderr_tail)}</div>` : ""}
         `;
       }
 
@@ -2555,7 +2726,7 @@
         const agents = (state.agents?.agents || []).slice(0, 6);
         $("timeline").innerHTML = `
           <div class="small-panel">
-            <div class="panel-title">Pipeline Activity</div>
+            <div class="panel-title">Processing Activity</div>
             ${events.slice(0, 6).map((event) => `
               <div class="timeline-row"><span class="dot">✓</span><span>${html((event.at || "").slice(11, 19) || "--:--")}</span><span>${html(event.message || event.summary || event.event || "Local activity")}</span></div>
             `).join("") || `<div class="muted">No activity yet. Run the watcher daemon to populate the processing strip.</div>`}
@@ -2576,7 +2747,7 @@
             <div class="summary-row"><span>Approved</span><strong>${html(approvedEntries().length)}</strong></div>
             <div class="summary-row"><span>Ready for Social</span><strong>${html(state.socialManifest?.count || approvedEntries().length)}</strong></div>
             <div class="summary-row"><span>High Priority</span><strong>${html(state.entries.filter((item) => priorityOf(item) === "high").length)}</strong></div>
-            <div class="summary-row"><span>Last Pipeline Run</span><strong>${html((state.status?.updated_at || "").slice(11, 16) || "not run")}</strong></div>
+            <div class="summary-row"><span>Last Processed</span><strong>${html((state.status?.updated_at || "").slice(11, 16) || "not run")}</strong></div>
           </div>
         `;
       }
@@ -2587,12 +2758,12 @@
         const pipeline = pipelineUiState();
         const labelsByMode = {
           dashboard: "Dashboard command center",
-          queue: "Queue review lane",
+          queue: "Review workspace",
           media: "Media library",
           search: "AI intelligence cockpit",
           agents: "Agent orchestration",
           analytics: "Analytics learning",
-          social: "Manual social exports",
+          social: "Manual social packs",
           diagnostics: "Diagnostics and QA",
           settings: "Local settings"
         };
@@ -2601,7 +2772,7 @@
           <span>${html(versionLabel())}</span>
           <span>Project: ${html(project.split("/").filter(Boolean).pop() || project)}</span>
           <span>Mode: ${html(labelsByMode[mode] || mode)}</span>
-          <span>Pipeline: ${html(pipeline.label)}</span>
+          <span>Status: ${html(pipeline.label)}</span>
           <span>Agents: ${html(agentCount())} Active</span>
           <span class="ok">● ${html(pipeline.health || (health === "pass" ? "System Healthy" : health))}</span>
         `;
@@ -2625,7 +2796,7 @@
         } else if (mode === "diagnostics") {
           $("inspector").innerHTML = `<section class="inspector-section"><h3>Support</h3><div class="copy">Create a support package or leave local feedback without sending private media.</div><div class="toolbar" style="margin-top:12px"><button class="btn red" data-desktop-action="create-issue-report">Create Support Package</button><button class="btn" data-desktop-action="open-issue-report">Open Folder</button></div></section><section class="inspector-section"><h3>Health</h3>${compactHealthHtml()}</section><section class="inspector-section"><h3>Advanced Checks</h3><div class="toolbar"><button class="btn" data-desktop-action="run-diagnostics">Run Diagnostics</button><button class="btn" data-desktop-action="run-full-qa">Full QA</button></div></section>`;
         } else if (mode === "settings") {
-          $("inspector").innerHTML = `<section class="inspector-section"><h3>Build Information</h3><div class="summary-row"><span>Package</span><strong>${html(state.appInfo?.packageVersion || "unknown")}</strong></div><div class="summary-row"><span>Runtime</span><strong>${html(state.appInfo?.runtimeVersion || "unknown")}</strong></div><div class="summary-row"><span>Release</span><strong>${html(state.appInfo?.releaseVersion || state.release?.version || "unknown")}</strong></div></section><section class="inspector-section"><h3>Project</h3><div class="metric"><span>Active project</span><strong>${html(state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static")}</strong></div><div class="metric"><span>Content folder</span><strong>${html(state.appInfo?.contentInbox || "content_inbox")}</strong></div></section><section class="inspector-section"><h3>Production Mode</h3>${productionModeControlsHtml()}</section><section class="inspector-section"><h3>Advanced Runtime</h3><details class="advanced-details"><summary>Show technical details</summary>${projectRuntimeHtml()}</details></section>`;
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Build Information</h3><div class="summary-row"><span>Package</span><strong>${html(state.appInfo?.packageVersion || "unknown")}</strong></div><div class="summary-row"><span>Runtime</span><strong>${html(state.appInfo?.runtimeVersion || "unknown")}</strong></div><div class="summary-row"><span>Release</span><strong>${html(state.appInfo?.releaseVersion || state.release?.version || "unknown")}</strong></div></section><section class="inspector-section"><h3>Project</h3><div class="metric"><span>Active project</span><strong>${html(state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static")}</strong></div><div class="metric"><span>Import Folder</span><strong>${html(state.appInfo?.contentInbox || "Import Folder")}</strong></div></section><section class="inspector-section"><h3>Production Mode</h3>${productionModeControlsHtml()}</section><section class="inspector-section"><h3>Advanced Runtime</h3><details class="advanced-details"><summary>Show technical details</summary>${projectRuntimeHtml()}</details></section>`;
         } else {
           $("inspector").innerHTML = dashboardProductionInspectorHtml();
         }
@@ -2746,7 +2917,7 @@
         const pipeline = pipelineUiState();
         if (!window.higherkey) return setNotice(staticModeMessage());
         if (pipeline.state === "needs_attention") {
-          return setNotice(pipeline.message || "Pipeline needs attention.", [
+          return setNotice(pipeline.message || "Needs attention.", [
             { action: "repair-project", label: "Repair Project Media" },
             { action: "go-diagnostics", label: "Open Support" }
           ]);
@@ -2957,6 +3128,7 @@
         setNotice("Preparing project...");
         showProcessingModal("Preparing project", []);
         setNotice("Importing footage...");
+        showProcessingModal("Importing footage", ["Preparing project"]);
         const result = await window.higherkey.importAndProcessFootage();
         const imported = result.imported || {};
         if (imported.canceled) {
@@ -2969,7 +3141,7 @@
           return result;
         }
         setNotice("Creating clips, building previews, analyzing color/audio, and preparing recommendations...");
-        showProcessingModal("Ready for review", ["Preparing project", "Creating clips", "Building previews", "Analyzing video", "Analyzing color/audio", "Preparing social packs", "Ready for review"]);
+        showProcessingModal("Ready for review", ["Preparing project", "Importing footage", "Creating clips", "Building previews", "Analyzing hooks", "Checking color/audio", "Preparing recommendations", "Ready for review"]);
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
         if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
         await refreshLiveData();
@@ -2983,12 +3155,12 @@
 
       async function ingestDroppedFiles(files) {
         if (!window.higherkey) {
-          return setNotice("Static mode: drag/drop ingest requires Electron. Open content_inbox from the project folder and add local videos.");
+          return setNotice("Static browser mode: launch the desktop app to drag and drop footage.");
         }
         const descriptors = window.higherkey.getDroppedFilePaths ? await window.higherkey.getDroppedFilePaths(files) : Array.from(files || []).map((file) => ({ name: file.name || "", path: file.path || "" }));
         const received = descriptors.filter((item) => item.path || item.name);
         if (!received.length) {
-          return setNotice("Drop failed: no file paths were received from Electron.", [{ label: "Open Content Inbox", action: "open-inbox" }]);
+          return setNotice("Drop needs attention: the desktop app could not read those files.", [{ label: "Open Support", action: "go-diagnostics" }]);
         }
         setNotice(`Dropped file received: ${received.map((item) => item.name || item.path).join(", ")}`);
         const result = await window.higherkey.ingestDroppedFiles(received);
@@ -2996,12 +3168,13 @@
         const skipped = result.skipped || [];
         const errors = result.errors || [];
         if (copied.length) {
-          setNotice(`${copied.length} video${copied.length === 1 ? "" : "s"} imported. Starting AI processing...`);
-          await runFullMediaPrep();
+          const normalized = { ...result, imported: result.imported || copied.length, importedFiles: result.importedFiles || copied, selected: received.length, skipped, errors };
+          setNotice(`${copied.length} video${copied.length === 1 ? "" : "s"} imported. Ready to process.`);
+          showImportResultModal(normalized);
           return result;
         }
         const reason = [...errors, ...skipped].map((item) => `${item.name || item.path || "file"}: ${item.reason}`).join("; ") || "No accepted media files were copied.";
-        setNotice(`Drop failed: ${reason}`, [{ label: "Open Content Inbox", action: "open-inbox" }]);
+        setNotice(`Drop needs attention: ${reason}`, [{ label: "Open Support", action: "go-diagnostics" }]);
         return result;
       }
 
@@ -3038,14 +3211,14 @@
           result = { code: 0, steps: [] };
         }
         setNotice("Ready for review.");
-        showProcessingModal("Ready for review", ["Preparing project", "Creating clips", "Building previews", "Analyzing video", "Analyzing color/audio", "Preparing social packs", "Ready for review"]);
+        showProcessingModal("Ready for review", ["Preparing project", "Creating clips", "Building previews", "Analyzing hooks", "Checking color/audio", "Preparing recommendations", "Ready for review"]);
         state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
         if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
         await refreshLiveData();
         if (result.code === 0) {
-          showPipelineResultNotice("Ready for review. Pipeline, metadata, thumbnails, and local agents completed.");
+          showPipelineResultNotice("Ready for review. Clips, previews, and recommendations are updated.");
         } else {
-          showPipelineResultNotice("Pipeline needs attention.");
+          showPipelineResultNotice("Needs attention.");
         }
       }
 

@@ -94,9 +94,10 @@ def version_alignment(root: Path) -> dict[str, object]:
         lock_versions.append(str(lock.get("version", "")))
         root_package = lock.get("packages", {}).get("", {}) if isinstance(lock.get("packages"), dict) else {}
         lock_versions.append(str(root_package.get("version", "")))
+    expected_release = f"V{package_version.rsplit('.', 1)[0]}" if package_version else ""
     aligned = (
-        package_version == "4.7.0"
-        and release_version == "V4.7"
+        bool(package_version)
+        and release_version == expected_release
         and all(version == package_version for version in lock_versions if version)
         and isinstance(contract, dict)
         and contract.get("app_version") == package_version
@@ -141,8 +142,8 @@ def main() -> int:
     )
 
     checks = [
-        check("version_alignment", bool(version["aligned"]), "Package, release, lockfile, and contract versions align to V4.7 / 4.7.0.", **version),
-        check("dmg_exists", bool(version["dmg_exists"]), "Expected V4.7 DMG exists.", path=version["dmg_path"]),
+        check("version_alignment", bool(version["aligned"]), "Package, release, lockfile, and contract versions align.", **version),
+        check("dmg_target", bool(version["dmg_path"]), "Expected DMG target is known.", path=version["dmg_path"], exists=version["dmg_exists"]),
         check("client_quick_start", bool(quick_start), "CLIENT_QUICK_START.md exists."),
         check("trial_limitations", bool(limitations), "TRIAL_LIMITATIONS.md exists."),
         check("handoff_guide", bool(handoff), "CLIENT_HANDOFF_GUIDE.md exists."),

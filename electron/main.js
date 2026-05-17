@@ -674,6 +674,19 @@ async function runPipelineOnce() {
 async function importFootage() {
   await readSettings();
   const inbox = path.join(activeProjectRoot, "content_inbox");
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) {
+    return {
+      imported: 0,
+      skipped: [],
+      errors: [{ reason: projectCheck.message || "That folder cannot be used as a project." }],
+      inbox,
+      importedFiles: [],
+      canceled: false,
+      status: "fail",
+      message: projectCheck.message || "That folder cannot be used as a project."
+    };
+  }
   const selected = await dialog.showOpenDialog(mainWindow, {
     title: "Import Footage",
     buttonLabel: "Import Footage",
@@ -706,14 +719,20 @@ async function importFootage() {
     };
   }
   const result = await ingestDroppedFilesToInbox(filtered.valid, inbox);
+  const errors = [...filtered.errors, ...result.errors];
+  const imported = result.copied.length;
   return {
-    imported: result.copied.length,
+    imported,
     skipped: result.skipped,
-    errors: [...filtered.errors, ...result.errors],
+    errors,
     inbox: result.inbox,
     importedFiles: result.copied,
     accepted_extensions: result.accepted_extensions,
-    canceled: false
+    canceled: false,
+    status: imported ? (errors.length ? "warn" : "pass") : "fail",
+    message: imported
+      ? `${imported} video${imported === 1 ? "" : "s"} imported.`
+      : "No supported footage files were imported."
   };
 }
 
@@ -724,11 +743,15 @@ async function runFullMediaPrep() {
   const profile = projectProfile(settings);
   await fsp.mkdir(profile.contentInbox, { recursive: true });
   const steps = [
-    { name: "Repairing media references", stage: "repair_preflight", args: ["scripts/repair_project_media.py"] },
+    { name: "Preparing project", stage: "repair_preflight", args: ["scripts/repair_project_media.py"] },
     { name: "Creating clips", stage: "creating_clips", args: ["scripts/run_pipeline.py"] },
     { name: "Indexing metadata", stage: "indexing_metadata", args: ["scripts/rebuild_metadata_index.py"] },
-    { name: "Building thumbnails", stage: "building_thumbnails", args: ["scripts/build_media_cache.py"] },
-    { name: "Updating agents", stage: "updating_agents", args: ["scripts/run_orchestrator.py", "--once"] }
+    { name: "Building previews", stage: "building_previews", args: ["scripts/build_media_cache.py"] },
+    { name: "Checking color", stage: "checking_color", args: ["scripts/run_color_school.py"], optional: true },
+    { name: "Checking audio", stage: "checking_audio", args: ["scripts/run_audio_school.py"], optional: true },
+    { name: "Preparing recommendations", stage: "updating_agents", args: ["scripts/run_orchestrator.py", "--once"], optional: true },
+    { name: "Updating workspace", stage: "client_workflow", args: ["scripts/build_client_workflow.py"], optional: true },
+    { name: "Refreshing client state", stage: "client_state", args: ["scripts/build_runtime_snapshot.py"], optional: true }
   ];
   const results = [];
   let staleQueueEntries = 0;
@@ -750,7 +773,7 @@ async function runFullMediaPrep() {
     }
     results.push({ name: step.name, stage: step.stage, parsed, ...result });
     const status = await writePipelineLastRun(result, { command: step.stage, parsed, staleQueueEntries });
-    if (result.code !== 0 && status.severity === "fail") {
+    if (result.code !== 0 && status.severity === "fail" && !step.optional) {
       return { code: result.code, status, steps: results, activeProjectRoot, contentInbox: profile.contentInbox };
     }
   }
@@ -1191,7 +1214,17 @@ async function verifyImportAndProcessBridge() {
   const bridge = await verifyImportBridge();
   return {
     ...bridge,
-    fullMediaPrep: ["repair_project_media.py", "run_pipeline.py", "rebuild_metadata_index.py", "build_media_cache.py", "run_orchestrator.py --once"]
+    fullMediaPrep: [
+      "repair_project_media.py",
+      "run_pipeline.py",
+      "rebuild_metadata_index.py",
+      "build_media_cache.py",
+      "run_color_school.py",
+      "run_audio_school.py",
+      "run_orchestrator.py --once",
+      "build_client_workflow.py",
+      "build_runtime_snapshot.py"
+    ]
   };
 }
 
@@ -1388,10 +1421,26 @@ async function runFirstRunSetup(force = false) {
 async function ingestDroppedFiles(filePaths) {
   await readSettings();
   const inbox = path.join(activeProjectRoot, "content_inbox");
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) {
+    return {
+      copied: [],
+      imported: 0,
+      importedFiles: [],
+      skipped: [],
+      errors: [{ reason: projectCheck.message || "That folder cannot be used as a project." }],
+      inbox,
+      accepted_extensions: [".mp4", ".mov", ".m4v"],
+      status: "fail",
+      message: projectCheck.message || "That folder cannot be used as a project."
+    };
+  }
   const filtered = filterImportSelections(filePaths || []);
   if (!filtered.valid.length) {
     return {
       copied: [],
+      imported: 0,
+      importedFiles: [],
       skipped: [],
       errors: filtered.errors,
       inbox,
@@ -1401,7 +1450,18 @@ async function ingestDroppedFiles(filePaths) {
     };
   }
   const result = await ingestDroppedFilesToInbox(filtered.valid, inbox);
-  return { ...result, errors: [...filtered.errors, ...result.errors] };
+  const errors = [...filtered.errors, ...result.errors];
+  const imported = result.copied.length;
+  return {
+    ...result,
+    imported,
+    importedFiles: result.copied,
+    errors,
+    status: imported ? (errors.length ? "warn" : "pass") : "fail",
+    message: imported
+      ? `${imported} video${imported === 1 ? "" : "s"} imported.`
+      : "No supported footage files were imported."
+  };
 }
 
 async function appInfo() {
