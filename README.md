@@ -1132,6 +1132,17 @@ python3 scripts/build_performance_feedback.py
 
 Marketing Studio now includes Performance Feedback: posted clips, expected vs actual deltas, winning hooks, winning CTAs, strong platforms, and next experiments. This remains local-first and manual-entry only. No live Instagram API, cloud API, social API, OAuth, token storage, or direct posting API is configured by default.
 
+## V5.3.1 Performance Feedback Hardening
+
+V5.3.1 keeps the V5.3 manual performance loop local-first while hardening the data path. Manual post results remain the only records written to `analytics/performance_history.json`. Optional imported Instagram summary records can inform feedback calculations, but they are marked as `record_source: "imported_summary"` and are not persisted back into manual history.
+
+Retention now accepts either percent or ratio input:
+
+- `--retention 42` means 42 percent.
+- `--retention 0.42` also means 42 percent.
+
+The dashboard Record Results action now collects posted date, watch time, profile visits, follows, and notes in addition to the original local metrics. QA also validates all V5.3 performance JSON artifacts and runs a tighter no-live-API scan. No live Instagram API, TikTok API, social posting API, OAuth flow, telemetry, cloud API, or external analytics API is configured.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

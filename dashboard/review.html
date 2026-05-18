@@ -3115,9 +3115,10 @@
         const audience = state.audienceProfile || {};
         return `
           <section class="inspector-section"><h3>Marketing Studio</h3>
-            <div class="copy">Campaign board, posting calendar, and manual upload plan for approved clips.</div>
+            <div class="copy">Campaign board, posting calendar, performance feedback, and manual upload plan for approved clips.</div>
             <div class="toolbar" style="margin-top:12px">
               <button class="btn red" data-desktop-action="build-campaign-plan">Build Campaign Plan</button>
+              <button class="btn" data-desktop-action="build-performance-feedback">Build Feedback Loop</button>
               <button class="btn" data-desktop-action="open-marketing-folder">Open Folder</button>
             </div>
           </section>
@@ -3660,6 +3661,8 @@
         }
         const platform = prompt("Platform posted to", card?.platform || card?.best_platform || "tiktok");
         if (!platform) return setNotice("Result entry cancelled.");
+        const postedAt = prompt("Posted at (ISO date/time)", new Date().toISOString());
+        if (postedAt === null) return setNotice("Result entry cancelled.");
         const views = prompt("Views", "1000");
         if (views === null) return setNotice("Result entry cancelled.");
         const likes = prompt("Likes", "80");
@@ -3670,20 +3673,31 @@
         if (shares === null) return setNotice("Result entry cancelled.");
         const saves = prompt("Saves", "0");
         if (saves === null) return setNotice("Result entry cancelled.");
-        const retention = prompt("Retention percentage", "60");
+        const watchTime = prompt("Watch time seconds", "0");
+        if (watchTime === null) return setNotice("Result entry cancelled.");
+        const retention = prompt("Retention percent or ratio (42 or 0.42)", "60");
         if (retention === null) return setNotice("Result entry cancelled.");
+        const profileVisits = prompt("Profile visits", "0");
+        if (profileVisits === null) return setNotice("Result entry cancelled.");
+        const follows = prompt("Follows", "0");
+        if (follows === null) return setNotice("Result entry cancelled.");
+        const notes = prompt("Notes", "Recorded from HigherKey");
+        if (notes === null) return setNotice("Result entry cancelled.");
         setNotice("Recording local post result...");
         const result = await window.higherkey.recordPostResult({
           clipId,
           platform,
-          postedAt: new Date().toISOString(),
+          postedAt,
           views,
           likes,
           comments,
           shares,
           saves,
+          watchTime,
           retention,
-          notes: "Recorded from HigherKey"
+          profileVisits,
+          follows,
+          notes
         });
         await refreshLiveData();
         if (result?.code === 0 || result?.parsed?.ok || result?.ok) {
@@ -3703,7 +3717,8 @@
           : (seven || "Build Campaign Plan to create the 7-day schedule.");
         if (navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(text);
-          return setNotice(kind === "brief" ? "Campaign brief copied." : "7-day plan copied.");
+          if (kind === "brief") return setNotice("Campaign brief copied.");
+          return setNotice("7-day plan copied.");
         }
         return setNotice(text);
       }

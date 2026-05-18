@@ -23,7 +23,7 @@ def main() -> int:
     parser.add_argument("--shares", type=float, default=0)
     parser.add_argument("--saves", type=float, default=0)
     parser.add_argument("--watch-time", type=float, default=0)
-    parser.add_argument("--retention", type=float, default=0)
+    parser.add_argument("--retention", type=float, default=0, help="Retention as a percent or ratio. Both 42 and 0.42 mean 42 percent.")
     parser.add_argument("--profile-visits", type=float, default=0)
     parser.add_argument("--follows", type=float, default=0)
     parser.add_argument("--notes", default="")

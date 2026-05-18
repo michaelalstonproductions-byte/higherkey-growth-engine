@@ -27,6 +27,15 @@ def _rate(part: float, whole: float) -> float:
     return round((part / whole) * 100.0, 3)
 
 
+def normalize_retention_percent(value: Any) -> float:
+    retention = _float(value)
+    if retention <= 0:
+        return 0.0
+    if retention <= 1:
+        retention *= 100.0
+    return round(max(0.0, min(100.0, retention)), 3)
+
+
 def _payload_items(payload: Any, keys: tuple[str, ...]) -> list[Any]:
     if isinstance(payload, list):
         return payload
@@ -72,11 +81,32 @@ def load_performance_context(root: Path) -> dict[str, Any]:
     }
 
 
-def load_performance_history(root: Path) -> dict[str, Any]:
+def load_manual_performance_history(root: Path) -> dict[str, Any]:
     payload = load_json(root / "analytics" / "performance_history.json", {})
-    records = safe_list(payload.get("records"))
+    records = []
+    for item in safe_list(payload.get("records")):
+        if not isinstance(item, dict):
+            continue
+        if item.get("record_source") == "imported_summary" or str(item.get("record_id") or "").startswith("manual_import_"):
+            continue
+        normalized = dict(item)
+        normalized["record_source"] = "manual"
+        normalized["manual_entry"] = True
+        if "retention_percent" not in normalized:
+            normalized["retention_percent"] = normalize_retention_percent(normalized.get("retention"))
+        normalized["retention"] = normalize_retention_percent(normalized.get("retention_percent"))
+        records.append(normalized)
+    return {
+        "version": int(payload.get("version") or 1) if isinstance(payload, dict) else 1,
+        "records": records,
+    }
+
+
+def load_imported_summary_records(root: Path) -> list[dict[str, Any]]:
     instagram = load_json(root / "analytics" / "instagram_performance_summary.json", {})
     instagram_records = safe_list(instagram.get("records") or instagram.get("posts") or instagram.get("items"))
+    records: list[dict[str, Any]] = []
+    seen: set[str] = set()
     for item in instagram_records:
         if not isinstance(item, dict):
             continue
@@ -84,8 +114,15 @@ def load_performance_history(root: Path) -> dict[str, Any]:
         platform = item.get("platform") or "instagram_reels"
         if not clip_id:
             continue
+        record_id = f"summary_import_{platform}_{clip_id}_{item.get('date') or item.get('posted_at') or ''}"
+        if record_id in seen:
+            continue
+        seen.add(record_id)
+        retention_percent = normalize_retention_percent(item.get("retention_percent", item.get("retention")))
         records.append({
-            "record_id": f"manual_import_{platform}_{clip_id}",
+            "record_id": record_id,
+            "record_source": "imported_summary",
+            "manual_entry": False,
             "clip_id": clip_id,
             "platform": platform,
             "posted_at": item.get("date") or item.get("posted_at"),
@@ -95,14 +132,23 @@ def load_performance_history(root: Path) -> dict[str, Any]:
             "shares": item.get("shares"),
             "saves": item.get("saves"),
             "watch_time": item.get("watch_time"),
-            "retention": item.get("retention"),
+            "retention": retention_percent,
+            "retention_percent": retention_percent,
             "profile_visits": item.get("profile_visits"),
             "follows": item.get("follows"),
             "notes": "Manual Instagram insights import.",
         })
+    return records
+
+
+def load_performance_history(root: Path) -> dict[str, Any]:
+    manual = load_manual_performance_history(root)
+    imported = load_imported_summary_records(root)
     return {
-        "version": int(payload.get("version") or 1) if isinstance(payload, dict) else 1,
-        "records": [item for item in records if isinstance(item, dict)],
+        "version": manual["version"],
+        "records": manual["records"] + imported,
+        "manual_records": manual["records"],
+        "imported_summary_records": imported,
     }
 
 
@@ -114,7 +160,7 @@ def score_record(record: dict[str, Any], rec: dict[str, Any], card: dict[str, An
     saves = _float(record.get("saves"))
     profile_visits = _float(record.get("profile_visits"))
     follows = _float(record.get("follows"))
-    retention = _float(record.get("retention"))
+    retention = normalize_retention_percent(record.get("retention_percent", record.get("retention")))
     engagement = likes + comments + shares + saves
     engagement_rate = _rate(engagement, views)
     save_rate = _rate(saves, views)
@@ -170,6 +216,7 @@ def score_record(record: dict[str, Any], rec: dict[str, Any], card: dict[str, An
             "saves": saves,
             "watch_time": _float(record.get("watch_time")),
             "retention": retention,
+            "retention_percent": retention,
             "profile_visits": profile_visits,
             "follows": follows,
         },
@@ -191,6 +238,7 @@ def score_record(record: dict[str, Any], rec: dict[str, Any], card: dict[str, An
         "what_underperformed": weak,
         "recommended_next_adjustment": adjustment,
         "notes": record.get("notes") or "",
+        "record_source": record.get("record_source") or "manual",
     }
 
 
@@ -365,7 +413,8 @@ def build_performance_feedback(root: Path) -> dict[str, Any]:
             "posting_schedule": len(_payload_items(context["posting_schedule"], ("seven_day_schedule", "items", "next_7_posts"))),
             "approved_reviews": len(_payload_items(context["approved_reviews"], ("entries", "approved", "approved_clip_ids"))),
             "social_export_manifest": len(_payload_items(context["social_export_manifest"], ("exports", "items", "platforms"))),
-            "performance_history": len(history["records"]),
+            "performance_history": len(history["manual_records"]),
+            "imported_summary_records": len(history["imported_summary_records"]),
             "marketing_recommendations": len(recommendations),
             "campaign_cards": len(cards),
         },
@@ -396,8 +445,10 @@ def record_post_result(root: Path, values: dict[str, Any], dry_run: bool = False
         raise ValueError("--clip-id is required")
     if not platform:
         raise ValueError("--platform is required")
+    retention_percent = normalize_retention_percent(values.get("retention_percent", values.get("retention")))
     record = {
         "record_id": f"perf_{platform}_{clip_id}",
+        "record_source": "manual",
         "clip_id": clip_id,
         "platform": platform,
         "posted_at": values.get("posted_at") or utc_now(),
@@ -407,7 +458,8 @@ def record_post_result(root: Path, values: dict[str, Any], dry_run: bool = False
         "shares": _float(values.get("shares")),
         "saves": _float(values.get("saves")),
         "watch_time": _float(values.get("watch_time")),
-        "retention": _float(values.get("retention")),
+        "retention": retention_percent,
+        "retention_percent": retention_percent,
         "profile_visits": _float(values.get("profile_visits")),
         "follows": _float(values.get("follows")),
         "notes": values.get("notes") or "",
@@ -430,7 +482,7 @@ def record_post_result(root: Path, values: dict[str, Any], dry_run: bool = False
             "shares": record["shares"],
             "saves": record["saves"],
             "watch_time": record["watch_time"],
-            "retention_percent": record["retention"],
+            "retention_percent": record["retention_percent"],
             "profile_visits": record["profile_visits"],
             "follows": record["follows"],
         },
@@ -445,7 +497,7 @@ def record_post_result(root: Path, values: dict[str, Any], dry_run: bool = False
         "posting_pattern": str(record["posted_at"] or "")[:13].replace("T", "_hour_"),
         "source": "manual_result",
     })
-    history = load_performance_history(project_root)
+    history = load_manual_performance_history(project_root)
     records = [item for item in history["records"] if item.get("record_id") != record["record_id"]]
     records.append(record)
     payload = {

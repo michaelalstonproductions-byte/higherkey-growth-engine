@@ -94,7 +94,12 @@ def version_alignment(root: Path) -> dict[str, object]:
         lock_versions.append(str(lock.get("version", "")))
         root_package = lock.get("packages", {}).get("", {}) if isinstance(lock.get("packages"), dict) else {}
         lock_versions.append(str(root_package.get("version", "")))
-    expected_release = f"V{package_version.rsplit('.', 1)[0]}" if package_version else ""
+    version_parts = package_version.split(".") if package_version else []
+    expected_release = ""
+    if len(version_parts) >= 3 and version_parts[2] == "0":
+        expected_release = f"V{version_parts[0]}.{version_parts[1]}"
+    elif package_version:
+        expected_release = f"V{package_version}"
     aligned = (
         bool(package_version)
         and release_version == expected_release

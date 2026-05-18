@@ -21,7 +21,18 @@ from growth_engine.index import relative_path, utc_now
 
 
 EXCLUDED_DIRS = {"node_modules", "dist", ".git", "__pycache__", "analytics", "out", "clips", "captions", "queue", "content_inbox", "logs"}
-SCAN_PATTERN = re.compile(r"https?://|fetch\(|axios|openai|api\.|graph\.facebook|instagram|tiktok|youtube|twitter|x\.com|cloud|social", re.IGNORECASE)
+SCAN_PATTERNS = {
+    "remote_url": re.compile(r"https?://", re.IGNORECASE),
+    "browser_fetch": re.compile(r"\bfetch\s*\(", re.IGNORECASE),
+    "axios": re.compile(r"\baxios\b", re.IGNORECASE),
+    "external_ai": re.compile(r"\bopenai\b", re.IGNORECASE),
+    "api_domain": re.compile(r"\bapi\.", re.IGNORECASE),
+    "social_graph": re.compile(r"\bgraph\.facebook\b", re.IGNORECASE),
+    "oauth": re.compile(r"\boauth\b", re.IGNORECASE),
+    "telemetry": re.compile(r"\btelemetry\b", re.IGNORECASE),
+    "live_platform_api": re.compile(r"\b(instagram|tiktok|youtube|twitter|x\.com)\b.{0,80}\b(api|oauth|token|posting|publish|endpoint|request|fetch)\b|\b(api|oauth|token|posting|publish|endpoint|request|fetch)\b.{0,80}\b(instagram|tiktok|youtube|twitter|x\.com)\b", re.IGNORECASE),
+    "cloud_api": re.compile(r"\bcloud\b.{0,80}\b(api|endpoint|request|upload|sync)\b|\b(api|endpoint|request|upload|sync)\b.{0,80}\bcloud\b", re.IGNORECASE),
+}
 
 
 def dashboard_js_check(root: Path) -> dict[str, object]:
@@ -60,6 +71,37 @@ def packaged_path_check(root: Path) -> dict[str, object]:
 
 
 def external_api_scan(root: Path) -> dict[str, object]:
+    def allowed_hit(rel_path: str, text: str, pattern_name: str) -> bool:
+        lower = text.lower()
+        local_context = "localhost" in lower or "127.0.0.1" in lower or "local api" in lower or "local_api" in lower or "fetch(`${path}" in text
+        safe_denial_context = (
+            "no live" in lower
+            or "no cloud" in lower
+            or "no external" in lower
+            or "manual-entry only" in lower
+            or "manual upload" in lower
+            or "manual import only" in lower
+            or "not configured" in lower
+            or "does not post directly" in lower
+            or "no automatic upload" in lower
+            or ("no " in lower and any(term in lower for term in ("api", "oauth", "telemetry", "token", "posting integration", "social posting")))
+        )
+        qa_scanner_context = rel_path in {"scripts/run_full_qa.py", "scripts/run_client_trial_qa.py"} and (
+            "scan_patterns" in lower
+            or "scan_pattern" in lower
+            or "matched_pattern" in lower
+            or "pattern_name" in lower
+            or "re.compile" in lower
+            or "direct_posting_pattern" in lower
+            or "local_api_endpoint_check" in lower
+        )
+        safe_remote_reference = "w3.org" in lower
+        if local_context or safe_denial_context or qa_scanner_context or safe_remote_reference:
+            return True
+        if pattern_name in {"live_platform_api", "cloud_api", "oauth", "telemetry"}:
+            return False
+        return False
+
     hits = []
     for path in root.rglob("*"):
         if not path.is_file():
@@ -73,67 +115,19 @@ def external_api_scan(root: Path) -> dict[str, object]:
         except UnicodeDecodeError:
             continue
         for line_no, line in enumerate(text.splitlines(), start=1):
-            if SCAN_PATTERN.search(line):
-                hits.append({"path": relative_path(path, root), "line": line_no, "text": line.strip()[:220]})
-    risky = [
-        hit
-        for hit in hits
-        if not (
-            "README.md" in hit["path"]
-            or "CLIENT_HANDOFF_GUIDE.md" in hit["path"]
-            or "CLIENT_QUICK_START.md" in hit["path"]
-            or "BETA_READINESS_CHECKLIST.md" in hit["path"]
-            or "TRIAL_LIMITATIONS.md" in hit["path"]
-            or "TRIAL_DELIVERY_CHECKLIST.md" in hit["path"]
-            or "CLIENT_TRIAL_QA_SUMMARY.md" in hit["path"]
-            or "scripts/run_full_qa.py" in hit["path"]
-            or "scripts/package_client_handoff.py" in hit["path"]
-            or "scripts/package_trial_release.py" in hit["path"]
-            or "scripts/validate_trial_package.py" in hit["path"]
-            or "scripts/build_trial_readiness_report.py" in hit["path"]
-            or "scripts/run_client_trial_qa.py" in hit["path"]
-            or "scripts/check_client_language.py" in hit["path"]
-            or "scripts/build_marketing_plan.py" in hit["path"]
-            or "scripts/build_performance_feedback.py" in hit["path"]
-            or "scripts/record_post_result.py" in hit["path"]
-            or "scripts/import_instagram_insights.py" in hit["path"]
-            or "scripts/collect_client_feedback.py" in hit["path"]
-            or "scripts/create_issue_report.py" in hit["path"]
-            or ("dashboard/review.html" in hit["path"] and "renderMarketingView" in hit["text"])
-            or ("dashboard/review.html" in hit["path"] and "renderSocialExportsView" in hit["text"])
-            or "growth_engine/marketing_intelligence.py" in hit["path"]
-            or "growth_engine/performance_feedback.py" in hit["path"]
-            or "growth_engine/local_api.py" in hit["path"]
-            or "growth_engine/observability.py" in hit["path"]
-            or "growth_engine/security.py" in hit["path"]
-            or "growth_engine/cache_manager.py" in hit["path"]
-            or "scripts/run_security_check.py" in hit["path"]
-            or "scripts/manage_storage.py" in hit["path"]
-            or "config/security_policy.json" in hit["path"]
-            or "config/retention_policy.json" in hit["path"]
-            or "config/marketing_profile.example.json" in hit["path"]
-            or "config/social_connectors.example.json" in hit["path"]
-            or "scripts/run_local_api.py" in hit["path"]
-            or "run_local_api.py" in hit["text"]
-            or "local api" in hit["text"].lower()
-            or "No cloud" in hit["text"]
-            or "no cloud" in hit["text"]
-            or "localhost" in hit["text"]
-            or "127.0.0.1" in hit["text"]
-            or "fetch(`${path}" in hit["text"]
-            or "w3.org" in hit["text"]
-            or "platform_notes" in hit["text"]
-            or "manual upload" in hit["text"].lower()
-            or "posting integration" in hit["text"].lower()
-            or "social export" in hit["text"].lower()
-            or "social_export" in hit["text"].lower()
-            or ("social" in hit["text"].lower() and "api" not in hit["text"].lower())
-            or "instagram" in hit["text"].lower()
-            or "tiktok" in hit["text"].lower()
-            or "youtube" in hit["text"].lower()
-            or "youtube_shorts" in hit["text"].lower()
-        )
-    ]
+            for pattern_name, pattern in SCAN_PATTERNS.items():
+                if pattern.search(line):
+                    hit = {
+                        "path": relative_path(path, root),
+                        "line": line_no,
+                        "matched_pattern": pattern_name,
+                        "full_text": line.strip(),
+                        "text": line.strip()[:220],
+                    }
+                    hits.append(hit)
+    risky = [hit for hit in hits if not allowed_hit(str(hit["path"]), str(hit.get("full_text") or hit["text"]), str(hit["matched_pattern"]))]
+    for hit in hits:
+        hit.pop("full_text", None)
     return {"name": "external_api_scan", "status": "pass" if not risky else "fail", "hits": hits, "risky_hits": risky}
 
 
@@ -388,17 +382,63 @@ def marketing_intelligence_check(root: Path) -> dict[str, object]:
 
 
 def performance_feedback_check(root: Path) -> dict[str, object]:
+    json_requirements = {
+        root / "analytics" / "performance_feedback.json": {
+            "version": int,
+            "updated_at": str,
+            "local_only": bool,
+            "manual_upload_only": bool,
+            "direct_posting_apis": bool,
+            "inputs": dict,
+            "input_counts": dict,
+            "records": list,
+            "summary": dict,
+        },
+        root / "analytics" / "campaign_performance_summary.json": {
+            "status": str,
+            "posted_count": int,
+            "best_platforms": list,
+            "winning_hooks": list,
+            "winning_ctas": list,
+        },
+        root / "analytics" / "marketing_learning_loop.json": {
+            "version": int,
+            "updated_at": str,
+            "local_only": bool,
+            "manual_upload_only": bool,
+            "direct_posting_apis": bool,
+            "status": str,
+            "winning_audience_segments": list,
+            "winning_hooks": list,
+            "winning_ctas": list,
+            "winning_content_pillars": list,
+            "strong_platforms": list,
+            "weak_platforms": list,
+            "best_campaign_role": str,
+            "next_5_experiments": list,
+            "post_less_of": list,
+            "double_down_on": list,
+        },
+        root / "analytics" / "next_iteration_plan.json": {
+            "version": int,
+            "updated_at": str,
+            "local_only": bool,
+            "manual_upload_only": bool,
+            "status": str,
+            "next_action": str,
+            "recommended_adjustments": list,
+            "what_to_post_next": list,
+            "what_to_post_less_of": list,
+        },
+    }
     required = [
-        root / "analytics" / "performance_feedback.json",
-        root / "analytics" / "campaign_performance_summary.json",
-        root / "analytics" / "marketing_learning_loop.json",
-        root / "analytics" / "next_iteration_plan.json",
+        *json_requirements.keys(),
         root / "out" / "marketing" / "performance_feedback.md",
         root / "out" / "marketing" / "next_iteration_plan.md",
     ]
     missing = [relative_path(path, root) for path in required if not path.exists()]
     json_errors = []
-    for path in required[:4]:
+    for path, expected_fields in json_requirements.items():
         if not path.exists():
             continue
         try:
@@ -406,11 +446,25 @@ def performance_feedback_check(root: Path) -> dict[str, object]:
         except Exception as error:
             json_errors.append({"path": relative_path(path, root), "error": str(error)})
             continue
+        missing_keys = sorted(set(expected_fields) - set(payload))
+        wrong_types = [
+            {"key": key, "expected": expected.__name__, "actual": type(payload.get(key)).__name__}
+            for key, expected in expected_fields.items()
+            if key in payload and not isinstance(payload.get(key), expected)
+        ]
+        if missing_keys or wrong_types:
+            json_errors.append({"path": relative_path(path, root), "missing_keys": missing_keys, "wrong_types": wrong_types})
         if path.name == "performance_feedback.json":
-            expected = {"records", "summary", "local_only", "manual_upload_only", "direct_posting_apis"}
-            missing_keys = sorted(expected - set(payload))
-            if missing_keys:
-                json_errors.append({"path": relative_path(path, root), "missing_keys": missing_keys})
+            if payload.get("local_only") is not True or payload.get("manual_upload_only") is not True or payload.get("direct_posting_apis") is not False:
+                json_errors.append({"path": relative_path(path, root), "error": "local/manual safety flags are invalid"})
+            for index, record in enumerate(payload.get("records") if isinstance(payload.get("records"), list) else []):
+                if not isinstance(record, dict):
+                    json_errors.append({"path": relative_path(path, root), "record_index": index, "error": "record is not an object"})
+                    continue
+                record_required = {"clip_id", "platform", "metrics", "predicted_score", "overall_actual_score", "expected_vs_actual_delta", "recommended_next_adjustment", "record_source"}
+                record_missing = sorted(record_required - set(record))
+                if record_missing:
+                    json_errors.append({"path": relative_path(path, root), "record_index": index, "missing_keys": record_missing})
     status = "pass" if not missing and not json_errors else "fail"
     return {
         "name": "performance_feedback_validation",
