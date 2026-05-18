@@ -1104,6 +1104,34 @@ Campaign board columns:
 
 Marketing Studio now shows Strategy, Campaign Board, Calendar, and Clip Recommendations views. The campaign planner remains local-first and manual-upload only. No cloud APIs, live Instagram APIs, OAuth, tokens, social APIs, or direct posting APIs are configured.
 
+## V5.3 Campaign Performance Feedback
+
+V5.3 closes the loop between planned posts and real manual-upload results. After a clip is posted manually, the operator can record local results and HigherKey compares expected vs actual performance to improve the next campaign plan.
+
+Local performance outputs:
+
+- `analytics/performance_history.json`
+- `analytics/performance_feedback.json`
+- `analytics/campaign_performance_summary.json`
+- `analytics/marketing_learning_loop.json`
+- `analytics/next_iteration_plan.json`
+- `out/marketing/performance_feedback.md`
+- `out/marketing/next_iteration_plan.md`
+
+Record a manual post result:
+
+```bash
+python3 scripts/record_post_result.py --clip-id a2cd9a1b27c7037a_clip_01 --platform tiktok --posted-at 2026-05-17T12:00:00 --views 1000 --likes 80 --comments 12 --shares 8 --saves 20 --watch-time 18 --retention 62 --profile-visits 15 --follows 3 --notes "QA fixture"
+```
+
+Rebuild the performance feedback loop:
+
+```bash
+python3 scripts/build_performance_feedback.py
+```
+
+Marketing Studio now includes Performance Feedback: posted clips, expected vs actual deltas, winning hooks, winning CTAs, strong platforms, and next experiments. This remains local-first and manual-entry only. No live Instagram API, cloud API, social API, OAuth, token storage, or direct posting API is configured by default.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

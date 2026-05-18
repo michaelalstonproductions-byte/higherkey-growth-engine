@@ -1079,6 +1079,10 @@
       .calendar-item{display:grid;grid-template-columns:56px minmax(0,1fr);gap:10px;border:1px solid var(--line);border-radius:12px;padding:10px;background:#0b1017}
       .calendar-item strong{color:var(--text);font-size:13px}
       .calendar-item p{margin:3px 0 0;color:var(--muted);font-size:12px}
+      .performance-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      .performance-record{border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);padding:12px;margin-bottom:10px}
+      .performance-record strong{display:block;font-size:14px;margin-bottom:6px}
+      .performance-record p{margin:0;color:var(--muted);font-size:12px;line-height:1.4}
       .platform-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
       .support-grid,
       .settings-grid{align-content:start}
@@ -1127,7 +1131,7 @@
         .project-line{grid-template-columns:minmax(0,1fr)}
         .project-line > div:nth-child(n+2){display:none}
         .platform-grid,.marketing-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
-        .queue-view,.asset-preview,.client-dashboard-grid,.ai-drop-panel,.marketing-hero,.marketing-panel-grid{grid-template-columns:1fr}
+        .queue-view,.asset-preview,.client-dashboard-grid,.ai-drop-panel,.marketing-hero,.marketing-panel-grid,.performance-grid{grid-template-columns:1fr}
         .queue-view > .toolbar{grid-column:auto}
       }
     </style>
@@ -1310,6 +1314,10 @@
         campaignBrief: "../analytics/campaign_brief.json",
         clientCampaignPlan: "../analytics/client_campaign_plan.json",
         manualPostStatus: "../analytics/manual_post_status.json",
+        performanceFeedback: "../analytics/performance_feedback.json",
+        campaignPerformanceSummary: "../analytics/campaign_performance_summary.json",
+        marketingLearningLoop: "../analytics/marketing_learning_loop.json",
+        nextIterationPlan: "../analytics/next_iteration_plan.json",
         clientTasks: "../analytics/client_tasks.json",
         clientWorkflow: "../analytics/client_workflow.json",
         clientDemo: "../config/client_demo.json",
@@ -1368,6 +1376,10 @@
         campaignBrief: null,
         clientCampaignPlan: null,
         manualPostStatus: null,
+        performanceFeedback: null,
+        campaignPerformanceSummary: null,
+        marketingLearningLoop: null,
+        nextIterationPlan: null,
         clientTasks: null,
         clientWorkflow: null,
         clientDemo: null,
@@ -1981,6 +1993,7 @@
         return state.entries.find((entry) => entry.clip_id === clipId) || productionEntries().find((entry) => entry.clip_id === clipId) || null;
       }
       function renderMarketingView() {
+        const marketingMode = state.workspace.marketingViewMode || "campaign";
         const recs = marketingRecs();
         const brief = state.marketingBrief || {};
         const attack = state.marketAttackPlan || {};
@@ -2009,6 +2022,8 @@
                     <button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button>
                     <button class="btn" data-desktop-action="copy-7-day-plan">Copy 7-Day Plan</button>
                     <button class="btn" data-desktop-action="copy-campaign-brief">Copy Campaign Brief</button>
+                    <button class="btn" data-desktop-action="build-performance-feedback">Build Feedback Loop</button>
+                    <button class="btn" data-desktop-action="record-post-result">Record Results</button>
                   </div>
                 </div>
               </section>
@@ -2018,7 +2033,13 @@
               </section>
             </div>
             <div class="marketing-mode-tabs">
-              ${["Strategy", "Campaign Board", "Calendar", "Clip Recommendations"].map((label, index) => `<button class="btn ${index === 1 ? "active" : ""}">${label}</button>`).join("")}
+              ${[
+                ["strategy", "Strategy"],
+                ["campaign", "Campaign Board"],
+                ["calendar", "Calendar"],
+                ["recommendations", "Clip Recommendations"],
+                ["performance", "Performance Feedback"]
+              ].map(([mode, label]) => `<button class="btn ${marketingMode === mode ? "active" : ""}" data-marketing-view="${mode}">${label}</button>`).join("")}
             </div>
             <div class="marketing-card-grid">
               ${marketingMetricCard("Audience Profile", audience.segments?.[0]?.name || "Local audience", audience.target_audience || "Clip-based segment fit")}
@@ -2028,11 +2049,11 @@
               ${marketingMetricCard("Campaign Plan", `${schedule.seven_day_schedule?.length || calendar.next_7_posts?.length || 0} next posts`, "7-day sequence")}
               ${marketingMetricCard("Clip Recommendations", recs.length, "Approved and high-scoring clips")}
             </div>
-            <section class="panel view-scroll">
+            ${marketingMode === "campaign" ? `<section class="panel view-scroll">
               <div class="panel-head"><div class="panel-title">Campaign Board</div><div>${board.cards?.length || 0} campaign cards</div></div>
               <div class="campaign-board" style="padding:12px">${campaignBoardHtml(board)}</div>
-            </section>
-            <div class="marketing-panel-grid">
+            </section>` : ""}
+            ${marketingMode === "strategy" ? `<div class="marketing-panel-grid">
               <section class="panel view-scroll">
                 <div class="panel-head"><div class="panel-title">Audience Segments</div><div>Demographic fit</div></div>
                 <div style="padding:14px">${audienceSegmentsHtml()}</div>
@@ -2041,12 +2062,12 @@
                 <div class="panel-head"><div class="panel-title">Campaign Brief</div><div>Positioning and angle</div></div>
                 <div style="padding:14px">${campaignBriefHtml(campaignBrief, attack)}</div>
               </section>
-            </div>
-            <section class="panel view-scroll">
+            </div>` : ""}
+            ${marketingMode === "recommendations" ? `<section class="panel view-scroll">
               <div class="panel-head"><div class="panel-title">Clip Recommendations</div><div>${recs.length} local recommendations</div></div>
               <div style="padding:14px">${recs.slice(0, 12).map((rec) => marketingRecommendationCard(rec)).join("") || `<div class="empty-state">No marketing recommendations yet.</div>`}</div>
-            </section>
-            <div class="marketing-panel-grid">
+            </section>` : ""}
+            ${marketingMode === "calendar" ? `<div class="marketing-panel-grid">
               <section class="panel view-scroll">
                 <div class="panel-head"><div class="panel-title">7-Day Posting Plan</div><div>Manual upload</div></div>
                 <div class="calendar-list" style="padding:14px">${postingPlanHtml(schedule.seven_day_schedule || calendar.next_7_posts || [])}</div>
@@ -2055,7 +2076,11 @@
                 <div class="panel-head"><div class="panel-title">30-Day Themes</div><div>Content pillars</div></div>
                 <div class="calendar-list" style="padding:14px">${themePlanHtml(schedule.thirty_day_schedule || calendar.next_30_day_content_themes || [])}</div>
               </section>
-            </div>
+            </div>` : ""}
+            ${marketingMode === "performance" ? `<section class="panel view-scroll">
+              <div class="panel-head"><div class="panel-title">Performance Feedback</div><div>Expected vs actual</div></div>
+              <div style="padding:14px">${performanceFeedbackHtml()}</div>
+            </section>` : ""}
           </div>
         `;
       }
@@ -2139,6 +2164,45 @@
       function themePlanHtml(items) {
         return items.slice(0, 10).map((item) => `<div class="calendar-item"><strong>${item.week ? `Week ${html(item.week)}` : `Day ${html(item.day)}`}</strong><p>${html(item.content_pillar)} · ${html(item.theme || item.topic)}<br><span class="muted">${html(item.goal)}</span></p></div>`).join("") || `<div class="empty-state">Build Campaign Plan to generate 30-day themes.</div>`;
       }
+      function performanceFeedbackHtml() {
+        const records = state.performanceFeedback?.records || [];
+        const summary = state.campaignPerformanceSummary || {};
+        const learning = state.marketingLearningLoop || {};
+        const iteration = state.nextIterationPlan || {};
+        if (!records.length) {
+          return `<div class="empty-state"><h2>No results recorded yet</h2><p>After you upload manually, record views, likes, saves, shares, and retention to improve the next campaign plan.</p><button class="btn red" data-desktop-action="record-post-result">Record First Result</button></div>`;
+        }
+        const winners = [
+          ["Winning hooks", learning.winning_hooks || []],
+          ["Winning CTAs", learning.winning_ctas || []],
+          ["Best platforms", learning.strong_platforms || []]
+        ];
+        return `
+          <div class="performance-grid">
+            ${marketingMetricCard("Posted Clips", summary.posted_count || records.length, "Manual results")}
+            ${marketingMetricCard("Avg Actual Score", summary.average_actual_score ?? "local", "Performance score")}
+            ${marketingMetricCard("Avg Delta", summary.average_delta ?? "local", "Expected vs actual")}
+          </div>
+          <div class="marketing-panel-grid" style="margin-top:12px">
+            <section class="small-panel"><div class="panel-title">Learning Loop</div>${winners.map(([label, values]) => `<div class="metric"><span>${html(label)}</span><strong>${html((values || []).slice(0, 2).join(" · ") || "Collect more results")}</strong></div>`).join("")}</section>
+            <section class="small-panel"><div class="panel-title">Next Experiments</div>${(learning.next_5_experiments || iteration.recommended_adjustments || []).slice(0, 5).map((item) => `<div class="copy">• ${html(item)}</div>`).join("") || `<div class="muted">Record post results to generate next experiments.</div>`}</section>
+          </div>
+          <div style="margin-top:12px">${records.slice(0, 6).map(performanceRecordHtml).join("")}</div>
+        `;
+      }
+      function performanceRecordHtml(record) {
+        const actual = record.overall_actual_score ?? record.actual_score ?? "local";
+        const expected = record.predicted_score ?? record.expected_score ?? "local";
+        const delta = record.expected_vs_actual_delta ?? record.delta ?? "local";
+        return `
+          <div class="performance-record">
+            <strong>${html(record.clip_id)} · ${html(record.platform || "platform")}</strong>
+            <p>Expected ${html(expected)} · Actual ${html(actual)} · Delta ${html(delta)}</p>
+            <p>${html(record.what_worked || "Manual results recorded.")}</p>
+            <p><strong>Next:</strong> ${html(record.recommended_next_adjustment || "Use the result to guide the next post.")}</p>
+          </div>
+        `;
+      }
       function renderAgentsView() {
         const agents = state.agents?.agents || [];
         const running = agents.filter((a) => ["assigned","running"].includes(a.state)).length;
@@ -2160,7 +2224,7 @@
       }
       function renderSocialExportsView() {
         const manifest = state.socialManifest || {};
-        return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Social Export Folders</div><div>HigherKey prepares posts. You upload manually.</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Checklist</div><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button></div><div class="checklist"><span>✓ Open the TikTok, Instagram Reels, YouTube Shorts, or Facebook Reels folder.</span><span>✓ Review caption.txt, hashtags.txt, title.txt, and posting_notes.txt.</span><span>✓ Confirm thumbnail.jpg when available.</span><span>✓ Upload manually. HigherKey does not post directly.</span></div></section></div>`;
+        return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Social Export Folders</div><div>HigherKey prepares posts. You upload manually.</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Checklist</div><div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button><button class="btn" data-desktop-action="record-post-result">Record Results</button></div></div><div class="checklist"><span>✓ Open the TikTok, Instagram Reels, YouTube Shorts, or Facebook Reels folder.</span><span>✓ Review caption.txt, hashtags.txt, title.txt, and posting_notes.txt.</span><span>✓ Confirm thumbnail.jpg when available.</span><span>✓ Upload manually. HigherKey does not post directly.</span><span>✓ After posting manually, record results to improve the next campaign plan.</span></div></section></div>`;
       }
       function renderDiagnosticsView() {
         const diagnosticsStatus = state.diagnostics?.status || "not run";
@@ -3046,6 +3110,7 @@
 
       function marketingInspectorHtml() {
         const rec = state.clientCampaignPlan?.next_post || state.campaignBoard?.cards?.[0] || marketingRecs()[0];
+        const perf = state.performanceFeedback?.records?.[0] || null;
         const attack = state.marketAttackPlan || {};
         const audience = state.audienceProfile || {};
         return `
@@ -3075,8 +3140,18 @@
             <div class="copy">${html(attack.positioning_statement || "HigherKey turns raw footage into ready-to-upload social moments.")}</div>
             <div class="copy"><strong>Manual upload:</strong> HigherKey prepares the files. You post them yourself.</div>
           </section>
+          <section class="inspector-section"><h3>Performance Feedback</h3>
+            ${perf ? `
+              <div class="metric"><span>Clip</span><strong>${html(perf.clip_id)}</strong></div>
+              <div class="metric"><span>Platform</span><strong>${html(perf.platform || "platform")}</strong></div>
+              <div class="metric"><span>Expected</span><strong>${html(perf.predicted_score ?? perf.expected_score ?? "local")}</strong></div>
+              <div class="metric"><span>Actual</span><strong>${html(perf.overall_actual_score ?? perf.actual_score ?? "local")}</strong></div>
+              <div class="metric"><span>Delta</span><strong>${html(perf.expected_vs_actual_delta ?? perf.delta ?? "local")}</strong></div>
+              <div class="copy">${html(perf.recommended_next_adjustment || "Use manual results to guide the next post.")}</div>
+            ` : `<div class="muted">Record post results after manual upload to close the learning loop.</div>`}
+          </section>
           <section class="inspector-section"><h3>Actions</h3>
-            <div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Packs</button><button class="btn" data-desktop-action="copy-7-day-plan">Copy 7-Day Plan</button><button class="btn" data-desktop-action="refresh-marketing">Refresh</button></div>
+            <div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Packs</button><button class="btn" data-desktop-action="copy-7-day-plan">Copy 7-Day Plan</button><button class="btn" data-desktop-action="record-post-result">Record Results</button><button class="btn" data-desktop-action="refresh-marketing">Refresh</button></div>
           </section>
         `;
       }
@@ -3186,6 +3261,7 @@
         renderBottomTelemetry(state.mode);
         renderModeDetails();
         wireDesktopActions();
+        wireMarketingViewActions();
         wireDynamicControls();
       }
 
@@ -3559,6 +3635,66 @@
         }
         return setNotice("Campaign plan needs attention. Open Support for details.");
       }
+      async function buildPerformanceFeedback() {
+        if (!window.higherkey?.buildPerformanceFeedback) {
+          return setNotice("Static mode: run python3 scripts/build_performance_feedback.py after recording local post results.");
+        }
+        setNotice("Building performance feedback loop...");
+        const result = await window.higherkey.buildPerformanceFeedback();
+        await refreshLiveData();
+        if (result?.code === 0 || result?.parsed?.ok || result?.ok) {
+          state.mode = "marketing";
+          state.workspace.marketingViewMode = "performance";
+          persistWorkspace();
+          render();
+          return setNotice("Performance feedback ready. Expected vs actual results are updated.");
+        }
+        return setNotice("Performance feedback needs attention. Open Support for details.");
+      }
+      async function recordPostResult() {
+        const card = state.clientCampaignPlan?.next_post || state.campaignBoard?.cards?.[0] || marketingRecs()[0] || activeEntry();
+        const clipId = card?.clip_id || activeEntry()?.clip_id;
+        if (!clipId) return setNotice("No clip selected. Build a campaign plan or select a clip first.");
+        if (!window.higherkey?.recordPostResult) {
+          return setNotice(`Static mode: run python3 scripts/record_post_result.py --clip-id ${clipId} --platform tiktok --views 1000 --likes 80`);
+        }
+        const platform = prompt("Platform posted to", card?.platform || card?.best_platform || "tiktok");
+        if (!platform) return setNotice("Result entry cancelled.");
+        const views = prompt("Views", "1000");
+        if (views === null) return setNotice("Result entry cancelled.");
+        const likes = prompt("Likes", "80");
+        if (likes === null) return setNotice("Result entry cancelled.");
+        const comments = prompt("Comments", "0");
+        if (comments === null) return setNotice("Result entry cancelled.");
+        const shares = prompt("Shares", "0");
+        if (shares === null) return setNotice("Result entry cancelled.");
+        const saves = prompt("Saves", "0");
+        if (saves === null) return setNotice("Result entry cancelled.");
+        const retention = prompt("Retention percentage", "60");
+        if (retention === null) return setNotice("Result entry cancelled.");
+        setNotice("Recording local post result...");
+        const result = await window.higherkey.recordPostResult({
+          clipId,
+          platform,
+          postedAt: new Date().toISOString(),
+          views,
+          likes,
+          comments,
+          shares,
+          saves,
+          retention,
+          notes: "Recorded from HigherKey"
+        });
+        await refreshLiveData();
+        if (result?.code === 0 || result?.parsed?.ok || result?.ok) {
+          state.mode = "marketing";
+          state.workspace.marketingViewMode = "performance";
+          persistWorkspace();
+          render();
+          return setNotice("Post result recorded. Learning loop updated.");
+        }
+        return setNotice("Post result could not be recorded. Open Support for details.");
+      }
       async function copyCampaignText(kind) {
         const seven = (state.postingSchedule?.seven_day_schedule || []).map((item) => `Day ${item.day}: ${item.platform} · ${item.clip_id} · ${item.hook} · ${item.CTA}`).join("\n");
         const brief = state.campaignBrief || {};
@@ -3575,6 +3711,16 @@
       function wireSocialExportActions() {
         document.querySelectorAll("[data-social-export]").forEach((button) => {
           button.onclick = () => exportSocialPlatform(button.dataset.socialExport);
+        });
+      }
+
+      function wireMarketingViewActions() {
+        document.querySelectorAll("[data-marketing-view]").forEach((button) => {
+          button.onclick = () => {
+            state.workspace.marketingViewMode = button.dataset.marketingView || "campaign";
+            persistWorkspace();
+            render();
+          };
         });
       }
 
@@ -3603,6 +3749,8 @@
             if (action === "refresh-marketing") { await refreshLiveData(); return setNotice("Marketing intelligence refreshed."); }
             if (action === "build-marketing-plan") return buildMarketingPlan();
             if (action === "build-campaign-plan") return buildCampaignPlan();
+            if (action === "build-performance-feedback") return buildPerformanceFeedback();
+            if (action === "record-post-result") return recordPostResult();
             if (action === "copy-7-day-plan") return copyCampaignText("7-day");
             if (action === "copy-campaign-brief") return copyCampaignText("brief");
             if (action === "open-marketing-folder") {
@@ -3724,6 +3872,10 @@
           state.campaignBrief = await optionalJson(PATHS.campaignBrief, null);
           state.clientCampaignPlan = await optionalJson(PATHS.clientCampaignPlan, null);
           state.manualPostStatus = await optionalJson(PATHS.manualPostStatus, null);
+          state.performanceFeedback = await optionalJson(PATHS.performanceFeedback, null);
+          state.campaignPerformanceSummary = await optionalJson(PATHS.campaignPerformanceSummary, null);
+          state.marketingLearningLoop = await optionalJson(PATHS.marketingLearningLoop, null);
+          state.nextIterationPlan = await optionalJson(PATHS.nextIterationPlan, null);
           state.clientTasks = await optionalJson(PATHS.clientTasks, null);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, null);
           state.clientDemo = await optionalJson(PATHS.clientDemo, null);
@@ -3797,6 +3949,10 @@
           state.campaignBrief = await optionalJson(PATHS.campaignBrief, state.campaignBrief);
           state.clientCampaignPlan = await optionalJson(PATHS.clientCampaignPlan, state.clientCampaignPlan);
           state.manualPostStatus = await optionalJson(PATHS.manualPostStatus, state.manualPostStatus);
+          state.performanceFeedback = await optionalJson(PATHS.performanceFeedback, state.performanceFeedback);
+          state.campaignPerformanceSummary = await optionalJson(PATHS.campaignPerformanceSummary, state.campaignPerformanceSummary);
+          state.marketingLearningLoop = await optionalJson(PATHS.marketingLearningLoop, state.marketingLearningLoop);
+          state.nextIterationPlan = await optionalJson(PATHS.nextIterationPlan, state.nextIterationPlan);
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);
           state.clientDemo = await optionalJson(PATHS.clientDemo, state.clientDemo);

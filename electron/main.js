@@ -1301,6 +1301,56 @@ async function getCampaignBoard() {
   };
 }
 
+async function buildPerformanceFeedback() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_performance_feedback.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function recordPostResult(_event, values = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/record_post_result.py"];
+  const addValue = (flag, value) => {
+    if (value !== undefined && value !== null && String(value).trim() !== "") args.push(flag, String(value));
+  };
+  addValue("--clip-id", values.clipId || values.clip_id);
+  addValue("--platform", values.platform);
+  addValue("--posted-at", values.postedAt || values.posted_at);
+  addValue("--views", values.views);
+  addValue("--likes", values.likes);
+  addValue("--comments", values.comments);
+  addValue("--shares", values.shares);
+  addValue("--saves", values.saves);
+  addValue("--watch-time", values.watchTime || values.watch_time);
+  addValue("--retention", values.retention);
+  addValue("--profile-visits", values.profileVisits || values.profile_visits);
+  addValue("--follows", values.follows);
+  addValue("--notes", values.notes);
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getPerformanceFeedback() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    feedback: await readAnalyticsJson("performance_feedback.json", {}),
+    summary: await readAnalyticsJson("campaign_performance_summary.json", {}),
+    learning: await readAnalyticsJson("marketing_learning_loop.json", {}),
+    iteration: await readAnalyticsJson("next_iteration_plan.json", {})
+  };
+}
+
 async function openMarketingFolder() {
   const folder = path.join(activeProjectRoot, "out", "marketing");
   await fsp.mkdir(folder, { recursive: true });
@@ -1593,6 +1643,9 @@ function registerIpc() {
   ipcMain.handle("marketing:openFolder", openMarketingFolder);
   ipcMain.handle("marketing:buildCampaignPlan", buildCampaignPlan);
   ipcMain.handle("marketing:getCampaignBoard", getCampaignBoard);
+  ipcMain.handle("marketing:recordPostResult", recordPostResult);
+  ipcMain.handle("marketing:buildPerformanceFeedback", buildPerformanceFeedback);
+  ipcMain.handle("marketing:getPerformanceFeedback", getPerformanceFeedback);
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);

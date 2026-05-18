@@ -94,12 +94,15 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "scripts/run_client_trial_qa.py" in hit["path"]
             or "scripts/check_client_language.py" in hit["path"]
             or "scripts/build_marketing_plan.py" in hit["path"]
+            or "scripts/build_performance_feedback.py" in hit["path"]
+            or "scripts/record_post_result.py" in hit["path"]
             or "scripts/import_instagram_insights.py" in hit["path"]
             or "scripts/collect_client_feedback.py" in hit["path"]
             or "scripts/create_issue_report.py" in hit["path"]
             or ("dashboard/review.html" in hit["path"] and "renderMarketingView" in hit["text"])
             or ("dashboard/review.html" in hit["path"] and "renderSocialExportsView" in hit["text"])
             or "growth_engine/marketing_intelligence.py" in hit["path"]
+            or "growth_engine/performance_feedback.py" in hit["path"]
             or "growth_engine/local_api.py" in hit["path"]
             or "growth_engine/observability.py" in hit["path"]
             or "growth_engine/security.py" in hit["path"]
@@ -384,6 +387,39 @@ def marketing_intelligence_check(root: Path) -> dict[str, object]:
     }
 
 
+def performance_feedback_check(root: Path) -> dict[str, object]:
+    required = [
+        root / "analytics" / "performance_feedback.json",
+        root / "analytics" / "campaign_performance_summary.json",
+        root / "analytics" / "marketing_learning_loop.json",
+        root / "analytics" / "next_iteration_plan.json",
+        root / "out" / "marketing" / "performance_feedback.md",
+        root / "out" / "marketing" / "next_iteration_plan.md",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    json_errors = []
+    for path in required[:4]:
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as error:
+            json_errors.append({"path": relative_path(path, root), "error": str(error)})
+            continue
+        if path.name == "performance_feedback.json":
+            expected = {"records", "summary", "local_only", "manual_upload_only", "direct_posting_apis"}
+            missing_keys = sorted(expected - set(payload))
+            if missing_keys:
+                json_errors.append({"path": relative_path(path, root), "missing_keys": missing_keys})
+    status = "pass" if not missing and not json_errors else "fail"
+    return {
+        "name": "performance_feedback_validation",
+        "status": status,
+        "missing": missing,
+        "json_errors": json_errors,
+    }
+
+
 def beta_checklist_check(root: Path) -> dict[str, object]:
     path = root / "BETA_READINESS_CHECKLIST.md"
     try:
@@ -633,6 +669,11 @@ def main() -> int:
     append_stage(results, qa_stage("campaign_plan_dry_run", ["python3", "scripts/build_campaign_plan.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("campaign_plan_build", ["python3", "scripts/build_campaign_plan.py"], root, timeout=60), config)
     append_stage(results, qa_stage("manual_post_status_fixture", ["python3", "scripts/update_manual_post_status.py", "--clip-id", "a2cd9a1b27c7037a_clip_01", "--platform", "tiktok", "--status", "not_uploaded", "--notes", "QA fixture"], root, timeout=60), config)
+    append_stage(results, qa_stage("post_result_dry_run", ["python3", "scripts/record_post_result.py", "--clip-id", "a2cd9a1b27c7037a_clip_01", "--platform", "tiktok", "--posted-at", "2026-05-17T12:00:00", "--views", "1000", "--likes", "80", "--comments", "12", "--shares", "8", "--saves", "20", "--watch-time", "18", "--retention", "62", "--profile-visits", "15", "--follows", "3", "--notes", "QA fixture", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("post_result_fixture", ["python3", "scripts/record_post_result.py", "--clip-id", "a2cd9a1b27c7037a_clip_01", "--platform", "tiktok", "--posted-at", "2026-05-17T12:00:00", "--views", "1000", "--likes", "80", "--comments", "12", "--shares", "8", "--saves", "20", "--watch-time", "18", "--retention", "62", "--profile-visits", "15", "--follows", "3", "--notes", "QA fixture"], root, timeout=60), config)
+    append_stage(results, qa_stage("performance_feedback_build", ["python3", "scripts/build_performance_feedback.py"], root, timeout=60), config)
+    print("[qa] performance_feedback_validation", flush=True)
+    append_stage(results, performance_feedback_check(root), config)
     append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)
     print("[qa] marketing_intelligence_validation", flush=True)
     append_stage(results, marketing_intelligence_check(root), config)

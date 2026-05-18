@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.2.0",
-  "release_version": "V5.2",
+  "app_version": "5.3.0",
+  "release_version": "V5.3",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -83,6 +83,12 @@
       "to": "V5.2",
       "safe": true,
       "notes": "Add local campaign board, posting schedule, campaign brief, and manual post status tracking without direct posting integrations."
+    },
+    {
+      "from": "V5.2",
+      "to": "V5.3",
+      "safe": true,
+      "notes": "Add local manual performance result entry, expected-vs-actual scoring, and marketing learning loop outputs without live platform integrations."
     }
   ],
   "required_runtime_files": [
@@ -145,6 +151,8 @@
     "scripts/check_client_language.py",
     "scripts/build_marketing_plan.py",
     "scripts/build_campaign_plan.py",
+    "scripts/build_performance_feedback.py",
+    "scripts/record_post_result.py",
     "scripts/update_manual_post_status.py",
     "scripts/import_instagram_insights.py",
     "scripts/collect_client_feedback.py",
