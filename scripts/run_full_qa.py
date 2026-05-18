@@ -474,6 +474,58 @@ def performance_feedback_check(root: Path) -> dict[str, object]:
     }
 
 
+def growth_strategy_check(root: Path) -> dict[str, object]:
+    json_requirements = {
+        root / "analytics" / "growth_strategy.json": {"local_only": bool, "manual_upload_only": bool, "direct_posting_apis": bool, "scorecard": dict, "next_best_actions": list, "growth_experiments": list},
+        root / "analytics" / "growth_dashboard.json": {"local_only": bool, "cards": dict, "strategy": dict},
+        root / "analytics" / "growth_scorecard.json": {"local_only": bool, "overall_growth_score": dict, "content_readiness_score": dict, "campaign_readiness_score": dict},
+        root / "analytics" / "next_best_actions.json": {"local_only": bool, "actions": list},
+        root / "analytics" / "content_pillar_performance.json": {"local_only": bool, "pillars": list},
+        root / "analytics" / "platform_focus.json": {"local_only": bool, "platforms": list},
+        root / "analytics" / "audience_growth_insights.json": {"local_only": bool, "winning_audience_segments": list},
+        root / "analytics" / "growth_experiments.json": {"local_only": bool, "experiments": list},
+        root / "analytics" / "client_growth_plan.json": {"local_only": bool, "manual_upload_only": bool, "next_action": (dict, type(None))},
+    }
+    required = [
+        *json_requirements.keys(),
+        root / "out" / "marketing" / "growth_strategy.md",
+        root / "out" / "marketing" / "next_best_actions.md",
+        root / "out" / "marketing" / "growth_scorecard.md",
+        root / "out" / "marketing" / "content_pillar_performance.md",
+        root / "out" / "marketing" / "platform_focus.md",
+        root / "out" / "marketing" / "growth_experiments.md",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    json_errors = []
+    safety_errors = []
+    for path, expected_fields in json_requirements.items():
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as error:
+            json_errors.append({"path": relative_path(path, root), "error": str(error)})
+            continue
+        for key, expected in expected_fields.items():
+            if key not in payload:
+                json_errors.append({"path": relative_path(path, root), "missing_key": key})
+                continue
+            if not isinstance(payload.get(key), expected):
+                json_errors.append({"path": relative_path(path, root), "key": key, "actual": type(payload.get(key)).__name__})
+        if payload.get("local_only") is not True:
+            safety_errors.append({"path": relative_path(path, root), "error": "local_only flag is invalid"})
+        if payload.get("direct_posting_apis") is True or payload.get("live_instagram_api") is True:
+            safety_errors.append({"path": relative_path(path, root), "error": "live/direct platform API flag is enabled"})
+    status = "pass" if not missing and not json_errors and not safety_errors else "fail"
+    return {
+        "name": "growth_strategy_validation",
+        "status": status,
+        "missing": missing,
+        "json_errors": json_errors,
+        "safety_errors": safety_errors,
+    }
+
+
 def beta_checklist_check(root: Path) -> dict[str, object]:
     path = root / "BETA_READINESS_CHECKLIST.md"
     try:
@@ -728,6 +780,10 @@ def main() -> int:
     append_stage(results, qa_stage("performance_feedback_build", ["python3", "scripts/build_performance_feedback.py"], root, timeout=60), config)
     print("[qa] performance_feedback_validation", flush=True)
     append_stage(results, performance_feedback_check(root), config)
+    append_stage(results, qa_stage("growth_strategy_dry_run", ["python3", "scripts/build_growth_strategy.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("growth_strategy_build", ["python3", "scripts/build_growth_strategy.py"], root, timeout=60), config)
+    print("[qa] growth_strategy_validation", flush=True)
+    append_stage(results, growth_strategy_check(root), config)
     append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)
     print("[qa] marketing_intelligence_validation", flush=True)
     append_stage(results, marketing_intelligence_check(root), config)

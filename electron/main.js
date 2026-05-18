@@ -1312,6 +1312,17 @@ async function buildPerformanceFeedback() {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function buildGrowthStrategy() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_growth_strategy.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function recordPostResult(_event, values = {}) {
   const projectCheck = validateProjectRootSelection(activeProjectRoot);
   if (!projectCheck.ok) return projectCheck;
@@ -1348,6 +1359,30 @@ async function getPerformanceFeedback() {
     summary: await readAnalyticsJson("campaign_performance_summary.json", {}),
     learning: await readAnalyticsJson("marketing_learning_loop.json", {}),
     iteration: await readAnalyticsJson("next_iteration_plan.json", {})
+  };
+}
+
+async function getGrowthDashboard() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    strategy: await readAnalyticsJson("growth_strategy.json", {}),
+    dashboard: await readAnalyticsJson("growth_dashboard.json", {}),
+    scorecard: await readAnalyticsJson("growth_scorecard.json", {}),
+    actions: await readAnalyticsJson("next_best_actions.json", {}),
+    pillars: await readAnalyticsJson("content_pillar_performance.json", {}),
+    platforms: await readAnalyticsJson("platform_focus.json", {}),
+    audience: await readAnalyticsJson("audience_growth_insights.json", {}),
+    experiments: await readAnalyticsJson("growth_experiments.json", {}),
+    clientPlan: await readAnalyticsJson("client_growth_plan.json", {})
+  };
+}
+
+async function getNextBestActions() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    actions: await readAnalyticsJson("next_best_actions.json", {})
   };
 }
 
@@ -1646,6 +1681,9 @@ function registerIpc() {
   ipcMain.handle("marketing:recordPostResult", recordPostResult);
   ipcMain.handle("marketing:buildPerformanceFeedback", buildPerformanceFeedback);
   ipcMain.handle("marketing:getPerformanceFeedback", getPerformanceFeedback);
+  ipcMain.handle("marketing:buildGrowthStrategy", buildGrowthStrategy);
+  ipcMain.handle("marketing:getGrowthDashboard", getGrowthDashboard);
+  ipcMain.handle("marketing:getNextBestActions", getNextBestActions);
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);

@@ -1143,6 +1143,36 @@ Retention now accepts either percent or ratio input:
 
 The dashboard Record Results action now collects posted date, watch time, profile visits, follows, and notes in addition to the original local metrics. QA also validates all V5.3 performance JSON artifacts and runs a tighter no-live-API scan. No live Instagram API, TikTok API, social posting API, OAuth flow, telemetry, cloud API, or external analytics API is configured.
 
+## V5.4 Growth Strategy Dashboard
+
+V5.4 adds a local Growth Strategy Dashboard inside Marketing Studio. It turns clip recommendations, campaign boards, posting schedules, social export packs, and manual performance feedback into a clear growth command center.
+
+Run:
+
+```bash
+python3 scripts/build_growth_strategy.py
+```
+
+Outputs include:
+
+- `analytics/growth_strategy.json`
+- `analytics/growth_dashboard.json`
+- `analytics/growth_scorecard.json`
+- `analytics/next_best_actions.json`
+- `analytics/content_pillar_performance.json`
+- `analytics/platform_focus.json`
+- `analytics/audience_growth_insights.json`
+- `analytics/growth_experiments.json`
+- `analytics/client_growth_plan.json`
+- `out/marketing/growth_strategy.md`
+- `out/marketing/next_best_actions.md`
+- `out/marketing/growth_scorecard.md`
+- `out/marketing/content_pillar_performance.md`
+- `out/marketing/platform_focus.md`
+- `out/marketing/growth_experiments.md`
+
+The dashboard answers what to post next, which audience is responding, which platform should be the primary focus, which content pillar to double down on, and what experiments to run next. It remains local-first and manual-upload only. No live Instagram API, cloud API, social API, OAuth flow, token storage, or direct posting API is configured.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

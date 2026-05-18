@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.3.1",
-  "release_version": "V5.3.1",
+  "app_version": "5.4.0",
+  "release_version": "V5.4",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -95,6 +95,12 @@
       "to": "V5.3.1",
       "safe": true,
       "notes": "Harden manual performance feedback by separating imported summaries from persisted manual history, normalizing retention, tightening QA, and expanding local result entry fields."
+    },
+    {
+      "from": "V5.3.1",
+      "to": "V5.4",
+      "safe": true,
+      "notes": "Add local Growth Strategy Dashboard, scorecard, next best actions, platform focus, audience insights, and growth experiments without live platform integrations."
     }
   ],
   "required_runtime_files": [
@@ -158,6 +164,7 @@
     "scripts/build_marketing_plan.py",
     "scripts/build_campaign_plan.py",
     "scripts/build_performance_feedback.py",
+    "scripts/build_growth_strategy.py",
     "scripts/record_post_result.py",
     "scripts/update_manual_post_status.py",
     "scripts/import_instagram_insights.py",
