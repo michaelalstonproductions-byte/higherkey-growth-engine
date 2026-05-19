@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.9.0",
-  "release_version": "V5.9",
+  "app_version": "6.0.0",
+  "release_version": "V6.0",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -131,6 +131,12 @@
       "to": "V5.9",
       "safe": true,
       "notes": "Add local Autopilot Run Console outputs, retry dry-run planning, approval visibility, and safety summary without cloud or social posting APIs."
+    },
+    {
+      "from": "V5.9",
+      "to": "V6.0",
+      "safe": true,
+      "notes": "Add release-candidate audit, client rehearsal reporting, packaged resource checks, and V6 handoff documentation without changing runtime behavior or adding cloud/social posting APIs."
     }
   ],
   "required_runtime_files": [
@@ -168,8 +174,10 @@
     "config/retention_policy.json",
     "config/error_taxonomy.json",
     "config/client_demo.json",
+    "config/autopilot_policy.json",
     "config/marketing_profile.example.json",
     "config/social_connectors.example.json",
+    "config/version_contract.json",
     "config/release.json"
   ],
   "required_scripts": [
@@ -195,6 +203,14 @@
     "scripts/build_campaign_plan.py",
     "scripts/build_performance_feedback.py",
     "scripts/build_growth_strategy.py",
+    "scripts/build_creative_direction.py",
+    "scripts/build_production_command.py",
+    "scripts/build_operator_autopilot.py",
+    "scripts/run_operator_autopilot.py",
+    "scripts/autopilot_preflight.py",
+    "scripts/build_autopilot_console.py",
+    "scripts/run_release_candidate_audit.py",
+    "scripts/run_client_rehearsal.py",
     "scripts/record_post_result.py",
     "scripts/update_manual_post_status.py",
     "scripts/import_instagram_insights.py",

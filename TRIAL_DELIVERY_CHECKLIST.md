@@ -6,6 +6,8 @@ Use this checklist before handing a trial build to a client.
 
 - [ ] Rebuild the unsigned DMG with `npm run dist:unsigned`.
 - [ ] Run `npm run qa:full`.
+- [ ] Run `python3 scripts/run_release_candidate_audit.py`.
+- [ ] Run `python3 scripts/run_client_rehearsal.py`.
 - [ ] Run `python3 scripts/build_trial_readiness_report.py`.
 - [ ] Generate the trial package with `python3 scripts/package_trial_release.py`.
 - [ ] Validate the trial package with `python3 scripts/validate_trial_package.py`.
@@ -19,6 +21,9 @@ Use this checklist before handing a trial build to a client.
 - [ ] Approve at least one clip when available.
 - [ ] Test social export pack generation.
 - [ ] Open the social export folder.
+- [ ] Open **Command** and verify today's plan.
+- [ ] Open **Marketing** and verify strategy/creative/growth views.
+- [ ] Open **Autopilot** and verify safe dry-run/manual approval language.
 - [ ] Confirm manual upload language is visible.
 
 ## Support And Safety
@@ -27,6 +32,8 @@ Use this checklist before handing a trial build to a client.
 - [ ] Confirm the support package excludes original footage.
 - [ ] Confirm the trial package excludes private media and runtime DB files.
 - [ ] Confirm `latest_dmg_pointer.json` points to the current DMG.
+- [ ] Confirm `analytics/release_candidate_audit.json` exists.
+- [ ] Confirm `analytics/client_rehearsal_report.json` exists.
 - [ ] Confirm no cloud APIs, social APIs, or direct posting APIs are configured.
 
 ## Handoff

@@ -1,10 +1,10 @@
 # HigherKey Operator OS Client Trial QA Summary
 
-Version: V4.7 / 4.7.0
+Version: V6.0 / 6.0.0
 
 DMG:
 
-- `dist/HigherKey Operator OS-4.7.0-arm64.dmg`
+- `dist/HigherKey Operator OS-6.0.0-arm64.dmg`
 
 Trial package:
 
@@ -19,7 +19,16 @@ Client workflow:
 2. Import & Process
 3. Review and approve clips
 4. Export Social Packs
-5. Upload manually
+5. Build Marketing / Creative / Command Center plans when useful
+6. Use Autopilot dry-run for safe local preparation tasks
+7. Upload manually
+
+Release-candidate checks:
+
+- Run `python3 scripts/run_release_candidate_audit.py`.
+- Run `python3 scripts/run_client_rehearsal.py`.
+- Confirm `analytics/release_candidate_audit.json` and `analytics/client_rehearsal_report.json` exist.
+- Confirm `out/marketing/client_rehearsal_summary.md` exists.
 
 Support workflow:
 
@@ -47,4 +56,6 @@ What to test during the trial:
 - Approve at least one clip.
 - Export social packs.
 - Open the social export folder and inspect caption, hashtag, title, notes, checklist, thumbnail, and manifest files.
+- Open Command and verify the daily action plan is readable.
+- Open Autopilot and verify safe local tasks are visible without any social posting controls.
 - Create a support package if anything looks wrong.

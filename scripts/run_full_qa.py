@@ -55,6 +55,8 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "dashboard" / "review.html",
         resources / "app-assets" / "growth_engine" / "diagnostics.py",
         resources / "app-assets" / "growth_engine" / "media_cache.py",
+        resources / "app-assets" / "growth_engine" / "marketing_intelligence.py",
+        resources / "app-assets" / "growth_engine" / "campaign_planner.py",
         resources / "app-assets" / "growth_engine" / "growth_strategy.py",
         resources / "app-assets" / "growth_engine" / "creative_director.py",
         resources / "app-assets" / "growth_engine" / "production_command.py",
@@ -62,6 +64,8 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "autopilot_console.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
+        resources / "app-assets" / "scripts" / "build_marketing_plan.py",
+        resources / "app-assets" / "scripts" / "build_campaign_plan.py",
         resources / "app-assets" / "scripts" / "build_growth_strategy.py",
         resources / "app-assets" / "scripts" / "build_creative_direction.py",
         resources / "app-assets" / "scripts" / "build_production_command.py",
@@ -70,6 +74,10 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "autopilot_preflight.py",
         resources / "app-assets" / "scripts" / "build_autopilot_console.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
+        resources / "app-assets" / "config" / "marketing_profile.example.json",
+        resources / "app-assets" / "config" / "social_connectors.example.json",
+        resources / "app-assets" / "config" / "release.json",
+        resources / "app-assets" / "config" / "version_contract.json",
     ]
     forbidden = [resources / "app-assets" / name for name in ("analytics", "queue", "clips", "captions", "out", "logs", "content_inbox")]
     missing = [relative_path(path, root) for path in required if not path.exists()]
@@ -100,7 +108,7 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "no automatic upload" in lower
             or ("no " in lower and any(term in lower for term in ("api", "oauth", "telemetry", "token", "posting integration", "social posting")))
         )
-        qa_scanner_context = rel_path in {"scripts/run_full_qa.py", "scripts/run_client_trial_qa.py"} and (
+        qa_scanner_context = rel_path in {"scripts/run_full_qa.py", "scripts/run_client_trial_qa.py", "scripts/run_release_candidate_audit.py"} and (
             "scan_patterns" in lower
             or "scan_pattern" in lower
             or "matched_pattern" in lower
@@ -727,6 +735,42 @@ def autopilot_console_check(root: Path) -> dict[str, object]:
     }
 
 
+def release_candidate_check(root: Path) -> dict[str, object]:
+    json_requirements = {
+        root / "analytics" / "release_candidate_audit.json": {"local_only": bool, "manual_upload_only": bool, "overall_readiness": str, "checks": list},
+        root / "analytics" / "client_rehearsal_report.json": {"local_only": bool, "manual_upload_only": bool, "status": str, "checks": list, "commands": list},
+    }
+    required = [
+        *json_requirements.keys(),
+        root / "out" / "marketing" / "client_rehearsal_summary.md",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    json_errors = []
+    for path, expected_fields in json_requirements.items():
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as error:
+            json_errors.append({"path": relative_path(path, root), "error": str(error)})
+            continue
+        for key, expected in expected_fields.items():
+            if key not in payload:
+                json_errors.append({"path": relative_path(path, root), "missing_key": key})
+                continue
+            if not isinstance(payload.get(key), expected):
+                json_errors.append({"path": relative_path(path, root), "key": key, "actual": type(payload.get(key)).__name__})
+        if payload.get("local_only") is not True or payload.get("manual_upload_only") is not True:
+            json_errors.append({"path": relative_path(path, root), "error": "local/manual flag is invalid"})
+    status = "pass" if not missing and not json_errors else "fail"
+    return {
+        "name": "release_candidate_validation",
+        "status": status,
+        "missing": missing,
+        "json_errors": json_errors,
+    }
+
+
 def beta_checklist_check(root: Path) -> dict[str, object]:
     path = root / "BETA_READINESS_CHECKLIST.md"
     try:
@@ -750,7 +794,7 @@ def upgrade_fixture_check(root: Path) -> dict[str, object]:
         "    root=Path(tmp)\n"
         "    config=load_config(root)\n"
         "    ensure_directories(config)\n"
-        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json','project_manifest.example.json','client_demo.json','marketing_profile.example.json','social_connectors.example.json'):\n"
+        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json','project_manifest.example.json','client_demo.json','autopilot_policy.json','marketing_profile.example.json','social_connectors.example.json'):\n"
         "        shutil.copy(Path('config')/rel, root/'config'/rel)\n"
         "    save_json_file(root/'config'/'project_manifest.json', {'version':'V3.8','project_root':str(root),'local_only':True})\n"
         "    plan=build_upgrade_plan(config)\n"
@@ -1005,6 +1049,10 @@ def main() -> int:
     append_stage(results, qa_stage("operator_autopilot_retry_failed_dry_run", ["python3", "scripts/run_operator_autopilot.py", "--retry-failed", "--dry-run"], root, timeout=60), config)
     print("[qa] autopilot_console_validation", flush=True)
     append_stage(results, autopilot_console_check(root), config)
+    append_stage(results, qa_stage("release_candidate_audit", ["python3", "scripts/run_release_candidate_audit.py"], root, timeout=180), config)
+    append_stage(results, qa_stage("client_rehearsal", ["python3", "scripts/run_client_rehearsal.py"], root, timeout=180), config)
+    print("[qa] release_candidate_validation", flush=True)
+    append_stage(results, release_candidate_check(root), config)
     append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)
     print("[qa] marketing_intelligence_validation", flush=True)
     append_stage(results, marketing_intelligence_check(root), config)

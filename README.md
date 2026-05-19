@@ -1335,6 +1335,59 @@ Outputs include:
 
 The console is observability only unless the operator explicitly runs an allowlisted safe-auto action. Approval-required actions still require local receipts, blocked actions never run, and HigherKey remains manual-upload only with no cloud APIs or social posting APIs.
 
+## V6.0 Release Candidate
+
+V6.0 prepares HigherKey Operator OS for a real client production release-candidate handoff. It does not add a new runtime system; it audits the existing local workflow, rehearses the client path, verifies packaging, and keeps the product ready for a demo or trial delivery.
+
+Included:
+
+- Import footage, process media, review clips, approve clips, and export Social Packs.
+- Marketing Intelligence Studio, Campaign Board, Growth Strategy Dashboard, Creative Director Studio, Production Content Command Center, Operator Autopilot, Autopilot Safety, and Autopilot Run Console.
+- Release-candidate audit and client rehearsal reports.
+- Client-safe support, trial, and handoff package guidance.
+- Manual upload workflow for TikTok, Instagram Reels, YouTube Shorts, and Facebook Reels folders.
+
+Intentionally not included:
+
+- No cloud APIs.
+- No live Instagram API.
+- No social posting APIs.
+- No automatic upload to social platforms.
+- No deletion or overwrite of original footage.
+
+Run the release-candidate audit:
+
+```bash
+python3 scripts/run_release_candidate_audit.py
+```
+
+Run the client rehearsal:
+
+```bash
+python3 scripts/run_client_rehearsal.py
+```
+
+Launch the latest local desktop app:
+
+```bash
+npm run app:open-latest
+```
+
+Build the current unsigned DMG:
+
+```bash
+npm run dist:unsigned
+```
+
+Expected V6.0 package:
+
+- `dist/HigherKey Operator OS-6.0.0-arm64.dmg`
+- `analytics/release_candidate_audit.json`
+- `analytics/client_rehearsal_report.json`
+- `out/marketing/client_rehearsal_summary.md`
+
+Known non-blocking warning: sandboxed localhost or macOS Application Support checks can warn when running inside restricted automation. Verify the packaged app with `npm run app:open-latest` in the normal GUI environment. The DMG is intentionally unsigned for local/client trial testing; macOS Gatekeeper may require Finder's contextual Open flow or local security approval.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

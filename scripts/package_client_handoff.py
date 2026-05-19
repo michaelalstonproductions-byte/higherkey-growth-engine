@@ -60,7 +60,9 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "3. Click Import Footage.",
         "4. Click Import & Process or Process Media.",
         "5. Review clips and export social packs.",
-        "6. Upload prepared files manually.",
+        "6. Use Command, Marketing, Creative Direction, and Autopilot dry-run for planning.",
+        "7. Upload prepared files manually.",
+        "No cloud APIs, social posting APIs, or live Instagram APIs are configured.",
         "",
     ])
     support_note = "\n".join([
