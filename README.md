@@ -1173,6 +1173,45 @@ Outputs include:
 
 The dashboard answers what to post next, which audience is responding, which platform should be the primary focus, which content pillar to double down on, and what experiments to run next. It remains local-first and manual-upload only. No live Instagram API, cloud API, social API, OAuth flow, token storage, or direct posting API is configured.
 
+## V5.5 Creative Director Studio
+
+V5.5 adds a local Creative Director view inside Marketing Studio. It turns approved clips, growth strategy, campaign plans, and manual performance feedback into creative direction the operator can use before posting or shooting the next asset.
+
+Run:
+
+```bash
+python3 scripts/build_creative_direction.py
+```
+
+Options:
+
+- `--dry-run`
+- `--json`
+- `--clip-id CLIP_ID`
+- `--platform PLATFORM`
+- `--count N`
+
+Outputs include:
+
+- `analytics/creative_director_brief.json`
+- `analytics/hook_bank.json`
+- `analytics/caption_variations.json`
+- `analytics/thumbnail_concepts.json`
+- `analytics/script_ideas.json`
+- `analytics/shot_list_recommendations.json`
+- `analytics/ab_test_plan.json`
+- `analytics/creative_quality_scorecard.json`
+- `analytics/client_creative_plan.json`
+- `out/marketing/creative_director_brief.md`
+- `out/marketing/hook_bank.md`
+- `out/marketing/caption_variations.md`
+- `out/marketing/thumbnail_concepts.md`
+- `out/marketing/script_ideas.md`
+- `out/marketing/shot_list_recommendations.md`
+- `out/marketing/ab_test_plan.md`
+
+Creative Director Studio provides a creative thesis, hook bank, caption variations, thumbnail concepts, script ideas, pickup-shot recommendations, and manual A/B test plans. This remains local-first planning only: no external AI API, live Instagram API, cloud API, social posting API, OAuth flow, token storage, or direct posting API is configured.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

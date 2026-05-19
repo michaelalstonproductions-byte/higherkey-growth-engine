@@ -55,8 +55,12 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "dashboard" / "review.html",
         resources / "app-assets" / "growth_engine" / "diagnostics.py",
         resources / "app-assets" / "growth_engine" / "media_cache.py",
+        resources / "app-assets" / "growth_engine" / "growth_strategy.py",
+        resources / "app-assets" / "growth_engine" / "creative_director.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
+        resources / "app-assets" / "scripts" / "build_growth_strategy.py",
+        resources / "app-assets" / "scripts" / "build_creative_direction.py",
     ]
     forbidden = [resources / "app-assets" / name for name in ("analytics", "queue", "clips", "captions", "out", "logs", "content_inbox")]
     missing = [relative_path(path, root) for path in required if not path.exists()]
@@ -78,6 +82,7 @@ def external_api_scan(root: Path) -> dict[str, object]:
             "no live" in lower
             or "no cloud" in lower
             or "no external" in lower
+            or "does not call" in lower
             or "manual-entry only" in lower
             or "manual upload" in lower
             or "manual import only" in lower
@@ -526,6 +531,59 @@ def growth_strategy_check(root: Path) -> dict[str, object]:
     }
 
 
+def creative_direction_check(root: Path) -> dict[str, object]:
+    json_requirements = {
+        root / "analytics" / "creative_director_brief.json": {"local_only": bool, "manual_upload_only": bool, "direct_posting_apis": bool, "live_instagram_api": bool, "campaign_creative_thesis": str},
+        root / "analytics" / "hook_bank.json": {"local_only": bool, "hooks": list},
+        root / "analytics" / "caption_variations.json": {"local_only": bool, "captions": list},
+        root / "analytics" / "thumbnail_concepts.json": {"local_only": bool, "concepts": list},
+        root / "analytics" / "script_ideas.json": {"local_only": bool, "ideas": list},
+        root / "analytics" / "shot_list_recommendations.json": {"local_only": bool, "shots": list},
+        root / "analytics" / "ab_test_plan.json": {"local_only": bool, "tests": list},
+        root / "analytics" / "creative_quality_scorecard.json": {"local_only": bool, "hook_strength": dict, "caption_strength": dict, "testing_readiness": dict},
+        root / "analytics" / "client_creative_plan.json": {"local_only": bool, "manual_upload_only": bool, "status": str},
+    }
+    required = [
+        *json_requirements.keys(),
+        root / "out" / "marketing" / "creative_director_brief.md",
+        root / "out" / "marketing" / "hook_bank.md",
+        root / "out" / "marketing" / "caption_variations.md",
+        root / "out" / "marketing" / "thumbnail_concepts.md",
+        root / "out" / "marketing" / "script_ideas.md",
+        root / "out" / "marketing" / "shot_list_recommendations.md",
+        root / "out" / "marketing" / "ab_test_plan.md",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    json_errors = []
+    safety_errors = []
+    for path, expected_fields in json_requirements.items():
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as error:
+            json_errors.append({"path": relative_path(path, root), "error": str(error)})
+            continue
+        for key, expected in expected_fields.items():
+            if key not in payload:
+                json_errors.append({"path": relative_path(path, root), "missing_key": key})
+                continue
+            if not isinstance(payload.get(key), expected):
+                json_errors.append({"path": relative_path(path, root), "key": key, "actual": type(payload.get(key)).__name__})
+        if payload.get("local_only") is not True:
+            safety_errors.append({"path": relative_path(path, root), "error": "local_only flag is invalid"})
+        if payload.get("direct_posting_apis") is True or payload.get("live_instagram_api") is True:
+            safety_errors.append({"path": relative_path(path, root), "error": "live/direct platform API flag is enabled"})
+    status = "pass" if not missing and not json_errors and not safety_errors else "fail"
+    return {
+        "name": "creative_direction_validation",
+        "status": status,
+        "missing": missing,
+        "json_errors": json_errors,
+        "safety_errors": safety_errors,
+    }
+
+
 def beta_checklist_check(root: Path) -> dict[str, object]:
     path = root / "BETA_READINESS_CHECKLIST.md"
     try:
@@ -784,6 +842,10 @@ def main() -> int:
     append_stage(results, qa_stage("growth_strategy_build", ["python3", "scripts/build_growth_strategy.py"], root, timeout=60), config)
     print("[qa] growth_strategy_validation", flush=True)
     append_stage(results, growth_strategy_check(root), config)
+    append_stage(results, qa_stage("creative_direction_dry_run", ["python3", "scripts/build_creative_direction.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("creative_direction_build", ["python3", "scripts/build_creative_direction.py"], root, timeout=60), config)
+    print("[qa] creative_direction_validation", flush=True)
+    append_stage(results, creative_direction_check(root), config)
     append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)
     print("[qa] marketing_intelligence_validation", flush=True)
     append_stage(results, marketing_intelligence_check(root), config)

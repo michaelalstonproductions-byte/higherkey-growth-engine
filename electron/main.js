@@ -1386,6 +1386,40 @@ async function getNextBestActions() {
   };
 }
 
+async function buildCreativeDirection() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_creative_direction.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getCreativeDirectorBrief() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    brief: await readAnalyticsJson("creative_director_brief.json", {}),
+    clientPlan: await readAnalyticsJson("client_creative_plan.json", {}),
+    captions: await readAnalyticsJson("caption_variations.json", {}),
+    thumbnails: await readAnalyticsJson("thumbnail_concepts.json", {}),
+    scripts: await readAnalyticsJson("script_ideas.json", {}),
+    shotList: await readAnalyticsJson("shot_list_recommendations.json", {}),
+    tests: await readAnalyticsJson("ab_test_plan.json", {}),
+    scorecard: await readAnalyticsJson("creative_quality_scorecard.json", {})
+  };
+}
+
+async function getHookBank() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    hooks: await readAnalyticsJson("hook_bank.json", {})
+  };
+}
+
 async function openMarketingFolder() {
   const folder = path.join(activeProjectRoot, "out", "marketing");
   await fsp.mkdir(folder, { recursive: true });
@@ -1684,6 +1718,9 @@ function registerIpc() {
   ipcMain.handle("marketing:buildGrowthStrategy", buildGrowthStrategy);
   ipcMain.handle("marketing:getGrowthDashboard", getGrowthDashboard);
   ipcMain.handle("marketing:getNextBestActions", getNextBestActions);
+  ipcMain.handle("marketing:buildCreativeDirection", buildCreativeDirection);
+  ipcMain.handle("marketing:getCreativeDirectorBrief", getCreativeDirectorBrief);
+  ipcMain.handle("marketing:getHookBank", getHookBank);
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);

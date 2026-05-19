@@ -1327,6 +1327,15 @@
         audienceGrowthInsights: "../analytics/audience_growth_insights.json",
         growthExperiments: "../analytics/growth_experiments.json",
         clientGrowthPlan: "../analytics/client_growth_plan.json",
+        creativeDirectorBrief: "../analytics/creative_director_brief.json",
+        hookBank: "../analytics/hook_bank.json",
+        captionVariations: "../analytics/caption_variations.json",
+        thumbnailConcepts: "../analytics/thumbnail_concepts.json",
+        scriptIdeas: "../analytics/script_ideas.json",
+        shotListRecommendations: "../analytics/shot_list_recommendations.json",
+        abTestPlan: "../analytics/ab_test_plan.json",
+        creativeQualityScorecard: "../analytics/creative_quality_scorecard.json",
+        clientCreativePlan: "../analytics/client_creative_plan.json",
         clientTasks: "../analytics/client_tasks.json",
         clientWorkflow: "../analytics/client_workflow.json",
         clientDemo: "../config/client_demo.json",
@@ -1398,6 +1407,15 @@
         audienceGrowthInsights: null,
         growthExperiments: null,
         clientGrowthPlan: null,
+        creativeDirectorBrief: null,
+        hookBank: null,
+        captionVariations: null,
+        thumbnailConcepts: null,
+        scriptIdeas: null,
+        shotListRecommendations: null,
+        abTestPlan: null,
+        creativeQualityScorecard: null,
+        clientCreativePlan: null,
         clientTasks: null,
         clientWorkflow: null,
         clientDemo: null,
@@ -2045,6 +2063,7 @@
                     <button class="btn" data-desktop-action="copy-campaign-brief">Copy Campaign Brief</button>
                     <button class="btn" data-desktop-action="build-performance-feedback">Build Feedback Loop</button>
                     <button class="btn" data-desktop-action="build-growth-strategy">Build Growth Strategy</button>
+                    <button class="btn" data-desktop-action="build-creative-direction">Build Creative Direction</button>
                     <button class="btn" data-desktop-action="record-post-result">Record Results</button>
                   </div>
                 </div>
@@ -2061,6 +2080,7 @@
                 ["calendar", "Calendar"],
                 ["performance", "Performance Feedback"],
                 ["growth", "Growth Dashboard"],
+                ["creative", "Creative Director"],
                 ["recommendations", "Clip Recommendations"]
               ].map(([mode, label]) => `<button class="btn ${marketingMode === mode ? "active" : ""}" data-marketing-view="${mode}">${label}</button>`).join("")}
             </div>
@@ -2106,6 +2126,7 @@
               <div style="padding:14px">${performanceFeedbackHtml()}</div>
             </section>` : ""}
             ${marketingMode === "growth" ? growthDashboardHtml() : ""}
+            ${marketingMode === "creative" ? creativeDirectorHtml() : ""}
           </div>
         `;
       }
@@ -2287,6 +2308,84 @@
       }
       function growthExperimentsHtml(experiments) {
         return (experiments || []).slice(0, 8).map((exp) => `<div class="performance-record"><strong>${html(exp.hypothesis)}</strong><p>${html(exp.platform)} · Watch ${html(exp.metric_to_watch)} · Success ${html(exp.success_threshold)}</p><p><strong>If it wins:</strong> ${html(exp.next_step_if_wins)}</p></div>`).join("") || `<div class="empty-state">No growth experiments yet.</div>`;
+      }
+      function creativeDirectorHtml() {
+        const brief = state.creativeDirectorBrief || {};
+        const client = state.clientCreativePlan || {};
+        const hooks = state.hookBank?.hooks || [];
+        const captions = state.captionVariations?.captions || [];
+        const thumbnails = state.thumbnailConcepts?.concepts || [];
+        const scripts = state.scriptIdeas?.ideas || [];
+        const shots = state.shotListRecommendations?.shots || [];
+        const tests = state.abTestPlan?.tests || [];
+        const scorecard = state.creativeQualityScorecard || {};
+        const hasPlan = Boolean(Object.keys(brief).length || hooks.length || captions.length || scripts.length);
+        if (!hasPlan) {
+          return `<section class="panel view-scroll"><div class="empty-state"><h2>Build Creative Direction</h2><p>Generate the creative thesis, hook bank, captions, thumbnail concepts, scripts, shot list, and manual A/B test plan.</p><div class="toolbar"><button class="btn red" data-desktop-action="build-creative-direction">Build Creative Direction</button><button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button></div><p class="muted">Static mode: run python3 scripts/build_creative_direction.py</p></div></section>`;
+        }
+        return `
+          <div class="marketing-card-grid">
+            ${marketingMetricCard("Creative Thesis", brief.primary_content_pillar || "Proof", brief.campaign_creative_thesis || client.next_creative_move || "Local creative direction")}
+            ${marketingMetricCard("Best Hook Style", client.best_hook_style || hooks[0]?.style || "Direct", hooks[0]?.text || "Hook bank ready")}
+            ${marketingMetricCard("Caption Direction", "Ready", client.caption_direction || brief.caption_strategy || `${captions.length} caption variants`)}
+            ${marketingMetricCard("Thumbnail Direction", "Concepts", client.thumbnail_direction || brief.thumbnail_strategy || `${thumbnails.length} thumbnail ideas`)}
+            ${marketingMetricCard("Next Script Idea", scripts[0]?.title || "Script ready", scripts[0]?.hook || "Follow-up ideas generated")}
+            ${marketingMetricCard("A/B Test Ready", tests.length ? "Yes" : "Build", tests[0]?.hypothesis || "Manual test plan")}
+          </div>
+          <div class="toolbar" style="margin:14px 0">
+            <button class="btn red" data-desktop-action="build-creative-direction">Build Creative Direction</button>
+            <button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button>
+            <button class="btn" data-desktop-action="copy-hook-bank">Copy Hook Bank</button>
+            <button class="btn" data-desktop-action="copy-caption-variations">Copy Caption Variations</button>
+            <button class="btn" data-desktop-action="copy-script-ideas">Copy Script Ideas</button>
+            <button class="btn" data-desktop-action="copy-ab-test-plan">Copy A/B Test Plan</button>
+          </div>
+          <div class="marketing-panel-grid">
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Creative Director Brief</div></div><div style="padding:14px">${creativeBriefHtml(brief)}</div></section>
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Hook Bank</div><div>${hooks.length} hooks</div></div><div style="padding:14px">${hookBankHtml(hooks)}</div></section>
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Caption Variations</div><div>${captions.length} captions</div></div><div style="padding:14px">${captionVariationsHtml(captions)}</div></section>
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Thumbnail Concepts</div><div>${thumbnails.length} concepts</div></div><div style="padding:14px">${thumbnailConceptsHtml(thumbnails)}</div></section>
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Script Ideas</div><div>${scripts.length} ideas</div></div><div style="padding:14px">${scriptIdeasHtml(scripts)}</div></section>
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Shot List</div><div>${shots.length} recommendations</div></div><div style="padding:14px">${shotListHtml(shots)}</div></section>
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">A/B Test Plan</div><div>${tests.length} tests</div></div><div style="padding:14px">${abTestPlanHtml(tests)}</div></section>
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Creative Quality Scorecard</div></div><div style="padding:14px">${creativeScorecardHtml(scorecard)}</div></section>
+          </div>
+        `;
+      }
+      function creativeBriefHtml(brief) {
+        return `
+          <div class="metric"><span>Thesis</span><strong>${html(brief.campaign_creative_thesis || "Build Creative Direction")}</strong></div>
+          <div class="metric"><span>Best angle</span><strong>${html(brief.best_creative_angle || "Lead with the strongest moment")}</strong></div>
+          <div class="metric"><span>Tone</span><strong>${html(brief.tone || "Confident and useful")}</strong></div>
+          <div class="copy"><strong>Hook:</strong> ${html(brief.hook_strategy || "Open with the payoff.")}</div>
+          <div class="copy"><strong>Caption:</strong> ${html(brief.caption_strategy || "Use short and story variants.")}</div>
+          <div class="copy"><strong>CTA:</strong> ${html(brief.CTA_strategy || "Save this and start today.")}</div>
+          <div class="copy"><strong>Avoid:</strong> ${html((brief.what_to_avoid || []).slice(0, 4).join(" · ") || "Generic setup and unclear next steps.")}</div>
+        `;
+      }
+      function hookBankHtml(hooks) {
+        return hooks.slice(0, 12).map((hook) => `<div class="performance-record"><strong>${html(hook.text)}</strong><p>${html(hook.style)} · ${html(hook.platform_fit)} · ${html(hook.target_audience)}</p><p>${html(hook.why_it_works || "")}</p></div>`).join("") || `<div class="empty-state">Build Creative Direction to generate hooks.</div>`;
+      }
+      function captionVariationsHtml(captions) {
+        return captions.slice(0, 10).map((caption) => `<div class="performance-record"><strong>${html(caption.tone)} · ${html(caption.platform)}</strong><p>${html(caption.text)}</p><p><strong>CTA:</strong> ${html(caption.CTA || "")}</p></div>`).join("") || `<div class="empty-state">No caption variations yet.</div>`;
+      }
+      function thumbnailConceptsHtml(concepts) {
+        return concepts.slice(0, 8).map((concept) => `<div class="performance-record"><strong>${html(concept.platform)} · ${html(concept.text_overlay)}</strong><p>${html(concept.visual_concept)}</p><p>${html(concept.framing_suggestion || "")}</p></div>`).join("") || `<div class="empty-state">No thumbnail concepts yet.</div>`;
+      }
+      function scriptIdeasHtml(scripts) {
+        return scripts.slice(0, 8).map((idea) => `<div class="performance-record"><strong>${html(idea.title)}</strong><p>${html(idea.hook)}</p><p><strong>CTA:</strong> ${html(idea.CTA || "")} · <strong>Impact:</strong> ${html(idea.expected_impact || "")}</p></div>`).join("") || `<div class="empty-state">No script ideas yet.</div>`;
+      }
+      function shotListHtml(shots) {
+        return shots.slice(0, 8).map((shot) => `<div class="performance-record"><strong>${html(shot.recommendation)}</strong><p>${html((shot.shots || []).join(" · "))}</p><p>${html(shot.expected_impact || "")}</p></div>`).join("") || `<div class="empty-state">No shot list recommendations yet.</div>`;
+      }
+      function abTestPlanHtml(tests) {
+        return tests.slice(0, 8).map((test) => `<div class="performance-record"><strong>${html(test.hypothesis)}</strong><p>${html(test.platform)} · Watch ${html(test.metric_to_watch)} · ${html(test.success_threshold)}</p><p><strong>If wins:</strong> ${html(test.next_step_if_wins || "")}</p></div>`).join("") || `<div class="empty-state">No A/B tests yet.</div>`;
+      }
+      function creativeScorecardHtml(scorecard) {
+        return Object.entries(scorecard || {})
+          .filter(([, value]) => value && typeof value === "object" && ("score" in value || "status" in value))
+          .map(([key, value]) => `<div class="metric"><span>${html(key.replaceAll("_", " "))}</span><strong>${html(value.score ?? "local")} · ${html(value.status || "ready")}</strong></div><div class="copy">${html(value.improvement || value.reason || "")}</div>`)
+          .join("") || `<div class="empty-state">Build Creative Direction to score creative readiness.</div>`;
       }
       function renderAgentsView() {
         const agents = state.agents?.agents || [];
@@ -3198,6 +3297,10 @@
         const perf = state.performanceFeedback?.records?.[0] || null;
         const growthAction = state.nextBestActions?.actions?.[0] || state.growthStrategy?.next_best_actions?.[0] || null;
         const growthExperiment = state.growthExperiments?.experiments?.[0] || state.growthStrategy?.growth_experiments?.[0] || null;
+        const creativeHook = state.hookBank?.hooks?.[0] || null;
+        const creativeCaption = state.captionVariations?.captions?.[0] || null;
+        const creativeScript = state.scriptIdeas?.ideas?.[0] || null;
+        const creativeTest = state.abTestPlan?.tests?.[0] || null;
         const attack = state.marketAttackPlan || {};
         const audience = state.audienceProfile || {};
         return `
@@ -3207,6 +3310,7 @@
               <button class="btn red" data-desktop-action="build-campaign-plan">Build Campaign Plan</button>
               <button class="btn" data-desktop-action="build-performance-feedback">Build Feedback Loop</button>
               <button class="btn" data-desktop-action="build-growth-strategy">Build Growth Strategy</button>
+              <button class="btn" data-desktop-action="build-creative-direction">Build Creative Direction</button>
               <button class="btn" data-desktop-action="open-marketing-folder">Open Folder</button>
             </div>
           </section>
@@ -3255,8 +3359,16 @@
               <div class="copy"><strong>Next step:</strong> ${html(growthExperiment.next_step_if_wins || "")}</div>
             ` : `<div class="muted">Growth experiments appear after strategy build.</div>`}
           </section>
+          <section class="inspector-section"><h3>Creative Direction</h3>
+            ${creativeHook || creativeCaption || creativeScript || creativeTest ? `
+              ${creativeHook ? `<div class="copy"><strong>Hook:</strong> ${html(creativeHook.text)}</div><div class="metric"><span>Style</span><strong>${html(creativeHook.style)}</strong></div>` : ""}
+              ${creativeCaption ? `<div class="copy"><strong>Caption:</strong> ${html(creativeCaption.text)}</div><div class="metric"><span>CTA</span><strong>${html(creativeCaption.CTA || "Save this")}</strong></div>` : ""}
+              ${creativeScript ? `<div class="copy"><strong>Script:</strong> ${html(creativeScript.title)} · ${html(creativeScript.hook)}</div>` : ""}
+              ${creativeTest ? `<div class="copy"><strong>Test:</strong> ${html(creativeTest.hypothesis)}</div>` : ""}
+            ` : `<div class="muted">Build Creative Direction to generate hooks, captions, scripts, and tests.</div>`}
+          </section>
           <section class="inspector-section"><h3>Actions</h3>
-            <div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Packs</button><button class="btn" data-desktop-action="copy-7-day-plan">Copy 7-Day Plan</button><button class="btn" data-desktop-action="copy-next-actions">Copy Next Actions</button><button class="btn" data-desktop-action="copy-growth-plan">Copy Growth Plan</button><button class="btn" data-desktop-action="record-post-result">Record Results</button><button class="btn" data-desktop-action="refresh-marketing">Refresh</button></div>
+            <div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Packs</button><button class="btn" data-desktop-action="copy-7-day-plan">Copy 7-Day Plan</button><button class="btn" data-desktop-action="copy-next-actions">Copy Next Actions</button><button class="btn" data-desktop-action="copy-growth-plan">Copy Growth Plan</button><button class="btn" data-desktop-action="copy-hook-bank">Copy Hook Bank</button><button class="btn" data-desktop-action="record-post-result">Record Results</button><button class="btn" data-desktop-action="refresh-marketing">Refresh</button></div>
           </section>
         `;
       }
@@ -3772,6 +3884,22 @@
         }
         return setNotice("Growth strategy needs attention. Open Support for details.");
       }
+      async function buildCreativeDirection() {
+        if (!window.higherkey?.buildCreativeDirection) {
+          return setNotice("Static mode: run python3 scripts/build_creative_direction.py to build the local Creative Director plan.");
+        }
+        setNotice("Building creative thesis, hook bank, captions, thumbnails, scripts, and A/B tests...");
+        const result = await window.higherkey.buildCreativeDirection();
+        await refreshLiveData();
+        if (result?.code === 0 || result?.parsed?.ok || result?.ok) {
+          state.mode = "marketing";
+          state.workspace.marketingViewMode = "creative";
+          persistWorkspace();
+          render();
+          return setNotice(`Creative Direction ready: ${result.parsed?.hook_count ?? state.hookBank?.hooks?.length ?? 0} hooks and ${result.parsed?.script_count ?? state.scriptIdeas?.ideas?.length ?? 0} script ideas.`);
+        }
+        return setNotice("Creative Direction needs attention. Open Support for details.");
+      }
       async function recordPostResult() {
         const card = state.clientCampaignPlan?.next_post || state.campaignBoard?.cards?.[0] || marketingRecs()[0] || activeEntry();
         const clipId = card?.clip_id || activeEntry()?.clip_id;
@@ -3859,6 +3987,22 @@
         }
         return setNotice(text);
       }
+      async function copyCreativeText(kind) {
+        const hooks = (state.hookBank?.hooks || []).map((item, index) => `${index + 1}. [${item.style}] ${item.text} — ${item.why_it_works || ""}`).join("\n");
+        const captions = (state.captionVariations?.captions || []).slice(0, 14).map((item, index) => `${index + 1}. ${item.clip_id} / ${item.tone}: ${item.text}`).join("\n");
+        const scripts = (state.scriptIdeas?.ideas || []).map((item, index) => `${index + 1}. ${item.title}: ${item.hook}\nCTA: ${item.CTA}\nShots: ${(item.shot_list || []).join(", ")}`).join("\n\n");
+        const tests = (state.abTestPlan?.tests || []).map((item, index) => `${index + 1}. ${item.hypothesis}\nPlatform: ${item.platform}\nMetric: ${item.metric_to_watch}\nSuccess: ${item.success_threshold}`).join("\n\n");
+        const text = kind === "captions" ? captions : kind === "scripts" ? scripts : kind === "tests" ? tests : hooks;
+        const fallback = "Build Creative Direction to generate this creative asset.";
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text || fallback);
+          if (kind === "captions") return setNotice("Caption variations copied.");
+          if (kind === "scripts") return setNotice("Script ideas copied.");
+          if (kind === "tests") return setNotice("A/B test plan copied.");
+          return setNotice("Hook bank copied.");
+        }
+        return setNotice(text || fallback);
+      }
 
       function wireSocialExportActions() {
         document.querySelectorAll("[data-social-export]").forEach((button) => {
@@ -3903,11 +4047,16 @@
             if (action === "build-campaign-plan") return buildCampaignPlan();
             if (action === "build-performance-feedback") return buildPerformanceFeedback();
             if (action === "build-growth-strategy") return buildGrowthStrategy();
+            if (action === "build-creative-direction") return buildCreativeDirection();
             if (action === "record-post-result") return recordPostResult();
             if (action === "copy-7-day-plan") return copyCampaignText("7-day");
             if (action === "copy-campaign-brief") return copyCampaignText("brief");
             if (action === "copy-next-actions") return copyCampaignText("next-actions");
             if (action === "copy-growth-plan") return copyCampaignText("growth-plan");
+            if (action === "copy-hook-bank") return copyCreativeText("hooks");
+            if (action === "copy-caption-variations") return copyCreativeText("captions");
+            if (action === "copy-script-ideas") return copyCreativeText("scripts");
+            if (action === "copy-ab-test-plan") return copyCreativeText("tests");
             if (action === "open-marketing-folder") {
               if (!window.higherkey?.openMarketingFolder) return setNotice("Static mode: run python3 scripts/build_marketing_plan.py, then open out/marketing.");
               await window.higherkey.openMarketingFolder();
@@ -4040,6 +4189,15 @@
           state.audienceGrowthInsights = await optionalJson(PATHS.audienceGrowthInsights, null);
           state.growthExperiments = await optionalJson(PATHS.growthExperiments, null);
           state.clientGrowthPlan = await optionalJson(PATHS.clientGrowthPlan, null);
+          state.creativeDirectorBrief = await optionalJson(PATHS.creativeDirectorBrief, null);
+          state.hookBank = await optionalJson(PATHS.hookBank, null);
+          state.captionVariations = await optionalJson(PATHS.captionVariations, null);
+          state.thumbnailConcepts = await optionalJson(PATHS.thumbnailConcepts, null);
+          state.scriptIdeas = await optionalJson(PATHS.scriptIdeas, null);
+          state.shotListRecommendations = await optionalJson(PATHS.shotListRecommendations, null);
+          state.abTestPlan = await optionalJson(PATHS.abTestPlan, null);
+          state.creativeQualityScorecard = await optionalJson(PATHS.creativeQualityScorecard, null);
+          state.clientCreativePlan = await optionalJson(PATHS.clientCreativePlan, null);
           state.clientTasks = await optionalJson(PATHS.clientTasks, null);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, null);
           state.clientDemo = await optionalJson(PATHS.clientDemo, null);
@@ -4126,6 +4284,15 @@
           state.audienceGrowthInsights = await optionalJson(PATHS.audienceGrowthInsights, state.audienceGrowthInsights);
           state.growthExperiments = await optionalJson(PATHS.growthExperiments, state.growthExperiments);
           state.clientGrowthPlan = await optionalJson(PATHS.clientGrowthPlan, state.clientGrowthPlan);
+          state.creativeDirectorBrief = await optionalJson(PATHS.creativeDirectorBrief, state.creativeDirectorBrief);
+          state.hookBank = await optionalJson(PATHS.hookBank, state.hookBank);
+          state.captionVariations = await optionalJson(PATHS.captionVariations, state.captionVariations);
+          state.thumbnailConcepts = await optionalJson(PATHS.thumbnailConcepts, state.thumbnailConcepts);
+          state.scriptIdeas = await optionalJson(PATHS.scriptIdeas, state.scriptIdeas);
+          state.shotListRecommendations = await optionalJson(PATHS.shotListRecommendations, state.shotListRecommendations);
+          state.abTestPlan = await optionalJson(PATHS.abTestPlan, state.abTestPlan);
+          state.creativeQualityScorecard = await optionalJson(PATHS.creativeQualityScorecard, state.creativeQualityScorecard);
+          state.clientCreativePlan = await optionalJson(PATHS.clientCreativePlan, state.clientCreativePlan);
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);
           state.clientDemo = await optionalJson(PATHS.clientDemo, state.clientDemo);

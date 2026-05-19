@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.4.0",
-  "release_version": "V5.4",
+  "app_version": "5.5.0",
+  "release_version": "V5.5",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -101,6 +101,12 @@
       "to": "V5.4",
       "safe": true,
       "notes": "Add local Growth Strategy Dashboard, scorecard, next best actions, platform focus, audience insights, and growth experiments without live platform integrations."
+    },
+    {
+      "from": "V5.4",
+      "to": "V5.5",
+      "safe": true,
+      "notes": "Add local Creative Director Studio, hook bank, caption variations, thumbnail concepts, script ideas, shot lists, and A/B testing plan without external AI or live platform integrations."
     }
   ],
   "required_runtime_files": [
