@@ -1212,6 +1212,36 @@ Outputs include:
 
 Creative Director Studio provides a creative thesis, hook bank, caption variations, thumbnail concepts, script ideas, pickup-shot recommendations, and manual A/B test plans. This remains local-first planning only: no external AI API, live Instagram API, cloud API, social posting API, OAuth flow, token storage, or direct posting API is configured.
 
+## V5.6 Production Content Command Center
+
+V5.6 adds a local Production Command page for day-to-day execution. It turns the current clips, review state, campaign board, growth strategy, Creative Director outputs, social packs, and manual performance feedback into a single daily operator plan.
+
+Run:
+
+```bash
+python3 scripts/build_production_command.py
+```
+
+Options:
+
+- `--dry-run`
+- `--json`
+- `--today YYYY-MM-DD`
+
+Outputs include:
+
+- `analytics/production_command_center.json`
+- `analytics/today_action_plan.json`
+- `analytics/content_readiness_board.json`
+- `analytics/operator_priorities.json`
+- `analytics/client_daily_plan.json`
+- `out/marketing/today_action_plan.md`
+- `out/marketing/production_command_center.md`
+- `out/marketing/content_readiness_board.md`
+- `out/marketing/operator_priorities.md`
+
+The Command page answers what to do today, which clips are ready, which packs are ready for manual upload, which creative assets are missing, which campaigns need attention, and what to shoot or import next. It remains local-first and manual-upload only. No cloud API, live Instagram API, social posting API, OAuth flow, token storage, or direct posting API is configured.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

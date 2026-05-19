@@ -1420,6 +1420,38 @@ async function getHookBank() {
   };
 }
 
+async function buildProductionCommand() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_production_command.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getProductionCommandCenter() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    command: await readAnalyticsJson("production_command_center.json", {}),
+    today: await readAnalyticsJson("today_action_plan.json", {}),
+    readiness: await readAnalyticsJson("content_readiness_board.json", {}),
+    priorities: await readAnalyticsJson("operator_priorities.json", {}),
+    clientPlan: await readAnalyticsJson("client_daily_plan.json", {})
+  };
+}
+
+async function getTodayActionPlan() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    today: await readAnalyticsJson("today_action_plan.json", {}),
+    priorities: await readAnalyticsJson("operator_priorities.json", {})
+  };
+}
+
 async function openMarketingFolder() {
   const folder = path.join(activeProjectRoot, "out", "marketing");
   await fsp.mkdir(folder, { recursive: true });
@@ -1721,6 +1753,9 @@ function registerIpc() {
   ipcMain.handle("marketing:buildCreativeDirection", buildCreativeDirection);
   ipcMain.handle("marketing:getCreativeDirectorBrief", getCreativeDirectorBrief);
   ipcMain.handle("marketing:getHookBank", getHookBank);
+  ipcMain.handle("production:buildCommand", buildProductionCommand);
+  ipcMain.handle("production:getCommandCenter", getProductionCommandCenter);
+  ipcMain.handle("production:getTodayActionPlan", getTodayActionPlan);
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);

@@ -57,10 +57,12 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "media_cache.py",
         resources / "app-assets" / "growth_engine" / "growth_strategy.py",
         resources / "app-assets" / "growth_engine" / "creative_director.py",
+        resources / "app-assets" / "growth_engine" / "production_command.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_growth_strategy.py",
         resources / "app-assets" / "scripts" / "build_creative_direction.py",
+        resources / "app-assets" / "scripts" / "build_production_command.py",
     ]
     forbidden = [resources / "app-assets" / name for name in ("analytics", "queue", "clips", "captions", "out", "logs", "content_inbox")]
     missing = [relative_path(path, root) for path in required if not path.exists()]
@@ -584,6 +586,52 @@ def creative_direction_check(root: Path) -> dict[str, object]:
     }
 
 
+def production_command_check(root: Path) -> dict[str, object]:
+    json_requirements = {
+        root / "analytics" / "production_command_center.json": {"local_only": bool, "manual_upload_only": bool, "direct_posting_apis": bool, "live_instagram_api": bool, "today_action_plan": dict, "content_readiness_board": dict, "operator_priorities": dict},
+        root / "analytics" / "today_action_plan.json": {"local_only": bool, "manual_upload_only": bool, "actions": list, "next_3_actions": list},
+        root / "analytics" / "content_readiness_board.json": {"local_only": bool, "columns": list},
+        root / "analytics" / "operator_priorities.json": {"local_only": bool, "manual_upload_only": bool},
+        root / "analytics" / "client_daily_plan.json": {"local_only": bool, "manual_upload_only": bool, "status": str},
+    }
+    required = [
+        *json_requirements.keys(),
+        root / "out" / "marketing" / "today_action_plan.md",
+        root / "out" / "marketing" / "production_command_center.md",
+        root / "out" / "marketing" / "content_readiness_board.md",
+        root / "out" / "marketing" / "operator_priorities.md",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    json_errors = []
+    safety_errors = []
+    for path, expected_fields in json_requirements.items():
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as error:
+            json_errors.append({"path": relative_path(path, root), "error": str(error)})
+            continue
+        for key, expected in expected_fields.items():
+            if key not in payload:
+                json_errors.append({"path": relative_path(path, root), "missing_key": key})
+                continue
+            if not isinstance(payload.get(key), expected):
+                json_errors.append({"path": relative_path(path, root), "key": key, "actual": type(payload.get(key)).__name__})
+        if payload.get("local_only") is not True:
+            safety_errors.append({"path": relative_path(path, root), "error": "local_only flag is invalid"})
+        if payload.get("direct_posting_apis") is True or payload.get("live_instagram_api") is True:
+            safety_errors.append({"path": relative_path(path, root), "error": "live/direct platform API flag is enabled"})
+    status = "pass" if not missing and not json_errors and not safety_errors else "fail"
+    return {
+        "name": "production_command_validation",
+        "status": status,
+        "missing": missing,
+        "json_errors": json_errors,
+        "safety_errors": safety_errors,
+    }
+
+
 def beta_checklist_check(root: Path) -> dict[str, object]:
     path = root / "BETA_READINESS_CHECKLIST.md"
     try:
@@ -846,6 +894,10 @@ def main() -> int:
     append_stage(results, qa_stage("creative_direction_build", ["python3", "scripts/build_creative_direction.py"], root, timeout=60), config)
     print("[qa] creative_direction_validation", flush=True)
     append_stage(results, creative_direction_check(root), config)
+    append_stage(results, qa_stage("production_command_dry_run", ["python3", "scripts/build_production_command.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("production_command_build", ["python3", "scripts/build_production_command.py"], root, timeout=60), config)
+    print("[qa] production_command_validation", flush=True)
+    append_stage(results, production_command_check(root), config)
     append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)
     print("[qa] marketing_intelligence_validation", flush=True)
     append_stage(results, marketing_intelligence_check(root), config)

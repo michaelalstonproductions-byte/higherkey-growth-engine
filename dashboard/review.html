@@ -1191,14 +1191,13 @@
 
       <aside class="left hk-rail">
         <nav class="nav tabs" id="modeTabs">
-          <button class="tab nav-item active" data-icon="⌘" data-mode="dashboard">Home</button>
+          <button class="tab nav-item active" data-icon="⌘" data-mode="command">Command</button>
+          <button class="tab nav-item" data-icon="◆" data-mode="dashboard">Home</button>
           <button class="tab nav-item" data-icon="☷" data-mode="queue">Review</button>
           <button class="tab nav-item" data-icon="▣" data-mode="media">Media</button>
           <button class="tab nav-item" data-icon="✺" data-mode="search">AI Insights</button>
           <button class="tab nav-item" data-icon="⌁" data-mode="marketing">Marketing</button>
           <button class="tab nav-item" data-icon="◎" data-mode="social">Exports</button>
-          <button class="tab nav-item technical-tab" data-icon="♙" data-mode="agents">Agents</button>
-          <button class="tab nav-item technical-tab" data-icon="♬" data-mode="analytics">Analytics</button>
           <button class="tab nav-item utility-tab" data-icon="▤" data-mode="diagnostics">Support</button>
           <button class="tab nav-item utility-tab" data-icon="⚙" data-mode="settings">Settings</button>
         </nav>
@@ -1336,6 +1335,11 @@
         abTestPlan: "../analytics/ab_test_plan.json",
         creativeQualityScorecard: "../analytics/creative_quality_scorecard.json",
         clientCreativePlan: "../analytics/client_creative_plan.json",
+        productionCommandCenter: "../analytics/production_command_center.json",
+        todayActionPlan: "../analytics/today_action_plan.json",
+        contentReadinessBoard: "../analytics/content_readiness_board.json",
+        operatorPriorities: "../analytics/operator_priorities.json",
+        clientDailyPlan: "../analytics/client_daily_plan.json",
         clientTasks: "../analytics/client_tasks.json",
         clientWorkflow: "../analytics/client_workflow.json",
         clientDemo: "../config/client_demo.json",
@@ -1348,13 +1352,13 @@
       const PRODUCTION_KEY = "higherkey.production_mode.v29";
 
       const state = {
-        mode: "dashboard",
+        mode: "command",
         entries: [],
         activeId: null,
         selected: new Set(),
         review: readLocal(REVIEW_KEY, {}),
         priority: readLocal(PRIORITY_KEY, {}),
-        workspace: readLocal(WORKSPACE_KEY, { density: "normal", lastActiveId: null, mode: "dashboard" }),
+        workspace: readLocal(WORKSPACE_KEY, { density: "normal", lastActiveId: null, mode: "command" }),
         production: readLocal(PRODUCTION_KEY, { creativeMode: true, hideTestMedia: true }),
         metadata: { items: [], clusters: [] },
         metadataByClip: {},
@@ -1416,6 +1420,11 @@
         abTestPlan: null,
         creativeQualityScorecard: null,
         clientCreativePlan: null,
+        productionCommandCenter: null,
+        todayActionPlan: null,
+        contentReadinessBoard: null,
+        operatorPriorities: null,
+        clientDailyPlan: null,
         clientTasks: null,
         clientWorkflow: null,
         clientDemo: null,
@@ -1915,6 +1924,114 @@
             <div class="metric"><span>Hook moment</span><strong>${html(hook ? formatTime(hook.timestamp || 0) : "pending")}</strong></div>
             <div class="pills">${chips(labels(entry), true)}${chips(tags(entry))}</div>
             <p class="copy">${html(recommendation?.reason || entry.package?.caption || entry.caption?.caption || "Review this clip to build stronger recommendations.")}</p>
+          </div>
+        `;
+      }
+      function commandActions() {
+        return state.todayActionPlan?.actions || state.todayActionPlan?.next_3_actions || [];
+      }
+      function commandTopPriority() {
+        return state.todayActionPlan?.top_priority || state.productionCommandCenter?.hero?.top_priority || commandActions()[0] || null;
+      }
+      function readinessColumns() {
+        return state.contentReadinessBoard?.columns || state.productionCommandCenter?.content_readiness_board?.columns || [];
+      }
+      function commandStatusLabel() {
+        return state.productionCommandCenter?.status || state.clientDailyPlan?.status || (state.clientTasks?.running_count ? "Processing" : "Ready");
+      }
+      function commandCard(title, value, label) {
+        return `<section class="small-panel"><div class="panel-title">${html(title)}</div><strong>${html(value ?? "0")}</strong><p class="muted">${html(label || "")}</p></section>`;
+      }
+      function todayActionPlanHtml() {
+        const actions = commandActions();
+        return actions.slice(0, 8).map((item) => `
+          <div class="performance-record" data-command-action="${html(item.action_id || "")}">
+            <strong>${html(item.title || "Action")}</strong>
+            <p>${html(item.client_message || item.why_it_matters || item.expected_impact || "")}</p>
+            <p><strong>${html(item.category || "action")}</strong> · ${html(item.effort || "local")} · ${html(item.due_label || "Today")}</p>
+          </div>
+        `).join("") || `<div class="empty-state"><h2>Build Today's Plan</h2><p>Generate a daily operator plan from clips, campaigns, creative direction, exports, and manual results.</p><button class="btn red" data-desktop-action="build-production-command">Build Today's Plan</button><p class="muted">Static mode: run python3 scripts/build_production_command.py</p></div>`;
+      }
+      function readinessBoardHtml() {
+        const columns = readinessColumns();
+        if (!columns.length) return `<div class="empty-state">Build Today's Plan to see content readiness.</div>`;
+        return `<div class="campaign-board compact-board">${columns.map((column) => `
+          <section class="campaign-column">
+            <h3>${html(column.name)}</h3>
+            ${(column.cards || []).slice(0, 6).map((card) => `
+              <div class="campaign-card">
+                <strong>${html(card.title || "Content item")}</strong>
+                <p>${html(card.next_action || "Next action pending")}</p>
+                <div class="pills">${card.clip_id ? `<span>${html(card.clip_id)}</span>` : ""}${card.platform ? `<span>${html(card.platform)}</span>` : ""}${card.priority ? `<span>Priority ${html(card.priority)}</span>` : ""}</div>
+              </div>
+            `).join("") || `<div class="muted">Nothing here.</div>`}
+          </section>
+        `).join("")}</div>`;
+      }
+      function operatorPrioritiesHtml() {
+        const priorities = state.operatorPriorities || {};
+        const rows = [
+          ["Highest value clip", priorities.highest_value_clip?.title || priorities.highest_value_clip?.clip_id || "Needs review data"],
+          ["Best next post", priorities.best_next_post?.clip_id || priorities.best_next_post?.title || "Prepare a pack"],
+          ["Best platform", priorities.best_next_platform || "Manual upload"],
+          ["Creative test", priorities.best_next_creative_test?.hypothesis || "Build Creative Direction"],
+          ["Campaign move", priorities.best_next_campaign_move?.title || "Build Growth Strategy"],
+          ["Shoot/import idea", priorities.best_next_shoot_or_import_idea?.title || "Import more footage"],
+          ["Bottleneck", priorities.biggest_bottleneck || "None"],
+          ["Warning", priorities.main_warning || "Ready"]
+        ];
+        return rows.map(([label, value]) => `<div class="metric"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join("");
+      }
+      function manualUploadQueueHtml() {
+        const posts = state.todayActionPlan?.posts_to_upload_manually || [];
+        return posts.slice(0, 6).map((item) => `<div class="performance-record"><strong>${html(item.clip_id || "Prepared pack")}</strong><p>${html(item.platform || item.platform_key || "Manual upload")} · ${html(item.folder || item.output_dir || "Social Packs folder")}</p></div>`).join("") || `<div class="empty-state">No manual upload packs waiting. Export approved clips when ready.</div>`;
+      }
+      function commandHeroHtml() {
+        const top = commandTopPriority();
+        return `
+          <section class="ai-hero command-hero">
+            <div>
+              <span class="eyebrow">Production Command Center</span>
+              <h1>Today's Content Command</h1>
+              <p>${html(top?.client_message || top?.title || "Build a daily plan from clips, campaigns, creative assets, exports, and manual results.")}</p>
+            </div>
+            <div class="hero-actions">
+              <span class="status-pill">${html(commandStatusLabel())}</span>
+              <button class="btn red" data-desktop-action="build-production-command">Build Today's Plan</button>
+              <button class="btn" data-desktop-action="open-social-exports">Open Social Packs</button>
+              <button class="btn" data-desktop-action="import-footage">Import Footage</button>
+            </div>
+          </section>
+        `;
+      }
+      function renderCommandView() {
+        const cards = state.productionCommandCenter?.top_cards || {};
+        const top = commandTopPriority();
+        return `
+          <div class="view dashboard-view command-view">
+            ${commandHeroHtml()}
+            <div class="dashboard-grid-secondary">
+              ${commandCard("Ready to Review", cards.ready_to_review ?? state.todayActionPlan?.clips_to_review?.length ?? 0, "Clips waiting for decisions")}
+              ${commandCard("Ready to Export", cards.ready_to_export ?? state.todayActionPlan?.packs_to_export?.length ?? 0, "Approved clips needing packs")}
+              ${commandCard("Ready to Upload", cards.ready_to_upload ?? state.todayActionPlan?.posts_to_upload_manually?.length ?? 0, "Manual upload packs")}
+              ${commandCard("Needs Creative", cards.needs_creative ?? 0, "Hooks, captions, scripts, tests")}
+              ${commandCard("Results to Record", cards.results_to_record ?? state.todayActionPlan?.results_to_record?.length ?? 0, "Manual performance entries")}
+              ${commandCard("Best Next Post", cards.best_next_post?.clip_id || top?.linked_clip_id || "Plan", "Highest leverage next move")}
+            </div>
+            <div class="client-dashboard-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Today's Action Plan</div><div>Daily execution</div></div><div style="padding:14px">${todayActionPlanHtml()}</div></section>
+              <div class="client-rail">
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Operator Priorities</div></div><div style="padding:14px">${operatorPrioritiesHtml()}</div></section>
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Manual Upload Queue</div></div><div style="padding:14px">${manualUploadQueueHtml()}</div></section>
+              </div>
+            </div>
+            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Content Readiness Board</div><div>What is ready, blocked, or waiting</div></div><div style="padding:14px">${readinessBoardHtml()}</div></section>
+            <div class="dashboard-grid-secondary">
+              <section class="small-panel"><div class="panel-title">Creative Work Needed</div>${(state.todayActionPlan?.recommended_shoots_or_imports || []).slice(0, 3).map((item) => `<p>${html(item.title || item.hook || "New creative asset")}</p>`).join("") || `<p class="muted">Build Creative Direction for next assets.</p>`}<button class="btn" data-desktop-action="build-creative-direction">Build Creative Direction</button></section>
+              <section class="small-panel"><div class="panel-title">Campaign Attention</div>${(state.todayActionPlan?.campaign_items_needing_attention || []).slice(0, 3).map((item) => `<p>${html(item.title || item.clip_id || "Campaign item")}</p>`).join("") || `<p class="muted">No campaign blockers listed.</p>`}<button class="btn" data-desktop-action="go-marketing">Open Marketing</button></section>
+              <section class="small-panel"><div class="panel-title">Latest Outputs</div><p class="muted">Marketing and creative briefs stay in the local marketing folder.</p><button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button></section>
+              <section class="small-panel"><div class="panel-title">Quick Actions</div><div class="toolbar"><button class="btn" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="record-post-result">Record Results</button></div></section>
+            </div>
           </div>
         `;
       }
@@ -2501,7 +2618,7 @@
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
-        const views = { dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, search: renderIntelligenceView, marketing: renderMarketingView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
+        const views = { command: renderCommandView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, search: renderIntelligenceView, marketing: renderMarketingView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
         $("mainContent").innerHTML = (views[mode] || renderDashboardView)();
       }
 
@@ -3900,6 +4017,21 @@
         }
         return setNotice("Creative Direction needs attention. Open Support for details.");
       }
+      async function buildProductionCommand() {
+        if (!window.higherkey?.buildProductionCommand) {
+          return setNotice("Static mode: run python3 scripts/build_production_command.py to build Today's Content Command.");
+        }
+        setNotice("Building Today's Content Command...");
+        const result = await window.higherkey.buildProductionCommand();
+        await refreshLiveData();
+        if (result?.code === 0 || result?.parsed?.ok || result?.ok) {
+          state.mode = "command";
+          persistWorkspace();
+          render();
+          return setNotice(`Today's plan ready: ${result.parsed?.actions ?? state.todayActionPlan?.actions?.length ?? 0} actions and ${result.parsed?.ready_to_upload ?? state.todayActionPlan?.posts_to_upload_manually?.length ?? 0} upload-ready packs.`);
+        }
+        return setNotice("Today's plan needs attention. Open Support for details.");
+      }
       async function recordPostResult() {
         const card = state.clientCampaignPlan?.next_post || state.campaignBoard?.cards?.[0] || marketingRecs()[0] || activeEntry();
         const clipId = card?.clip_id || activeEntry()?.clip_id;
@@ -4048,6 +4180,7 @@
             if (action === "build-performance-feedback") return buildPerformanceFeedback();
             if (action === "build-growth-strategy") return buildGrowthStrategy();
             if (action === "build-creative-direction") return buildCreativeDirection();
+            if (action === "build-production-command") return buildProductionCommand();
             if (action === "record-post-result") return recordPostResult();
             if (action === "copy-7-day-plan") return copyCampaignText("7-day");
             if (action === "copy-campaign-brief") return copyCampaignText("brief");
@@ -4198,6 +4331,11 @@
           state.abTestPlan = await optionalJson(PATHS.abTestPlan, null);
           state.creativeQualityScorecard = await optionalJson(PATHS.creativeQualityScorecard, null);
           state.clientCreativePlan = await optionalJson(PATHS.clientCreativePlan, null);
+          state.productionCommandCenter = await optionalJson(PATHS.productionCommandCenter, null);
+          state.todayActionPlan = await optionalJson(PATHS.todayActionPlan, null);
+          state.contentReadinessBoard = await optionalJson(PATHS.contentReadinessBoard, null);
+          state.operatorPriorities = await optionalJson(PATHS.operatorPriorities, null);
+          state.clientDailyPlan = await optionalJson(PATHS.clientDailyPlan, null);
           state.clientTasks = await optionalJson(PATHS.clientTasks, null);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, null);
           state.clientDemo = await optionalJson(PATHS.clientDemo, null);
@@ -4214,7 +4352,7 @@
             metadata: state.metadataByClip[entry.clip_id] || null
           })));
           state.selected = new Set(state.workspace.selected || []);
-          state.mode = state.workspace.mode || "dashboard";
+          state.mode = state.workspace.mode || "command";
           state.activeId = state.workspace.lastActiveId || state.entries[0]?.id || null;
           if (!state.entries.find((entry) => entry.id === state.activeId)) state.activeId = state.entries[0]?.id || null;
           if (state.production.hideTestMedia && state.activeId && isTestEntry(state.entries.find((entry) => entry.id === state.activeId))) {
@@ -4293,6 +4431,11 @@
           state.abTestPlan = await optionalJson(PATHS.abTestPlan, state.abTestPlan);
           state.creativeQualityScorecard = await optionalJson(PATHS.creativeQualityScorecard, state.creativeQualityScorecard);
           state.clientCreativePlan = await optionalJson(PATHS.clientCreativePlan, state.clientCreativePlan);
+          state.productionCommandCenter = await optionalJson(PATHS.productionCommandCenter, state.productionCommandCenter);
+          state.todayActionPlan = await optionalJson(PATHS.todayActionPlan, state.todayActionPlan);
+          state.contentReadinessBoard = await optionalJson(PATHS.contentReadinessBoard, state.contentReadinessBoard);
+          state.operatorPriorities = await optionalJson(PATHS.operatorPriorities, state.operatorPriorities);
+          state.clientDailyPlan = await optionalJson(PATHS.clientDailyPlan, state.clientDailyPlan);
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);
           state.clientDemo = await optionalJson(PATHS.clientDemo, state.clientDemo);
