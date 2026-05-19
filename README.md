@@ -1242,6 +1242,42 @@ Outputs include:
 
 The Command page answers what to do today, which clips are ready, which packs are ready for manual upload, which creative assets are missing, which campaigns need attention, and what to shoot or import next. It remains local-first and manual-upload only. No cloud API, live Instagram API, social posting API, OAuth flow, token storage, or direct posting API is configured.
 
+## V5.7 Operator Autopilot
+
+V5.7 adds a local Operator Autopilot page. It turns Today’s Content Command into a safe action queue so HigherKey can show what it can prepare now, what requires approval, what is blocked, and what has already run.
+
+Build the plan:
+
+```bash
+python3 scripts/build_operator_autopilot.py
+```
+
+Preview the runner:
+
+```bash
+python3 scripts/run_operator_autopilot.py --dry-run
+```
+
+Run only allowlisted safe local actions:
+
+```bash
+python3 scripts/run_operator_autopilot.py --safe-auto --apply
+```
+
+Outputs include:
+
+- `analytics/operator_autopilot.json`
+- `analytics/autopilot_action_queue.json`
+- `analytics/autopilot_approval_queue.json`
+- `analytics/autopilot_run_history.json`
+- `analytics/autopilot_approval_receipts.json`
+- `analytics/client_autopilot_state.json`
+- `out/marketing/operator_autopilot.md`
+- `out/marketing/autopilot_approval_queue.md`
+- `out/marketing/autopilot_run_history.md`
+
+Autopilot can run safe local preparation tasks such as rebuilding marketing, campaign, growth, creative, production, workflow, runtime, task, observability, and trial readiness outputs. Approval-required actions stay queued for the operator. Autopilot never posts to social platforms, never calls cloud or live Instagram APIs, and never deletes or overwrites original footage automatically.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

@@ -1452,6 +1452,52 @@ async function getTodayActionPlan() {
   };
 }
 
+async function buildOperatorAutopilot() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_operator_autopilot.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getOperatorAutopilot() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    autopilot: await readAnalyticsJson("operator_autopilot.json", {}),
+    actionQueue: await readAnalyticsJson("autopilot_action_queue.json", {}),
+    approvalQueue: await readAnalyticsJson("autopilot_approval_queue.json", {}),
+    runHistory: await readAnalyticsJson("autopilot_run_history.json", {}),
+    clientState: await readAnalyticsJson("client_autopilot_state.json", {})
+  };
+}
+
+async function runOperatorAutopilotSafe() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/run_operator_autopilot.py", "--dry-run"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function approveAutopilotAction(_event, actionId) {
+  if (!actionId) return { ok: false, status: "missing_action_id", message: "Select an autopilot action first." };
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/run_operator_autopilot.py", "--approve-action-id", String(actionId)]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function openMarketingFolder() {
   const folder = path.join(activeProjectRoot, "out", "marketing");
   await fsp.mkdir(folder, { recursive: true });
@@ -1756,6 +1802,10 @@ function registerIpc() {
   ipcMain.handle("production:buildCommand", buildProductionCommand);
   ipcMain.handle("production:getCommandCenter", getProductionCommandCenter);
   ipcMain.handle("production:getTodayActionPlan", getTodayActionPlan);
+  ipcMain.handle("autopilot:build", buildOperatorAutopilot);
+  ipcMain.handle("autopilot:get", getOperatorAutopilot);
+  ipcMain.handle("autopilot:runSafe", runOperatorAutopilotSafe);
+  ipcMain.handle("autopilot:approveAction", approveAutopilotAction);
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);

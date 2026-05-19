@@ -3,6 +3,6 @@
   "build_status": "release-candidate",
   "local_first_statement": "HigherKey Operator OS runs locally. No cloud APIs or social APIs are configured.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "Production Content Command Center",
-  "version": "V5.6"
+  "release_name": "Operator Autopilot",
+  "version": "V5.7"
 }

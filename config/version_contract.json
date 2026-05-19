@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.6.0",
-  "release_version": "V5.6",
+  "app_version": "5.7.0",
+  "release_version": "V5.7",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -113,6 +113,12 @@
       "to": "V5.6",
       "safe": true,
       "notes": "Add local Production Content Command Center, today action plan, content readiness board, operator priorities, and daily plan outputs without cloud or social posting APIs."
+    },
+    {
+      "from": "V5.6",
+      "to": "V5.7",
+      "safe": true,
+      "notes": "Add local Operator Autopilot planning, safe-auto queue, approval queue, run history, and local approval receipts without cloud or social posting APIs."
     }
   ],
   "required_runtime_files": [

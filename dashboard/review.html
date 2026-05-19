@@ -1192,6 +1192,7 @@
       <aside class="left hk-rail">
         <nav class="nav tabs" id="modeTabs">
           <button class="tab nav-item active" data-icon="⌘" data-mode="command">Command</button>
+          <button class="tab nav-item" data-icon="◈" data-mode="autopilot">Autopilot</button>
           <button class="tab nav-item" data-icon="◆" data-mode="dashboard">Home</button>
           <button class="tab nav-item" data-icon="☷" data-mode="queue">Review</button>
           <button class="tab nav-item" data-icon="▣" data-mode="media">Media</button>
@@ -1340,6 +1341,12 @@
         contentReadinessBoard: "../analytics/content_readiness_board.json",
         operatorPriorities: "../analytics/operator_priorities.json",
         clientDailyPlan: "../analytics/client_daily_plan.json",
+        operatorAutopilot: "../analytics/operator_autopilot.json",
+        autopilotActionQueue: "../analytics/autopilot_action_queue.json",
+        autopilotApprovalQueue: "../analytics/autopilot_approval_queue.json",
+        autopilotRunHistory: "../analytics/autopilot_run_history.json",
+        autopilotApprovalReceipts: "../analytics/autopilot_approval_receipts.json",
+        clientAutopilotState: "../analytics/client_autopilot_state.json",
         clientTasks: "../analytics/client_tasks.json",
         clientWorkflow: "../analytics/client_workflow.json",
         clientDemo: "../config/client_demo.json",
@@ -1425,6 +1432,12 @@
         contentReadinessBoard: null,
         operatorPriorities: null,
         clientDailyPlan: null,
+        operatorAutopilot: null,
+        autopilotActionQueue: null,
+        autopilotApprovalQueue: null,
+        autopilotRunHistory: null,
+        autopilotApprovalReceipts: null,
+        clientAutopilotState: null,
         clientTasks: null,
         clientWorkflow: null,
         clientDemo: null,
@@ -2035,6 +2048,93 @@
           </div>
         `;
       }
+      function autopilotActions() {
+        return state.autopilotActionQueue?.actions || state.operatorAutopilot?.action_queue?.actions || [];
+      }
+      function autopilotApprovals() {
+        return state.autopilotApprovalQueue?.actions || state.operatorAutopilot?.approval_queue?.actions || [];
+      }
+      function autopilotRuns() {
+        return state.autopilotRunHistory?.runs || state.operatorAutopilot?.run_history?.runs || [];
+      }
+      function autopilotReceipts() {
+        return state.autopilotApprovalReceipts?.receipts || state.operatorAutopilot?.approval_receipts?.receipts || [];
+      }
+      function autopilotTopCards() {
+        return state.operatorAutopilot?.top_cards || {
+          safe_actions_ready: autopilotActions().filter((item) => item.safety_level === "safe_auto").length,
+          awaiting_approval: autopilotApprovals().length,
+          completed_today: autopilotRuns().filter((item) => item.status === "completed").length,
+          blocked: autopilotActions().filter((item) => item.safety_level === "blocked").length,
+          next_safe_run: autopilotActions().find((item) => item.safety_level === "safe_auto")
+        };
+      }
+      function autopilotActionCard(item) {
+        const level = item.safety_level || "approval_required";
+        return `
+          <div class="campaign-card ${level === "safe_auto" ? "ready" : level === "blocked" ? "danger" : ""}">
+            <div class="row between"><strong>${html(item.title || "Autopilot action")}</strong><span class="pill">${html(level.replace("_", " "))}</span></div>
+            <p>${html(item.reason || item.client_message || "Local action prepared.")}</p>
+            <div class="small-meta">${html(item.expected_output || "Updated local outputs.")}</div>
+            <div class="small-meta">${html(Array.isArray(item.command) ? item.command.join(" ") : "Approval required")}</div>
+          </div>
+        `;
+      }
+      function autopilotQueueHtml(filter) {
+        const items = autopilotActions().filter((item) => !filter || filter(item));
+        return items.slice(0, 8).map(autopilotActionCard).join("") || `<div class="empty-state"><h3>No actions here.</h3><p>Build an Autopilot Plan to refresh local recommendations.</p></div>`;
+      }
+      function autopilotRunsHtml() {
+        return autopilotRuns().slice(-6).reverse().map((item) => `
+          <div class="activity-row"><span>${html(item.title || item.action_id || "Autopilot run")}</span><strong>${html(item.status || "recorded")}</strong></div>
+        `).join("") || `<p class="muted">No safe-auto runs yet.</p>`;
+      }
+      function autopilotReceiptsHtml() {
+        return autopilotReceipts().slice(-6).reverse().map((item) => `
+          <div class="activity-row"><span>${html(item.approval_scope || item.action_id || "Approval receipt")}</span><strong>${html((item.approved_at || "").slice(0, 10))}</strong></div>
+        `).join("") || `<p class="muted">No approval receipts yet.</p>`;
+      }
+      function renderAutopilotView() {
+        const cards = autopilotTopCards();
+        const nextSafe = cards.next_safe_run || autopilotActions().find((item) => item.safety_level === "safe_auto");
+        return `
+          <div class="view dashboard-view command-view autopilot-view">
+            <section class="hero ai-intake-hero">
+              <div>
+                <div class="eyebrow">Operator Autopilot</div>
+                <h1>HigherKey can prepare the next moves. You approve anything sensitive.</h1>
+                <p>HigherKey prepares local actions. You stay in control. Manual upload only. No direct posting APIs.</p>
+              </div>
+              <div class="hero-actions">
+                <button class="btn red" data-desktop-action="build-autopilot-plan">Build Autopilot Plan</button>
+                <button class="btn" data-desktop-action="run-autopilot-safe">Run Safe Auto</button>
+                <button class="btn" data-desktop-action="build-production-command">Refresh Command Center</button>
+              </div>
+            </section>
+            <div class="dashboard-grid-secondary">
+              ${commandCard("Safe Actions Ready", cards.safe_actions_ready ?? 0, "Local tasks HigherKey can run")}
+              ${commandCard("Awaiting Approval", cards.awaiting_approval ?? 0, "Sensitive actions need you")}
+              ${commandCard("Completed Today", cards.completed_today ?? 0, "Safe local runs")}
+              ${commandCard("Blocked", cards.blocked ?? 0, "Never automatic")}
+              ${commandCard("Next Safe Run", nextSafe?.title || "None", "Prepared local action")}
+              ${commandCard("Manual Upload", "Only", "No direct posting APIs")}
+            </div>
+            <div class="client-dashboard-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Autopilot Queue</div><div>Prepared local actions</div></div><div style="padding:14px">${autopilotQueueHtml()}</div></section>
+              <div class="client-rail">
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Approval Queue</div></div><div style="padding:14px">${autopilotQueueHtml((item) => item.approval_required)}</div></section>
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Safe Auto Actions</div></div><div style="padding:14px">${autopilotQueueHtml((item) => item.safety_level === "safe_auto")}</div></section>
+              </div>
+            </div>
+            <div class="dashboard-grid-secondary">
+              <section class="small-panel"><div class="panel-title">Blocked Actions</div>${autopilotQueueHtml((item) => item.safety_level === "blocked")}</section>
+              <section class="small-panel"><div class="panel-title">Recent Runs</div>${autopilotRunsHtml()}</section>
+              <section class="small-panel"><div class="panel-title">Approval Receipts</div>${autopilotReceiptsHtml()}</section>
+              <section class="small-panel"><div class="panel-title">Next Step</div><p class="muted">Run safe local actions, then approve exports or uploads manually.</p><div class="toolbar"><button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button></div></section>
+            </div>
+          </div>
+        `;
+      }
       function renderDashboardView() {
         const entries = productionEntries();
         const approved = approvedCount(entries);
@@ -2618,7 +2718,7 @@
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
-        const views = { command: renderCommandView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, search: renderIntelligenceView, marketing: renderMarketingView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
+        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, search: renderIntelligenceView, marketing: renderMarketingView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
         $("mainContent").innerHTML = (views[mode] || renderDashboardView)();
       }
 
@@ -4032,6 +4132,31 @@
         }
         return setNotice("Today's plan needs attention. Open Support for details.");
       }
+      async function buildOperatorAutopilot() {
+        if (!window.higherkey?.buildOperatorAutopilot) {
+          return setNotice("Static mode: run python3 scripts/build_operator_autopilot.py to build Operator Autopilot.");
+        }
+        setNotice("Building Operator Autopilot...");
+        const result = await window.higherkey.buildOperatorAutopilot();
+        await refreshLiveData();
+        if (result?.code === 0 || result?.parsed?.ok || result?.ok) {
+          state.mode = "autopilot";
+          persistWorkspace();
+          render();
+          return setNotice(`Autopilot ready: ${result.parsed?.safe_actions_ready ?? state.clientAutopilotState?.safe_actions_ready ?? 0} safe actions and ${result.parsed?.awaiting_approval ?? state.clientAutopilotState?.awaiting_approval ?? 0} approvals.`);
+        }
+        return setNotice("Autopilot needs attention. Open Support for details.");
+      }
+      async function runOperatorAutopilotSafe() {
+        if (!window.higherkey?.runOperatorAutopilotSafe) {
+          return setNotice("Static mode: run python3 scripts/run_operator_autopilot.py --dry-run to preview safe actions.");
+        }
+        setNotice("Previewing safe autopilot actions...");
+        const result = await window.higherkey.runOperatorAutopilotSafe();
+        await refreshLiveData();
+        render();
+        return setNotice(result?.parsed?.message || "Safe autopilot dry-run complete. No sensitive actions were executed.");
+      }
       async function recordPostResult() {
         const card = state.clientCampaignPlan?.next_post || state.campaignBoard?.cards?.[0] || marketingRecs()[0] || activeEntry();
         const clipId = card?.clip_id || activeEntry()?.clip_id;
@@ -4159,6 +4284,7 @@
             if (action === "hide-test-media") return setHideTestMedia(true);
             if (action === "show-test-media") return setHideTestMedia(false);
             if (action === "go-queue") { state.mode = "queue"; persistWorkspace(); return render(); }
+            if (action === "go-autopilot") { state.mode = "autopilot"; persistWorkspace(); return render(); }
             if (action === "go-social") { state.mode = "social"; persistWorkspace(); return render(); }
             if (action === "go-marketing") { state.mode = "marketing"; persistWorkspace(); return render(); }
             if (action === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); return render(); }
@@ -4181,6 +4307,8 @@
             if (action === "build-growth-strategy") return buildGrowthStrategy();
             if (action === "build-creative-direction") return buildCreativeDirection();
             if (action === "build-production-command") return buildProductionCommand();
+            if (action === "build-autopilot-plan") return buildOperatorAutopilot();
+            if (action === "run-autopilot-safe") return runOperatorAutopilotSafe();
             if (action === "record-post-result") return recordPostResult();
             if (action === "copy-7-day-plan") return copyCampaignText("7-day");
             if (action === "copy-campaign-brief") return copyCampaignText("brief");
@@ -4436,6 +4564,12 @@
           state.contentReadinessBoard = await optionalJson(PATHS.contentReadinessBoard, state.contentReadinessBoard);
           state.operatorPriorities = await optionalJson(PATHS.operatorPriorities, state.operatorPriorities);
           state.clientDailyPlan = await optionalJson(PATHS.clientDailyPlan, state.clientDailyPlan);
+          state.operatorAutopilot = await optionalJson(PATHS.operatorAutopilot, state.operatorAutopilot);
+          state.autopilotActionQueue = await optionalJson(PATHS.autopilotActionQueue, state.autopilotActionQueue);
+          state.autopilotApprovalQueue = await optionalJson(PATHS.autopilotApprovalQueue, state.autopilotApprovalQueue);
+          state.autopilotRunHistory = await optionalJson(PATHS.autopilotRunHistory, state.autopilotRunHistory);
+          state.autopilotApprovalReceipts = await optionalJson(PATHS.autopilotApprovalReceipts, state.autopilotApprovalReceipts);
+          state.clientAutopilotState = await optionalJson(PATHS.clientAutopilotState, state.clientAutopilotState);
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);
           state.clientDemo = await optionalJson(PATHS.clientDemo, state.clientDemo);
