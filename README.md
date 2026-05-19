@@ -1307,6 +1307,34 @@ Outputs include:
 
 Safe-auto actions are limited to allowlisted local build/report scripts. Approval-required actions need local receipts. Blocked actions never run. The runner uses argument arrays and validates script paths inside the project root; arbitrary shell strings, original footage deletion, cloud APIs, live platform APIs, and social posting APIs are not allowed.
 
+## V5.9 Autopilot Run Console
+
+V5.9 adds a local Autopilot Run Console so the operator can see the safe run queue, recent runs, failed/retryable actions, approval queue, and safety preflight state in one place.
+
+Build the console:
+
+```bash
+python3 scripts/build_autopilot_console.py
+```
+
+Plan retry for failed safe-auto actions without executing anything:
+
+```bash
+python3 scripts/run_operator_autopilot.py --retry-failed --dry-run
+```
+
+Outputs include:
+
+- `analytics/autopilot_console.json`
+- `analytics/autopilot_run_console.json`
+- `analytics/autopilot_run_summary.json`
+- `analytics/client_autopilot_console.json`
+- `out/marketing/autopilot_console.md`
+- `out/marketing/autopilot_run_summary.md`
+- `out/marketing/autopilot_safety_summary.md`
+
+The console is observability only unless the operator explicitly runs an allowlisted safe-auto action. Approval-required actions still require local receipts, blocked actions never run, and HigherKey remains manual-upload only with no cloud APIs or social posting APIs.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

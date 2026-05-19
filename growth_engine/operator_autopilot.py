@@ -507,3 +507,94 @@ def run_safe_actions(root: Path, *, safe_auto: bool = False, action_id: str | No
         "local_only": True,
         "manual_upload_only": True,
     }
+
+
+def retry_failed_actions(root: Path, *, retry_run_id: str | None = None, dry_run: bool = True) -> dict[str, Any]:
+    project_root = root.resolve()
+    if not (project_root / "analytics" / "autopilot_action_queue.json").exists():
+        build_operator_autopilot(project_root, dry_run=False)
+    history = load_json(_history_path(project_root), {"version": 1, "local_only": True, "runs": []})
+    runs = [item for item in safe_list(history.get("runs")) if isinstance(item, dict)]
+    failed_runs = [item for item in runs if item.get("status") == "failed"]
+    if retry_run_id:
+        failed_runs = [item for item in failed_runs if item.get("run_id") == retry_run_id]
+    actions = {item.get("action_id"): item for item in _load_action_queue(project_root) if item.get("action_id")}
+    results: list[dict[str, Any]] = []
+    for failed in failed_runs:
+        action = actions.get(failed.get("action_id"))
+        started_at = utc_now()
+        run_id = _stable_id("retry", failed.get("run_id"), started_at)
+        if not action:
+            result = {
+                "run_id": run_id,
+                "retry_of_run_id": failed.get("run_id"),
+                "action_id": failed.get("action_id"),
+                "status": "blocked",
+                "dry_run": True,
+                "safety_level": failed.get("safety_level"),
+                "started_at": started_at,
+                "completed_at": utc_now(),
+                "return_code": None,
+                "stdout_tail": "",
+                "stderr_tail": "Original action is no longer in the Autopilot queue.",
+                "local_only": True,
+                "manual_upload_only": True,
+            }
+            _append_run(project_root, result)
+            results.append(result)
+            continue
+        validation = validate_autopilot_command(project_root, action.get("command"), safety_level=str(action.get("safety_level") or ""))
+        if action.get("safety_level") != "safe_auto" or not validation.get("ok"):
+            result = {
+                "run_id": run_id,
+                "retry_of_run_id": failed.get("run_id"),
+                "action_id": action.get("action_id"),
+                "title": action.get("title"),
+                "command": action.get("command"),
+                "safety_level": action.get("safety_level"),
+                "dry_run": True,
+                "started_at": started_at,
+                "completed_at": utc_now(),
+                "status": "blocked",
+                "return_code": None,
+                "stdout_tail": "",
+                "stderr_tail": validation.get("reason") or "Retry is only available for safe-auto allowlisted actions.",
+                "expected_output": action.get("expected_output"),
+                "local_only": True,
+                "manual_upload_only": True,
+            }
+            _append_run(project_root, result)
+            results.append(result)
+            continue
+        result = {
+            "run_id": run_id,
+            "retry_of_run_id": failed.get("run_id"),
+            "action_id": action.get("action_id"),
+            "title": action.get("title"),
+            "command": action.get("command"),
+            "args": validation.get("args"),
+            "safety_level": action.get("safety_level"),
+            "dry_run": True,
+            "started_at": started_at,
+            "completed_at": utc_now(),
+            "status": "retry_planned",
+            "return_code": None,
+            "stdout_tail": "Retry dry-run planned. No action executed.",
+            "stderr_tail": "",
+            "expected_output": action.get("expected_output"),
+            "receipt_id": None,
+            "local_only": True,
+            "manual_upload_only": True,
+        }
+        _append_run(project_root, result)
+        results.append(result)
+    return {
+        "ok": True,
+        "dry_run": True,
+        "status": "retry_planned" if results else "no_failed_runs",
+        "retry_run_id": retry_run_id,
+        "candidate_count": len(failed_runs),
+        "results": results,
+        "local_only": True,
+        "manual_upload_only": True,
+    }

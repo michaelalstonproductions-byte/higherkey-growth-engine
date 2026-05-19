@@ -1348,6 +1348,10 @@
         autopilotApprovalReceipts: "../analytics/autopilot_approval_receipts.json",
         autopilotSafetyReport: "../analytics/autopilot_safety_report.json",
         clientAutopilotState: "../analytics/client_autopilot_state.json",
+        autopilotConsole: "../analytics/autopilot_console.json",
+        autopilotRunConsole: "../analytics/autopilot_run_console.json",
+        autopilotRunSummary: "../analytics/autopilot_run_summary.json",
+        clientAutopilotConsole: "../analytics/client_autopilot_console.json",
         clientTasks: "../analytics/client_tasks.json",
         clientWorkflow: "../analytics/client_workflow.json",
         clientDemo: "../config/client_demo.json",
@@ -1440,6 +1444,10 @@
         autopilotApprovalReceipts: null,
         autopilotSafetyReport: null,
         clientAutopilotState: null,
+        autopilotConsole: null,
+        autopilotRunConsole: null,
+        autopilotRunSummary: null,
+        clientAutopilotConsole: null,
         clientTasks: null,
         clientWorkflow: null,
         clientDemo: null,
@@ -2096,8 +2104,42 @@
           <div class="activity-row"><span>${html(item.approval_scope || item.action_id || "Approval receipt")}</span><strong>${html((item.approved_at || "").slice(0, 10))}</strong></div>
         `).join("") || `<p class="muted">No approval receipts yet.</p>`;
       }
+      function autopilotConsoleData() {
+        return state.autopilotConsole || {};
+      }
+      function autopilotConsoleRuns() {
+        return state.autopilotRunConsole?.recent_runs || state.autopilotConsole?.recent_runs || autopilotRuns();
+      }
+      function autopilotRunCard(item) {
+        return `
+          <div class="campaign-card ${item.status === "failed" ? "danger" : item.retry_available ? "ready" : ""}">
+            <div class="row between"><strong>${html(item.title || item.action_id || "Autopilot run")}</strong><span class="pill">${html(item.status || "recorded")}</span></div>
+            <p>${html(item.output_summary || item.stdout_tail || item.stderr_tail || "Local run recorded.")}</p>
+            <div class="small-meta">${html(Array.isArray(item.command) ? item.command.join(" ") : item.command || "Local command")}</div>
+            <div class="small-meta">${html(item.retry_available ? "Retry available as dry-run" : item.safety_level || "safe local record")}</div>
+          </div>
+        `;
+      }
+      function autopilotRunConsoleHtml() {
+        const runs = autopilotConsoleRuns();
+        return runs.slice(0, 10).map(autopilotRunCard).join("") || `<div class="empty-state"><h3>No runs yet</h3><p>Run Safe Auto Dry Run to preview local preparation tasks.</p></div>`;
+      }
+      function autopilotSafetySummaryHtml() {
+        const summary = autopilotConsoleData().safety_summary || {};
+        const report = state.autopilotSafetyReport || {};
+        return `
+          <div class="metric"><span>Policy</span><strong>${html(summary.policy_status || "local")}</strong></div>
+          <div class="metric"><span>Preflight</span><strong>${html(summary.preflight_status || report.status || "not run")}</strong></div>
+          <div class="metric"><span>Manual upload</span><strong>${html(summary.manual_upload_only === false ? "Review" : "Only")}</strong></div>
+          <div class="metric"><span>Social posting</span><strong>${html(summary.social_posting_allowed ? "Blocked" : "Disabled")}</strong></div>
+          <div class="metric"><span>Cloud APIs</span><strong>${html(summary.cloud_apis_allowed ? "Blocked" : "Disabled")}</strong></div>
+        `;
+      }
       function renderAutopilotView() {
+        const autopilotMode = state.workspace.autopilotViewMode || "overview";
         const cards = autopilotTopCards();
+        const consoleData = autopilotConsoleData();
+        const summary = consoleData.queue_summary || {};
         const nextSafe = cards.next_safe_run || autopilotActions().find((item) => item.safety_level === "safe_auto");
         return `
           <div class="view dashboard-view command-view autopilot-view">
@@ -2112,25 +2154,51 @@
                 <button class="btn red" data-desktop-action="build-autopilot-plan">Build Autopilot Plan</button>
                 <button class="btn" data-desktop-action="run-autopilot-safe-dry">Run Safe Auto Dry Run</button>
                 <button class="btn" data-desktop-action="run-autopilot-safe">Run Safe Auto</button>
+                <button class="btn" data-desktop-action="retry-autopilot-failed-dry">Retry Failed Dry Run</button>
+                <button class="btn" data-desktop-action="build-autopilot-console">Build Run Console</button>
                 <button class="btn" data-desktop-action="build-production-command">Refresh Command Center</button>
               </div>
             </section>
-            <div class="dashboard-grid-secondary">
-              ${commandCard("Safety Mode", "Local-only", "Will not delete original footage")}
-              ${commandCard("Safe Actions Ready", cards.safe_actions_ready ?? 0, "Local tasks HigherKey can run")}
-              ${commandCard("Awaiting Approval", cards.awaiting_approval ?? 0, "Sensitive actions need you")}
-              ${commandCard("Completed Today", cards.completed_today ?? 0, "Safe local runs")}
-              ${commandCard("Blocked", cards.blocked ?? 0, "Never automatic")}
-              ${commandCard("Last Preflight", state.autopilotSafetyReport?.status || "Not run", "Policy and command safety")}
-              ${commandCard("Manual Upload", "Only", "No direct posting APIs")}
+            <div class="marketing-mode-tabs">
+              ${[
+                ["overview", "Overview"],
+                ["console", "Run Console"],
+                ["approvals", "Approval Queue"],
+                ["safety", "Safety"],
+                ["history", "History"]
+              ].map(([mode, label]) => `<button class="btn ${autopilotMode === mode ? "active" : ""}" data-autopilot-view="${mode}">${label}</button>`).join("")}
             </div>
-            <div class="client-dashboard-grid">
+            <div class="dashboard-grid-secondary">
+              ${commandCard("Safe Actions Ready", summary.safe_auto ?? cards.safe_actions_ready ?? 0, "Local tasks HigherKey can run")}
+              ${commandCard("Running", summary.running ?? 0, "Current local actions")}
+              ${commandCard("Completed Today", summary.completed ?? cards.completed_today ?? 0, "Safe local runs")}
+              ${commandCard("Failed", summary.failed ?? 0, "Retry by dry-run first")}
+              ${commandCard("Awaiting Approval", summary.awaiting_approval ?? cards.awaiting_approval ?? 0, "Sensitive actions need you")}
+              ${commandCard("Last Preflight", state.autopilotSafetyReport?.status || "Not run", "Policy and command safety")}
+            </div>
+            ${autopilotMode === "overview" ? `<div class="client-dashboard-grid">
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Autopilot Queue</div><div>Prepared local actions</div></div><div style="padding:14px">${autopilotQueueHtml()}</div></section>
               <div class="client-rail">
                 <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Approval Queue</div></div><div style="padding:14px">${autopilotQueueHtml((item) => item.approval_required)}</div></section>
                 <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Safe Auto Actions</div></div><div style="padding:14px">${autopilotQueueHtml((item) => item.safety_level === "safe_auto")}</div></section>
               </div>
-            </div>
+            </div>` : ""}
+            ${autopilotMode === "console" ? `<div class="client-dashboard-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Run Queue</div><div>Safe local preparation tasks</div></div><div style="padding:14px">${autopilotQueueHtml((item) => item.safety_level === "safe_auto")}</div></section>
+              <div class="client-rail">
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Recent Runs</div></div><div style="padding:14px">${autopilotRunConsoleHtml()}</div></section>
+                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Failed / Retryable</div></div><div style="padding:14px">${(consoleData.failed_retryable || []).map(autopilotRunCard).join("") || `<p class="muted">No retryable failures.</p>`}</div></section>
+              </div>
+            </div>` : ""}
+            ${autopilotMode === "approvals" ? `<section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Approval Queue</div><div>You approve sensitive actions.</div></div><div style="padding:14px">${autopilotQueueHtml((item) => item.approval_required)}<button class="btn" data-desktop-action="approve-autopilot-action">Approve Selected Action</button></div></section>` : ""}
+            ${autopilotMode === "safety" ? `<div class="client-dashboard-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Safety Preflight</div><div>Local-only policy</div></div><div style="padding:14px">${autopilotSafetySummaryHtml()}</div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Blocked Actions</div><div>Never automatic</div></div><div style="padding:14px">${autopilotQueueHtml((item) => item.safety_level === "blocked")}</div></section>
+            </div>` : ""}
+            ${autopilotMode === "history" ? `<div class="client-dashboard-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Run History</div><div>Local run records</div></div><div style="padding:14px">${autopilotRunConsoleHtml()}</div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Approval Receipts</div><div>Local confirmations</div></div><div style="padding:14px">${autopilotReceiptsHtml()}</div></section>
+            </div>` : ""}
             <div class="dashboard-grid-secondary">
               <section class="small-panel"><div class="panel-title">Blocked Actions</div>${autopilotQueueHtml((item) => item.safety_level === "blocked")}</section>
               <section class="small-panel"><div class="panel-title">Recent Runs</div>${autopilotRunsHtml()}</section>
@@ -3701,6 +3769,7 @@
         renderModeDetails();
         wireDesktopActions();
         wireMarketingViewActions();
+        wireAutopilotViewActions();
         wireDynamicControls();
       }
 
@@ -4181,6 +4250,26 @@
         render();
         return setNotice(result?.parsed?.ok ? "Autopilot approval receipt created." : "Autopilot approval needs attention.");
       }
+      async function buildAutopilotConsole() {
+        if (!window.higherkey?.buildAutopilotConsole) {
+          return setNotice("Static mode: run python3 scripts/build_autopilot_console.py to build the run console.");
+        }
+        setNotice("Building Autopilot Run Console...");
+        const result = await window.higherkey.buildAutopilotConsole();
+        await refreshLiveData();
+        render();
+        return setNotice(result?.parsed?.ok ? "Autopilot Run Console updated." : "Autopilot Run Console needs attention.");
+      }
+      async function retryAutopilotFailedDryRun() {
+        if (!window.higherkey?.retryAutopilotFailedDryRun) {
+          return setNotice("Static mode: run python3 scripts/run_operator_autopilot.py --retry-failed --dry-run.");
+        }
+        setNotice("Planning retry dry-run for failed safe actions...");
+        const result = await window.higherkey.retryAutopilotFailedDryRun();
+        await refreshLiveData();
+        render();
+        return setNotice(result?.parsed?.status === "no_failed_runs" ? "No failed safe-auto runs to retry." : "Retry dry-run plan recorded.");
+      }
       async function recordPostResult() {
         const card = state.clientCampaignPlan?.next_post || state.campaignBoard?.cards?.[0] || marketingRecs()[0] || activeEntry();
         const clipId = card?.clip_id || activeEntry()?.clip_id;
@@ -4301,6 +4390,16 @@
         });
       }
 
+      function wireAutopilotViewActions() {
+        document.querySelectorAll("[data-autopilot-view]").forEach((button) => {
+          button.onclick = () => {
+            state.workspace.autopilotViewMode = button.dataset.autopilotView || "overview";
+            persistWorkspace();
+            render();
+          };
+        });
+      }
+
       function wireDesktopActions() {
         document.querySelectorAll("[data-desktop-action]").forEach((button) => {
           button.onclick = async () => {
@@ -4336,6 +4435,8 @@
             if (action === "run-autopilot-safe-dry") return runOperatorAutopilotSafe(false);
             if (action === "run-autopilot-safe") return runOperatorAutopilotSafe(true);
             if (action === "approve-autopilot-action") return approveAutopilotAction();
+            if (action === "build-autopilot-console") return buildAutopilotConsole();
+            if (action === "retry-autopilot-failed-dry") return retryAutopilotFailedDryRun();
             if (action === "record-post-result") return recordPostResult();
             if (action === "copy-7-day-plan") return copyCampaignText("7-day");
             if (action === "copy-campaign-brief") return copyCampaignText("brief");
@@ -4598,6 +4699,10 @@
           state.autopilotApprovalReceipts = await optionalJson(PATHS.autopilotApprovalReceipts, state.autopilotApprovalReceipts);
           state.autopilotSafetyReport = await optionalJson(PATHS.autopilotSafetyReport, state.autopilotSafetyReport);
           state.clientAutopilotState = await optionalJson(PATHS.clientAutopilotState, state.clientAutopilotState);
+          state.autopilotConsole = await optionalJson(PATHS.autopilotConsole, state.autopilotConsole);
+          state.autopilotRunConsole = await optionalJson(PATHS.autopilotRunConsole, state.autopilotRunConsole);
+          state.autopilotRunSummary = await optionalJson(PATHS.autopilotRunSummary, state.autopilotRunSummary);
+          state.clientAutopilotConsole = await optionalJson(PATHS.clientAutopilotConsole, state.clientAutopilotConsole);
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);
           state.clientDemo = await optionalJson(PATHS.clientDemo, state.clientDemo);

@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from growth_engine.operator_autopilot import approve_action, build_operator_autopilot, run_safe_actions
+from growth_engine.operator_autopilot import approve_action, build_operator_autopilot, retry_failed_actions, run_safe_actions
 
 
 def main() -> int:
@@ -21,11 +21,15 @@ def main() -> int:
     parser.add_argument("--safe-auto", action="store_true", help="Allow execution of safe-auto allowlisted local actions.")
     parser.add_argument("--action-id", help="Limit to one action id.")
     parser.add_argument("--approve-action-id", help="Record local approval receipt for one action id.")
+    parser.add_argument("--retry-run-id", help="Plan a safe dry-run retry for a failed run id.")
+    parser.add_argument("--retry-failed", action="store_true", help="Plan dry-run retries for failed safe-auto runs.")
     parser.add_argument("--json", action="store_true", help="Print JSON summary.")
     args = parser.parse_args()
     root = Path(args.root)
     build_operator_autopilot(root, dry_run=False)
-    if args.approve_action_id:
+    if args.retry_failed or args.retry_run_id:
+        summary = retry_failed_actions(root.resolve(), retry_run_id=args.retry_run_id, dry_run=True)
+    elif args.approve_action_id:
         summary = approve_action(root.resolve(), args.approve_action_id)
     else:
         summary = run_safe_actions(root, safe_auto=args.safe_auto, action_id=args.action_id, dry_run=not args.apply)

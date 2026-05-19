@@ -1521,6 +1521,39 @@ async function getAutopilotSafetyReport() {
   };
 }
 
+async function buildAutopilotConsole() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_autopilot_console.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getAutopilotConsole() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    console: await readAnalyticsJson("autopilot_console.json", {}),
+    runConsole: await readAnalyticsJson("autopilot_run_console.json", {}),
+    runSummary: await readAnalyticsJson("autopilot_run_summary.json", {}),
+    clientConsole: await readAnalyticsJson("client_autopilot_console.json", {})
+  };
+}
+
+async function retryAutopilotFailedDryRun() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/run_operator_autopilot.py", "--retry-failed", "--dry-run"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function openMarketingFolder() {
   const folder = path.join(activeProjectRoot, "out", "marketing");
   await fsp.mkdir(folder, { recursive: true });
@@ -1831,6 +1864,9 @@ function registerIpc() {
   ipcMain.handle("autopilot:approveAction", approveAutopilotAction);
   ipcMain.handle("autopilot:preflight", runAutopilotPreflight);
   ipcMain.handle("autopilot:getSafetyReport", getAutopilotSafetyReport);
+  ipcMain.handle("autopilot:buildConsole", buildAutopilotConsole);
+  ipcMain.handle("autopilot:getConsole", getAutopilotConsole);
+  ipcMain.handle("autopilot:retryFailedDryRun", retryAutopilotFailedDryRun);
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);

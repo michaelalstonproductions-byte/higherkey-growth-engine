@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.8.0",
-  "release_version": "V5.8",
+  "app_version": "5.9.0",
+  "release_version": "V5.9",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -125,6 +125,12 @@
       "to": "V5.8",
       "safe": true,
       "notes": "Harden Operator Autopilot with an explicit local safety policy, safe command validation, preflight report, richer run receipts, and no shell-string execution."
+    },
+    {
+      "from": "V5.8",
+      "to": "V5.9",
+      "safe": true,
+      "notes": "Add local Autopilot Run Console outputs, retry dry-run planning, approval visibility, and safety summary without cloud or social posting APIs."
     }
   ],
   "required_runtime_files": [

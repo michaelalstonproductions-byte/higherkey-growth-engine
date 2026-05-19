@@ -59,6 +59,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "creative_director.py",
         resources / "app-assets" / "growth_engine" / "production_command.py",
         resources / "app-assets" / "growth_engine" / "operator_autopilot.py",
+        resources / "app-assets" / "growth_engine" / "autopilot_console.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_growth_strategy.py",
@@ -67,6 +68,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "build_operator_autopilot.py",
         resources / "app-assets" / "scripts" / "run_operator_autopilot.py",
         resources / "app-assets" / "scripts" / "autopilot_preflight.py",
+        resources / "app-assets" / "scripts" / "build_autopilot_console.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
     ]
     forbidden = [resources / "app-assets" / name for name in ("analytics", "queue", "clips", "captions", "out", "logs", "content_inbox")]
@@ -683,6 +685,48 @@ def operator_autopilot_check(root: Path) -> dict[str, object]:
     }
 
 
+def autopilot_console_check(root: Path) -> dict[str, object]:
+    json_requirements = {
+        root / "analytics" / "autopilot_console.json": {"local_only": bool, "manual_upload_only": bool, "queue_summary": dict, "recent_runs": list, "approval_summary": dict, "safety_summary": dict},
+        root / "analytics" / "autopilot_run_console.json": {"local_only": bool, "manual_upload_only": bool, "queue": list, "recent_runs": list, "approval_queue": list},
+        root / "analytics" / "autopilot_run_summary.json": {"local_only": bool, "manual_upload_only": bool, "queue_summary": dict},
+        root / "analytics" / "client_autopilot_console.json": {"local_only": bool, "manual_upload_only": bool, "status": str},
+    }
+    required = [
+        *json_requirements.keys(),
+        root / "out" / "marketing" / "autopilot_console.md",
+        root / "out" / "marketing" / "autopilot_run_summary.md",
+        root / "out" / "marketing" / "autopilot_safety_summary.md",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    json_errors = []
+    safety_errors = []
+    for path, expected_fields in json_requirements.items():
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as error:
+            json_errors.append({"path": relative_path(path, root), "error": str(error)})
+            continue
+        for key, expected in expected_fields.items():
+            if key not in payload:
+                json_errors.append({"path": relative_path(path, root), "missing_key": key})
+                continue
+            if not isinstance(payload.get(key), expected):
+                json_errors.append({"path": relative_path(path, root), "key": key, "actual": type(payload.get(key)).__name__})
+        if payload.get("local_only") is not True or payload.get("manual_upload_only") is not True:
+            safety_errors.append({"path": relative_path(path, root), "error": "local/manual flag is invalid"})
+    status = "pass" if not missing and not json_errors and not safety_errors else "fail"
+    return {
+        "name": "autopilot_console_validation",
+        "status": status,
+        "missing": missing,
+        "json_errors": json_errors,
+        "safety_errors": safety_errors,
+    }
+
+
 def beta_checklist_check(root: Path) -> dict[str, object]:
     path = root / "BETA_READINESS_CHECKLIST.md"
     try:
@@ -956,6 +1000,11 @@ def main() -> int:
     append_stage(results, qa_stage("operator_autopilot_safe_auto_dry_run", ["python3", "scripts/run_operator_autopilot.py", "--safe-auto", "--dry-run"], root, timeout=60), config)
     print("[qa] operator_autopilot_validation", flush=True)
     append_stage(results, operator_autopilot_check(root), config)
+    append_stage(results, qa_stage("autopilot_console_dry_run", ["python3", "scripts/build_autopilot_console.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("autopilot_console_build", ["python3", "scripts/build_autopilot_console.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("operator_autopilot_retry_failed_dry_run", ["python3", "scripts/run_operator_autopilot.py", "--retry-failed", "--dry-run"], root, timeout=60), config)
+    print("[qa] autopilot_console_validation", flush=True)
+    append_stage(results, autopilot_console_check(root), config)
     append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)
     print("[qa] marketing_intelligence_validation", flush=True)
     append_stage(results, marketing_intelligence_check(root), config)
