@@ -1278,6 +1278,35 @@ Outputs include:
 
 Autopilot can run safe local preparation tasks such as rebuilding marketing, campaign, growth, creative, production, workflow, runtime, task, observability, and trial readiness outputs. Approval-required actions stay queued for the operator. Autopilot never posts to social platforms, never calls cloud or live Instagram APIs, and never deletes or overwrites original footage automatically.
 
+## V5.8 Operator Autopilot Safety Hardening
+
+V5.8 adds an explicit Autopilot safety policy and preflight report so safe local actions can be validated before any run.
+
+Policy:
+
+- `config/autopilot_policy.json`
+
+Run safety preflight:
+
+```bash
+python3 scripts/autopilot_preflight.py
+```
+
+Run plan and dry-run:
+
+```bash
+python3 scripts/build_operator_autopilot.py
+python3 scripts/run_operator_autopilot.py --safe-auto --dry-run
+```
+
+Outputs include:
+
+- `analytics/autopilot_safety_report.json`
+- `analytics/autopilot_run_history.json`
+- `analytics/autopilot_approval_receipts.json`
+
+Safe-auto actions are limited to allowlisted local build/report scripts. Approval-required actions need local receipts. Blocked actions never run. The runner uses argument arrays and validates script paths inside the project root; arbitrary shell strings, original footage deletion, cloud APIs, live platform APIs, and social posting APIs are not allowed.
+
 ## Smoke Test
 
 The smoke test creates a tiny synthetic video in `content_inbox/`, runs the pipeline, and checks for generated clips, captions, index, and queue output.

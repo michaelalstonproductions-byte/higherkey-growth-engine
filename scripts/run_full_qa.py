@@ -66,6 +66,8 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "build_production_command.py",
         resources / "app-assets" / "scripts" / "build_operator_autopilot.py",
         resources / "app-assets" / "scripts" / "run_operator_autopilot.py",
+        resources / "app-assets" / "scripts" / "autopilot_preflight.py",
+        resources / "app-assets" / "config" / "autopilot_policy.json",
     ]
     forbidden = [resources / "app-assets" / name for name in ("analytics", "queue", "clips", "captions", "out", "logs", "content_inbox")]
     missing = [relative_path(path, root) for path in required if not path.exists()]
@@ -642,6 +644,7 @@ def operator_autopilot_check(root: Path) -> dict[str, object]:
         root / "analytics" / "autopilot_approval_queue.json": {"local_only": bool, "manual_upload_only": bool, "actions": list},
         root / "analytics" / "autopilot_run_history.json": {"local_only": bool, "runs": list},
         root / "analytics" / "client_autopilot_state.json": {"local_only": bool, "manual_upload_only": bool, "status": str},
+        root / "analytics" / "autopilot_safety_report.json": {"local_only": bool, "manual_upload_only": bool, "status": str},
     }
     required = [
         *json_requirements.keys(),
@@ -946,9 +949,11 @@ def main() -> int:
     append_stage(results, qa_stage("production_command_build", ["python3", "scripts/build_production_command.py"], root, timeout=60), config)
     print("[qa] production_command_validation", flush=True)
     append_stage(results, production_command_check(root), config)
+    append_stage(results, qa_stage("autopilot_preflight", ["python3", "scripts/autopilot_preflight.py"], root, timeout=60), config)
     append_stage(results, qa_stage("operator_autopilot_dry_run", ["python3", "scripts/build_operator_autopilot.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("operator_autopilot_build", ["python3", "scripts/build_operator_autopilot.py"], root, timeout=60), config)
     append_stage(results, qa_stage("operator_autopilot_runner_dry_run", ["python3", "scripts/run_operator_autopilot.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("operator_autopilot_safe_auto_dry_run", ["python3", "scripts/run_operator_autopilot.py", "--safe-auto", "--dry-run"], root, timeout=60), config)
     print("[qa] operator_autopilot_validation", flush=True)
     append_stage(results, operator_autopilot_check(root), config)
     append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)

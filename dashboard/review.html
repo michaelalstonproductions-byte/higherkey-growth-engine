@@ -1346,6 +1346,7 @@
         autopilotApprovalQueue: "../analytics/autopilot_approval_queue.json",
         autopilotRunHistory: "../analytics/autopilot_run_history.json",
         autopilotApprovalReceipts: "../analytics/autopilot_approval_receipts.json",
+        autopilotSafetyReport: "../analytics/autopilot_safety_report.json",
         clientAutopilotState: "../analytics/client_autopilot_state.json",
         clientTasks: "../analytics/client_tasks.json",
         clientWorkflow: "../analytics/client_workflow.json",
@@ -1437,6 +1438,7 @@
         autopilotApprovalQueue: null,
         autopilotRunHistory: null,
         autopilotApprovalReceipts: null,
+        autopilotSafetyReport: null,
         clientAutopilotState: null,
         clientTasks: null,
         clientWorkflow: null,
@@ -2106,17 +2108,20 @@
                 <p>HigherKey prepares local actions. You stay in control. Manual upload only. No direct posting APIs.</p>
               </div>
               <div class="hero-actions">
+                <button class="btn" data-desktop-action="run-autopilot-preflight">Run Safety Preflight</button>
                 <button class="btn red" data-desktop-action="build-autopilot-plan">Build Autopilot Plan</button>
+                <button class="btn" data-desktop-action="run-autopilot-safe-dry">Run Safe Auto Dry Run</button>
                 <button class="btn" data-desktop-action="run-autopilot-safe">Run Safe Auto</button>
                 <button class="btn" data-desktop-action="build-production-command">Refresh Command Center</button>
               </div>
             </section>
             <div class="dashboard-grid-secondary">
+              ${commandCard("Safety Mode", "Local-only", "Will not delete original footage")}
               ${commandCard("Safe Actions Ready", cards.safe_actions_ready ?? 0, "Local tasks HigherKey can run")}
               ${commandCard("Awaiting Approval", cards.awaiting_approval ?? 0, "Sensitive actions need you")}
               ${commandCard("Completed Today", cards.completed_today ?? 0, "Safe local runs")}
               ${commandCard("Blocked", cards.blocked ?? 0, "Never automatic")}
-              ${commandCard("Next Safe Run", nextSafe?.title || "None", "Prepared local action")}
+              ${commandCard("Last Preflight", state.autopilotSafetyReport?.status || "Not run", "Policy and command safety")}
               ${commandCard("Manual Upload", "Only", "No direct posting APIs")}
             </div>
             <div class="client-dashboard-grid">
@@ -2129,7 +2134,7 @@
             <div class="dashboard-grid-secondary">
               <section class="small-panel"><div class="panel-title">Blocked Actions</div>${autopilotQueueHtml((item) => item.safety_level === "blocked")}</section>
               <section class="small-panel"><div class="panel-title">Recent Runs</div>${autopilotRunsHtml()}</section>
-              <section class="small-panel"><div class="panel-title">Approval Receipts</div>${autopilotReceiptsHtml()}</section>
+              <section class="small-panel"><div class="panel-title">Approval Receipts</div>${autopilotReceiptsHtml()}<button class="btn" data-desktop-action="approve-autopilot-action">Approve Selected Action</button></section>
               <section class="small-panel"><div class="panel-title">Next Step</div><p class="muted">Run safe local actions, then approve exports or uploads manually.</p><div class="toolbar"><button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button></div></section>
             </div>
           </div>
@@ -4147,15 +4152,34 @@
         }
         return setNotice("Autopilot needs attention. Open Support for details.");
       }
-      async function runOperatorAutopilotSafe() {
+      async function runAutopilotPreflight() {
+        if (!window.higherkey?.runAutopilotPreflight) {
+          return setNotice("Static mode: run python3 scripts/autopilot_preflight.py to verify Autopilot safety.");
+        }
+        setNotice("Running Autopilot safety preflight...");
+        const result = await window.higherkey.runAutopilotPreflight();
+        await refreshLiveData();
+        render();
+        return setNotice(result?.parsed?.status === "pass" ? "Autopilot safety preflight passed." : "Autopilot safety preflight needs attention.");
+      }
+      async function runOperatorAutopilotSafe(apply = false) {
         if (!window.higherkey?.runOperatorAutopilotSafe) {
           return setNotice("Static mode: run python3 scripts/run_operator_autopilot.py --dry-run to preview safe actions.");
         }
-        setNotice("Previewing safe autopilot actions...");
-        const result = await window.higherkey.runOperatorAutopilotSafe();
+        setNotice(apply ? "Running safe local autopilot actions..." : "Previewing safe autopilot actions...");
+        const result = await window.higherkey.runOperatorAutopilotSafe({ apply });
         await refreshLiveData();
         render();
-        return setNotice(result?.parsed?.message || "Safe autopilot dry-run complete. No sensitive actions were executed.");
+        return setNotice(result?.parsed?.message || (apply ? "Safe autopilot run complete." : "Safe autopilot dry-run complete. No sensitive actions were executed."));
+      }
+      async function approveAutopilotAction() {
+        const action = autopilotApprovals()[0];
+        if (!action?.action_id) return setNotice("No approval-required action is selected.");
+        if (!window.higherkey?.approveAutopilotAction) return setNotice("Static mode: approvals are available in analytics/autopilot_approval_queue.json.");
+        const result = await window.higherkey.approveAutopilotAction(action.action_id);
+        await refreshLiveData();
+        render();
+        return setNotice(result?.parsed?.ok ? "Autopilot approval receipt created." : "Autopilot approval needs attention.");
       }
       async function recordPostResult() {
         const card = state.clientCampaignPlan?.next_post || state.campaignBoard?.cards?.[0] || marketingRecs()[0] || activeEntry();
@@ -4308,7 +4332,10 @@
             if (action === "build-creative-direction") return buildCreativeDirection();
             if (action === "build-production-command") return buildProductionCommand();
             if (action === "build-autopilot-plan") return buildOperatorAutopilot();
-            if (action === "run-autopilot-safe") return runOperatorAutopilotSafe();
+            if (action === "run-autopilot-preflight") return runAutopilotPreflight();
+            if (action === "run-autopilot-safe-dry") return runOperatorAutopilotSafe(false);
+            if (action === "run-autopilot-safe") return runOperatorAutopilotSafe(true);
+            if (action === "approve-autopilot-action") return approveAutopilotAction();
             if (action === "record-post-result") return recordPostResult();
             if (action === "copy-7-day-plan") return copyCampaignText("7-day");
             if (action === "copy-campaign-brief") return copyCampaignText("brief");
@@ -4569,6 +4596,7 @@
           state.autopilotApprovalQueue = await optionalJson(PATHS.autopilotApprovalQueue, state.autopilotApprovalQueue);
           state.autopilotRunHistory = await optionalJson(PATHS.autopilotRunHistory, state.autopilotRunHistory);
           state.autopilotApprovalReceipts = await optionalJson(PATHS.autopilotApprovalReceipts, state.autopilotApprovalReceipts);
+          state.autopilotSafetyReport = await optionalJson(PATHS.autopilotSafetyReport, state.autopilotSafetyReport);
           state.clientAutopilotState = await optionalJson(PATHS.clientAutopilotState, state.clientAutopilotState);
           state.clientTasks = await optionalJson(PATHS.clientTasks, state.clientTasks);
           state.clientWorkflow = await optionalJson(PATHS.clientWorkflow, state.clientWorkflow);

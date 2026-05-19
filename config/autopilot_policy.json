@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "local_only": true,
+  "manual_upload_only": true,
+  "cloud_apis_allowed": false,
+  "social_posting_allowed": false,
+  "destructive_actions_allowed": false,
+  "original_media_delete_allowed": false,
+  "allow_arbitrary_shell": false,
+  "safe_auto_commands": [
+    "scripts/build_marketing_plan.py",
+    "scripts/build_campaign_plan.py",
+    "scripts/build_growth_strategy.py",
+    "scripts/build_creative_direction.py",
+    "scripts/build_production_command.py",
+    "scripts/build_operator_autopilot.py",
+    "scripts/build_client_workflow.py",
+    "scripts/build_runtime_snapshot.py",
+    "scripts/build_task_snapshot.py",
+    "scripts/build_observability_report.py",
+    "scripts/build_trial_readiness_report.py"
+  ],
+  "approval_required_commands": [
+    "scripts/export_social_packs.py",
+    "scripts/export_approved_posts.py",
+    "scripts/repair_project_media.py",
+    "scripts/archive_project_artifacts.py",
+    "scripts/reset_demo_workspace.py"
+  ],
+  "blocked_commands": [
+    "delete_original_media",
+    "post_to_social_platform",
+    "call_remote_platform",
+    "outside_project_root",
+    "arbitrary_shell_string"
+  ],
+  "protected_paths": [
+    "content_inbox",
+    "clips",
+    "captions"
+  ]
+}

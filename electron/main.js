@@ -1475,10 +1475,14 @@ async function getOperatorAutopilot() {
   };
 }
 
-async function runOperatorAutopilotSafe() {
+async function runOperatorAutopilotSafe(_event, options = {}) {
   const projectCheck = validateProjectRootSelection(activeProjectRoot);
   if (!projectCheck.ok) return projectCheck;
-  const result = await runPython(["scripts/run_operator_autopilot.py", "--dry-run"]);
+  const args = ["scripts/run_operator_autopilot.py", "--safe-auto"];
+  if (options.apply) args.push("--apply");
+  else args.push("--dry-run");
+  if (options.actionId) args.push("--action-id", String(options.actionId));
+  const result = await runPython(args);
   let parsed = null;
   try {
     parsed = JSON.parse(result.stdout);
@@ -1496,6 +1500,25 @@ async function approveAutopilotAction(_event, actionId) {
     parsed = JSON.parse(result.stdout);
   } catch {}
   return { ...result, parsed, activeProjectRoot };
+}
+
+async function runAutopilotPreflight() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/autopilot_preflight.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getAutopilotSafetyReport() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    report: await readAnalyticsJson("autopilot_safety_report.json", {})
+  };
 }
 
 async function openMarketingFolder() {
@@ -1806,6 +1829,8 @@ function registerIpc() {
   ipcMain.handle("autopilot:get", getOperatorAutopilot);
   ipcMain.handle("autopilot:runSafe", runOperatorAutopilotSafe);
   ipcMain.handle("autopilot:approveAction", approveAutopilotAction);
+  ipcMain.handle("autopilot:preflight", runAutopilotPreflight);
+  ipcMain.handle("autopilot:getSafetyReport", getAutopilotSafetyReport);
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);

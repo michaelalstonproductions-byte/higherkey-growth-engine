@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +19,7 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "build_growth_strategy": ["python3", "scripts/build_growth_strategy.py"],
     "build_creative_direction": ["python3", "scripts/build_creative_direction.py"],
     "build_production_command": ["python3", "scripts/build_production_command.py"],
+    "build_operator_autopilot": ["python3", "scripts/build_operator_autopilot.py"],
     "build_media_cache": ["python3", "scripts/build_media_cache.py"],
     "build_client_workflow": ["python3", "scripts/build_client_workflow.py"],
     "build_runtime_snapshot": ["python3", "scripts/build_runtime_snapshot.py"],
@@ -25,6 +27,8 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "build_observability_report": ["python3", "scripts/build_observability_report.py"],
     "build_trial_readiness_report": ["python3", "scripts/build_trial_readiness_report.py"],
 }
+
+POLICY_PATH = "config/autopilot_policy.json"
 
 APPROVAL_REQUIRED_CATEGORIES = {
     "approve",
@@ -70,6 +74,69 @@ def _load_inputs(root: Path) -> dict[str, Any]:
         "social_manifest": load_json(root / "out" / "social_exports" / "manifest.json", {}),
         "previous_history": load_json(analytics / "autopilot_run_history.json", {}),
         "previous_receipts": load_json(analytics / "autopilot_approval_receipts.json", {}),
+    }
+
+
+def load_autopilot_policy(root: Path) -> dict[str, Any]:
+    fallback = {
+        "version": 1,
+        "local_only": True,
+        "manual_upload_only": True,
+        "cloud_apis_allowed": False,
+        "social_posting_allowed": False,
+        "destructive_actions_allowed": False,
+        "original_media_delete_allowed": False,
+        "allow_arbitrary_shell": False,
+        "safe_auto_commands": [cmd[1] for cmd in SAFE_AUTO_COMMANDS.values()],
+        "approval_required_commands": [],
+        "blocked_commands": [],
+        "protected_paths": ["content_inbox", "clips", "captions"],
+    }
+    policy = load_json(root / POLICY_PATH, fallback)
+    if not isinstance(policy, dict):
+        return fallback
+    return {**fallback, **policy}
+
+
+def _is_relative_script(script: str) -> bool:
+    path = Path(script)
+    return not path.is_absolute() and ".." not in path.parts and path.suffix == ".py"
+
+
+def validate_autopilot_command(root: Path, command: Any, safety_level: str = "safe_auto") -> dict[str, Any]:
+    project_root = root.resolve()
+    policy = load_autopilot_policy(project_root)
+    if not isinstance(command, list) or len(command) != 2:
+        return {"ok": False, "status": "blocked", "reason": "Autopilot commands must be argument arrays with a Python executable and one script."}
+    executable, script = command
+    if not isinstance(executable, str) or not isinstance(script, str):
+        return {"ok": False, "status": "blocked", "reason": "Autopilot command entries must be strings."}
+    if executable not in {"python3", sys.executable, Path(sys.executable).name}:
+        return {"ok": False, "status": "blocked", "reason": "Autopilot only runs the local Python interpreter for allowlisted scripts."}
+    if not _is_relative_script(script):
+        return {"ok": False, "status": "blocked", "reason": "Script path must be a relative project script."}
+    script_path = (project_root / script).resolve()
+    try:
+        script_path.relative_to(project_root)
+    except ValueError:
+        return {"ok": False, "status": "blocked", "reason": "Script path is outside the active project."}
+    if not script_path.exists():
+        return {"ok": False, "status": "blocked", "reason": "Allowlisted script is missing.", "script_path": str(script_path)}
+    allowed = set(policy.get("safe_auto_commands", []))
+    approval = set(policy.get("approval_required_commands", []))
+    if safety_level == "safe_auto" and script not in allowed:
+        return {"ok": False, "status": "blocked", "reason": "Script is not in the safe-auto allowlist.", "script": script}
+    if safety_level == "approval_required" and script not in approval:
+        return {"ok": False, "status": "blocked", "reason": "Script is not in the approval-required allowlist.", "script": script}
+    if policy.get("cloud_apis_allowed") or policy.get("social_posting_allowed") or policy.get("destructive_actions_allowed") or policy.get("original_media_delete_allowed") or policy.get("allow_arbitrary_shell"):
+        return {"ok": False, "status": "blocked", "reason": "Autopilot safety policy enables a forbidden capability."}
+    return {
+        "ok": True,
+        "status": "allowed",
+        "args": [sys.executable, str(script_path)],
+        "script": script,
+        "script_path": str(script_path),
+        "policy": POLICY_PATH,
     }
 
 
@@ -162,6 +229,7 @@ def _default_safe_cards() -> list[dict[str, Any]]:
         ("refresh_growth_strategy", "Refresh Growth Strategy", "build_growth_strategy"),
         ("refresh_campaign_plan", "Refresh Campaign Plan", "build_campaign_plan"),
         ("refresh_marketing_plan", "Refresh Marketing Plan", "build_marketing_plan"),
+        ("refresh_autopilot_plan", "Refresh Operator Autopilot", "build_operator_autopilot"),
         ("refresh_client_workflow", "Refresh Client Workflow", "build_client_workflow"),
     ]
     cards: list[dict[str, Any]] = []
@@ -348,9 +416,12 @@ def approve_action(root: Path, action_id: str, approved_by: str = "local_operato
     receipt = {
         "receipt_id": _stable_id("receipt", action_id, timestamp),
         "action_id": action_id,
+        "command": action.get("command"),
+        "safety_level": action.get("safety_level"),
         "approved_by": approved_by,
         "approved_at": timestamp,
         "approval_scope": action.get("title"),
+        "expires_at": None,
         "safety_note": "Approval recorded locally. No social posting or destructive action was executed.",
     }
     path = _receipts_path(root)
@@ -373,6 +444,8 @@ def run_safe_actions(root: Path, *, safe_auto: bool = False, action_id: str | No
     candidates = _load_action_queue(project_root)
     if action_id:
         candidates = [item for item in candidates if item.get("action_id") == action_id]
+    elif safe_auto:
+        candidates = [item for item in candidates if item.get("safety_level") == "safe_auto"]
     if not safe_auto:
         return {
             "ok": True,
@@ -385,24 +458,39 @@ def run_safe_actions(root: Path, *, safe_auto: bool = False, action_id: str | No
     results: list[dict[str, Any]] = []
     for action in candidates:
         command = action.get("command")
-        if action.get("safety_level") != "safe_auto" or not isinstance(command, list) or command not in SAFE_AUTO_COMMANDS.values():
-            results.append({"action_id": action.get("action_id"), "status": "blocked", "message": "Not a safe-auto allowlisted action."})
+        validation = validate_autopilot_command(project_root, command, safety_level=str(action.get("safety_level") or ""))
+        if action.get("safety_level") != "safe_auto" or not validation.get("ok"):
+            results.append({"action_id": action.get("action_id"), "status": "blocked", "message": validation.get("reason") or "Not a safe-auto allowlisted action."})
             continue
+        started_at = utc_now()
+        run_id = _stable_id("run", action.get("action_id"), started_at, command)
+        base_result = {
+            "run_id": run_id,
+            "action_id": action.get("action_id"),
+            "command": command,
+            "args": validation.get("args"),
+            "safety_level": action.get("safety_level"),
+            "dry_run": dry_run,
+            "started_at": started_at,
+            "expected_output": action.get("expected_output"),
+            "receipt_id": None,
+            "local_only": True,
+            "manual_upload_only": True,
+        }
         if dry_run:
-            results.append({"action_id": action.get("action_id"), "status": "dry_run", "command": command})
+            results.append({**base_result, "completed_at": utc_now(), "status": "dry_run", "return_code": None, "stdout_tail": "", "stderr_tail": ""})
             continue
-        timestamp = utc_now()
-        completed = subprocess.run(command, cwd=project_root, text=True, capture_output=True, timeout=120)
+        completed = subprocess.run(validation["args"], cwd=project_root, text=True, capture_output=True, timeout=120)
         status = "completed" if completed.returncode == 0 else "failed"
         result = {
+            **base_result,
             "action_id": action.get("action_id"),
             "title": action.get("title"),
-            "timestamp": timestamp,
+            "completed_at": utc_now(),
             "status": status,
-            "returncode": completed.returncode,
+            "return_code": completed.returncode,
             "stdout_tail": completed.stdout[-1200:],
             "stderr_tail": completed.stderr[-1200:],
-            "local_only": True,
         }
         _append_run(project_root, result)
         try:

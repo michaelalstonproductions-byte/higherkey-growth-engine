@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "5.7.0",
-  "release_version": "V5.7",
+  "app_version": "5.8.0",
+  "release_version": "V5.8",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -119,6 +119,12 @@
       "to": "V5.7",
       "safe": true,
       "notes": "Add local Operator Autopilot planning, safe-auto queue, approval queue, run history, and local approval receipts without cloud or social posting APIs."
+    },
+    {
+      "from": "V5.7",
+      "to": "V5.8",
+      "safe": true,
+      "notes": "Harden Operator Autopilot with an explicit local safety policy, safe command validation, preflight report, richer run receipts, and no shell-string execution."
     }
   ],
   "required_runtime_files": [
