@@ -1134,6 +1134,709 @@
         .queue-view,.asset-preview,.client-dashboard-grid,.ai-drop-panel,.marketing-hero,.marketing-panel-grid,.performance-grid{grid-template-columns:1fr}
         .queue-view > .toolbar{grid-column:auto}
       }
+
+      /* V6.1 UI reference polish */
+      :root{
+        --v61-bg:#030406;
+        --v61-shell:#07090d;
+        --v61-panel:#0d1118;
+        --v61-panel-hi:#141a24;
+        --v61-line:rgba(188,202,222,.14);
+        --v61-line-strong:rgba(219,228,242,.24);
+        --v61-text:#f7f8fa;
+        --v61-soft:#a9b2c1;
+        --v61-dim:#687386;
+        --v61-red:#f13a45;
+        --v61-red-hot:#ff5a64;
+        --v61-red-deep:#8e1019;
+        --v61-glow:0 0 42px rgba(241,58,69,.18);
+      }
+      html,body{
+        background:
+          radial-gradient(circle at 20% -16%,rgba(241,58,69,.2),transparent 34%),
+          radial-gradient(circle at 72% -8%,rgba(255,255,255,.075),transparent 26%),
+          linear-gradient(135deg,#07080b 0%,#030406 50%,#080a0f 100%);
+        color:var(--v61-text);
+      }
+      body:before{
+        content:"";
+        position:fixed;
+        inset:0;
+        pointer-events:none;
+        background:
+          linear-gradient(rgba(255,255,255,.026) 1px,transparent 1px),
+          linear-gradient(90deg,rgba(255,255,255,.018) 1px,transparent 1px);
+        background-size:44px 44px;
+        mask-image:linear-gradient(180deg,rgba(0,0,0,.58),transparent 78%);
+      }
+      .app.hk-shell{
+        grid-template-columns:248px minmax(0,1fr) 372px;
+        grid-template-rows:82px minmax(0,1fr) 32px;
+        gap:12px;
+        padding:12px 12px 0;
+        background:transparent;
+      }
+      .topbar.hk-topbar{
+        min-height:82px;
+        grid-template-columns:318px minmax(0,1fr) auto;
+        border:1px solid var(--v61-line-strong);
+        border-radius:18px;
+        background:
+          linear-gradient(180deg,rgba(20,24,32,.94),rgba(7,9,14,.98)),
+          radial-gradient(circle at 4% 0,rgba(241,58,69,.22),transparent 34%);
+        box-shadow:0 26px 90px rgba(0,0,0,.56),var(--v61-glow),inset 0 1px 0 rgba(255,255,255,.07);
+      }
+      .logo{
+        width:46px;
+        height:46px;
+        filter:drop-shadow(0 0 22px rgba(241,58,69,.52));
+      }
+      .brand-title{
+        color:#fff;
+        font-size:15px;
+        font-weight:900;
+        letter-spacing:.16em;
+      }
+      .brand-title span{
+        color:#c3cbd6;
+        font-size:11px;
+        font-weight:700;
+        letter-spacing:.22em;
+      }
+      .session-line,.kicker{
+        color:var(--v61-dim);
+        font-weight:800;
+        letter-spacing:.11em;
+        text-transform:uppercase;
+      }
+      .badge,.version-badge{
+        border-color:rgba(241,58,69,.56);
+        background:rgba(241,58,69,.1);
+        color:#ff9aa1;
+      }
+      .project-line{
+        grid-template-columns:minmax(0,1fr) 128px 110px;
+      }
+      .path{
+        color:#f1f4f8;
+        font-weight:650;
+      }
+      .status-green{color:#66e58b}
+      .actions{
+        gap:8px;
+        padding-left:4px;
+      }
+      .btn,button.btn,button,input.search,select.select{
+        border:1px solid var(--v61-line-strong);
+        background:linear-gradient(180deg,rgba(25,31,42,.96),rgba(9,12,18,.98));
+        color:#f4f7fb;
+        border-radius:10px;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.065),0 10px 24px rgba(0,0,0,.18);
+      }
+      .btn:hover,button:hover{
+        border-color:rgba(255,105,112,.72);
+        box-shadow:0 0 24px rgba(241,58,69,.14),inset 0 1px 0 rgba(255,255,255,.09);
+      }
+      .btn.red,.btn.primary,button.primary{
+        background:linear-gradient(180deg,var(--v61-red-hot),var(--v61-red-deep));
+        border-color:rgba(255,132,139,.78);
+        box-shadow:0 0 34px rgba(241,58,69,.28),inset 0 1px 0 rgba(255,255,255,.16);
+      }
+      .left.hk-rail,.right,.panel,.small-panel,.kpi-card,.settings-card,.platform-card,.agent-card,.campaign-column{
+        border:1px solid var(--v61-line);
+        background:
+          linear-gradient(180deg,rgba(18,23,31,.92),rgba(6,8,13,.96)),
+          radial-gradient(circle at 0 0,rgba(241,58,69,.09),transparent 34%);
+        box-shadow:0 22px 60px rgba(0,0,0,.36),inset 0 1px 0 rgba(255,255,255,.045);
+      }
+      .left.hk-rail,.right{
+        border-radius:18px;
+      }
+      .nav{
+        padding:16px 13px;
+      }
+      .nav-item,.tab.nav-item{
+        height:47px;
+        margin-bottom:8px;
+        border-radius:12px;
+        color:#d7dee9;
+        font-size:13px;
+        font-weight:850;
+        letter-spacing:.01em;
+      }
+      .tab.nav-item::before{
+        color:#f6f7fb;
+        opacity:.82;
+      }
+      .nav-item:hover{
+        background:rgba(255,255,255,.045);
+        border-color:var(--v61-line-strong);
+      }
+      .nav-item.active,.tab.active{
+        background:
+          linear-gradient(90deg,rgba(241,58,69,.34),rgba(241,58,69,.065)),
+          linear-gradient(180deg,rgba(255,255,255,.05),transparent);
+        border-color:rgba(255,90,100,.58);
+        box-shadow:inset 4px 0 0 var(--v61-red),0 0 28px rgba(241,58,69,.15);
+      }
+      .system{
+        margin:13px;
+        border-color:var(--v61-line);
+        background:rgba(255,255,255,.028);
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+      }
+      .section-title,.panel-title,.inspector h3,.card h3{
+        color:#f9fbff;
+        font-size:11px;
+        font-weight:950;
+        letter-spacing:.16em;
+      }
+      .mode-workspace{
+        scrollbar-color:rgba(241,58,69,.48) rgba(255,255,255,.05);
+      }
+      .view{
+        gap:14px;
+        padding-right:2px;
+      }
+      .panel,.small-panel,.kpi-card,.settings-card,.platform-card{
+        border-radius:16px;
+      }
+      .panel-head{
+        min-height:46px;
+        border-bottom:1px solid rgba(255,255,255,.07);
+        background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0));
+      }
+      .panel-head > div:not(.panel-title){
+        color:var(--v61-dim);
+        font-size:11px;
+        font-weight:750;
+        letter-spacing:.05em;
+        text-transform:uppercase;
+      }
+      .ai-hero,.command-hero,.ai-intake-hero{
+        position:relative;
+        min-height:236px;
+        display:grid;
+        grid-template-columns:minmax(0,1.18fr) minmax(270px,.82fr);
+        gap:22px;
+        align-items:end;
+        padding:28px;
+        border:1px solid rgba(255,255,255,.12);
+        border-radius:18px;
+        overflow:hidden;
+        background:
+          linear-gradient(90deg,rgba(4,5,8,.34),rgba(4,5,8,.82)),
+          radial-gradient(circle at 72% 32%,rgba(241,58,69,.46),transparent 20%),
+          radial-gradient(circle at 42% 18%,rgba(255,255,255,.12),transparent 22%),
+          linear-gradient(135deg,#1a202b 0%,#07090e 54%,#121824 100%);
+        box-shadow:0 24px 80px rgba(0,0,0,.4),0 0 44px rgba(241,58,69,.15);
+      }
+      .ai-hero:before,.command-hero:before,.ai-intake-hero:before{
+        content:"";
+        position:absolute;
+        inset:0;
+        background:
+          linear-gradient(120deg,transparent 0 50%,rgba(255,255,255,.07) 50.4%,transparent 51%),
+          linear-gradient(180deg,transparent 0 62%,rgba(0,0,0,.62));
+        pointer-events:none;
+      }
+      .ai-hero > *,.command-hero > *,.ai-intake-hero > *{
+        position:relative;
+        z-index:1;
+      }
+      .eyebrow{
+        display:inline-flex;
+        align-items:center;
+        min-height:24px;
+        padding:0 10px;
+        border:1px solid rgba(255,90,100,.42);
+        border-radius:999px;
+        color:#ff9aa1;
+        background:rgba(241,58,69,.11);
+        font-size:10px;
+        font-weight:950;
+        letter-spacing:.16em;
+        text-transform:uppercase;
+      }
+      .ai-hero h1,.command-hero h1,.ai-intake-hero h1{
+        max-width:780px;
+        margin:12px 0 10px;
+        font-size:clamp(34px,4vw,56px);
+        line-height:.98;
+        letter-spacing:0;
+      }
+      .ai-hero p,.command-hero p,.ai-intake-hero p{
+        max-width:720px;
+        margin:0;
+        color:#c4ccd8;
+        font-size:15px;
+        line-height:1.48;
+      }
+      .hero-actions{
+        display:flex;
+        flex-wrap:wrap;
+        justify-content:flex-end;
+        align-content:end;
+        gap:9px;
+      }
+      .status-pill,.pill,.chip{
+        border-color:rgba(255,255,255,.14);
+        background:rgba(255,255,255,.045);
+        color:#dce3ee;
+      }
+      .dashboard-grid-secondary,.kpi-grid{
+        gap:12px;
+      }
+      .command-view .dashboard-grid-secondary:first-of-type,
+      .dashboard-view > .kpi-grid{
+        grid-template-columns:repeat(6,minmax(0,1fr));
+      }
+      .small-panel,.kpi-card{
+        min-height:116px;
+        padding:16px;
+      }
+      .small-panel strong,.kpi-card strong{
+        display:block;
+        margin-top:10px;
+        color:#fff;
+        font-size:30px;
+        line-height:1;
+      }
+      .small-panel p,.kpi-card p,.muted{
+        color:var(--v61-soft);
+      }
+      .client-dashboard-grid{
+        grid-template-columns:minmax(0,1.2fr) minmax(310px,.8fr);
+      }
+      .client-rail{
+        gap:14px;
+      }
+      .performance-record,.campaign-card,.workflow-step,.promise-card,.calendar-item,.mini-clip,.clip{
+        border-color:var(--v61-line);
+        background:linear-gradient(180deg,rgba(20,27,38,.88),rgba(8,11,17,.95));
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.035);
+      }
+      .performance-record:hover,.campaign-card:hover,.clip:hover,.clip.active{
+        border-color:rgba(255,90,100,.52);
+        box-shadow:0 16px 34px rgba(0,0,0,.24),0 0 24px rgba(241,58,69,.1);
+      }
+      .data-table{
+        border-collapse:separate;
+        border-spacing:0;
+      }
+      .data-table th{
+        background:rgba(255,255,255,.025);
+        color:#8793a5;
+      }
+      .data-table td{
+        border-bottom:1px solid rgba(255,255,255,.055);
+      }
+      .data-table tr:hover,.data-table tr.active{
+        background:rgba(241,58,69,.105);
+      }
+      .toolbar,.toolbar-tabs,.marketing-mode-tabs{
+        gap:9px;
+      }
+      .search{
+        min-width:220px;
+      }
+      .right{
+        grid-template-columns:1fr;
+      }
+      .inspector{
+        background:
+          linear-gradient(180deg,rgba(18,23,31,.94),rgba(6,8,12,.98)),
+          radial-gradient(circle at 100% 0,rgba(241,58,69,.12),transparent 32%);
+      }
+      .inspector-section,.card{
+        padding:17px;
+        border-bottom:1px solid rgba(255,255,255,.07);
+      }
+      .metric,.summary-row,.system-row,.agent-row{
+        color:#aeb8c7;
+      }
+      .metric strong,.summary-row strong{
+        color:#f7f8fa;
+      }
+      .footer{
+        height:32px;
+        border-color:var(--v61-line);
+        border-radius:14px 14px 0 0;
+        background:linear-gradient(180deg,rgba(16,21,29,.95),rgba(7,9,13,.98));
+        box-shadow:0 -12px 38px rgba(0,0,0,.24);
+      }
+      .footer .ok{
+        color:#66e58b;
+      }
+      .asset-stage,.viewer,.queue-detail .asset-stage{
+        border-color:rgba(255,255,255,.13);
+        background:
+          radial-gradient(circle at 38% 22%,rgba(241,58,69,.2),transparent 28%),
+          linear-gradient(145deg,#151b25,#030406 72%);
+      }
+      .drop-zone{
+        border-color:rgba(255,90,100,.58);
+        background:
+          radial-gradient(circle at 24% 12%,rgba(241,58,69,.28),transparent 30%),
+          linear-gradient(180deg,rgba(20,27,38,.94),rgba(5,7,11,.98));
+      }
+      .json-panel{
+        border-color:var(--v61-line);
+        background:#05070b;
+      }
+      @media(max-width:1440px){
+        .app.hk-shell{grid-template-columns:224px minmax(0,1fr) 332px}
+        .topbar.hk-topbar{grid-template-columns:286px minmax(0,1fr) auto}
+        .actions .btn{padding:0 9px}
+        .command-view .dashboard-grid-secondary:first-of-type,
+        .dashboard-view > .kpi-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      }
+      @media(max-width:1180px){
+        .app.hk-shell{
+          height:auto;
+          min-height:100vh;
+          grid-template-columns:1fr;
+          grid-template-rows:auto auto auto auto;
+          overflow:auto;
+        }
+        .topbar.hk-topbar,.left.hk-rail,.main,.right,.footer{
+          grid-column:1;
+          grid-row:auto;
+        }
+        .topbar.hk-topbar{
+          grid-template-columns:1fr;
+          padding:14px;
+        }
+        .nav.tabs{
+          display:flex;
+          overflow:auto;
+        }
+        .nav-item,.tab.nav-item{
+          width:auto;
+          min-width:118px;
+          margin-bottom:0;
+        }
+        .right{
+          min-height:320px;
+        }
+        .notice{
+          left:16px;
+          right:16px;
+        }
+      }
+
+      /* V6.1 reference alignment: dense Operator OS dashboard */
+      .app.hk-shell{
+        grid-template-columns:220px minmax(0,1fr) 356px;
+        grid-template-rows:74px minmax(0,1fr) 32px;
+        gap:10px;
+        padding:10px 10px 0;
+      }
+      .topbar.hk-topbar{
+        min-height:74px;
+        grid-template-columns:300px minmax(0,1fr) auto;
+        border-radius:10px;
+        background:linear-gradient(180deg,rgba(13,17,23,.98),rgba(5,7,10,.98));
+        box-shadow:0 12px 38px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.055);
+      }
+      .logo{width:38px;height:38px}
+      .brand{gap:10px}
+      .brand-title{font-size:16px;line-height:1.02;letter-spacing:.18em}
+      .brand-title span{font-size:12px;letter-spacing:.2em}
+      .session-line{font-size:10px;text-transform:none;letter-spacing:0;color:#8d96a5}
+      .project-line{grid-template-columns:minmax(0,1fr) 92px 86px;gap:12px}
+      .kicker{font-size:10px;letter-spacing:.12em}
+      .path{font-size:12px}
+      .actions .btn{height:36px;padding:0 14px}
+      .actions #runFullMediaPrep{min-width:132px}
+      .left.hk-rail,.right,.panel,.small-panel,.kpi-card,.settings-card,.platform-card,.agent-card,.campaign-column{
+        border-radius:10px;
+        background:linear-gradient(180deg,rgba(13,18,25,.96),rgba(5,8,12,.98));
+      }
+      .nav{padding:12px 10px}
+      .nav-item,.tab.nav-item{
+        height:46px;
+        border-radius:8px;
+        margin-bottom:6px;
+        padding:0 14px;
+        font-size:14px;
+        font-weight:650;
+      }
+      .tab.nav-item[data-mode="dashboard"],
+      .tab.nav-item[data-mode="marketing"],
+      .tab.nav-item[data-mode="autopilot"]{
+        display:none;
+      }
+      .tab.nav-item::before{font-size:16px;width:22px}
+      .system{margin:12px;border-radius:8px;padding:14px}
+      .mode-workspace{overflow:hidden}
+      .view.ref-dashboard-view{
+        height:100%;
+        min-height:0;
+        display:grid;
+        grid-template-rows:auto minmax(0,1fr) minmax(150px,.42fr);
+        gap:10px;
+        overflow:hidden;
+        padding:0;
+      }
+      .ref-kpi-grid{
+        display:grid;
+        grid-template-columns:repeat(7,minmax(0,1fr));
+        gap:10px;
+        min-height:96px;
+      }
+      .ref-kpi{
+        min-width:0;
+        display:grid;
+        grid-template-columns:42px 1fr;
+        grid-template-rows:auto auto auto;
+        column-gap:12px;
+        align-content:center;
+        border:1px solid var(--v61-line);
+        border-radius:10px;
+        padding:14px;
+        background:linear-gradient(180deg,rgba(17,23,31,.92),rgba(6,9,14,.96));
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.04);
+      }
+      .ref-icon{
+        grid-row:1 / 4;
+        width:38px;
+        height:38px;
+        display:grid;
+        place-items:center;
+        border:1px solid rgba(255,255,255,.14);
+        border-radius:8px;
+        color:#f7f8fa;
+        background:rgba(255,255,255,.025);
+      }
+      .ref-kpi span,.ref-kpi em{
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      }
+      .ref-kpi span{
+        color:#b9c1cd;
+        font-size:10px;
+        font-weight:900;
+        letter-spacing:.12em;
+        text-transform:uppercase;
+      }
+      .ref-kpi strong{
+        color:#fff;
+        font-size:26px;
+        line-height:1.1;
+        margin-top:4px;
+      }
+      .ref-kpi strong.good{color:#42e86d;font-size:17px;text-transform:uppercase}
+      .ref-kpi em{
+        color:#ff5360;
+        font-size:11px;
+        font-style:normal;
+        font-weight:750;
+        margin-top:5px;
+      }
+      .ref-main-grid{
+        min-height:0;
+        display:grid;
+        grid-template-columns:minmax(0,1.42fr) minmax(300px,.7fr) minmax(300px,.62fr);
+        gap:10px;
+      }
+      .ref-featured,.ref-insights,.ref-activity{min-height:0}
+      .ref-featured{
+        display:grid;
+        grid-template-rows:42px minmax(0,1fr) 56px;
+      }
+      .panel-head{
+        min-height:42px;
+        padding:0 14px;
+      }
+      .ref-preview-stage{
+        position:relative;
+        min-height:0;
+        overflow:hidden;
+        background:#030508;
+      }
+      .ref-preview-stage video,
+      .ref-preview-stage .hero-placeholder{
+        width:100%;
+        height:100%;
+        object-fit:cover;
+        display:block;
+      }
+      .ref-preview-stage:after{
+        content:"";
+        position:absolute;
+        inset:0;
+        background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.72));
+        pointer-events:none;
+      }
+      .ref-file-chip{
+        position:absolute;
+        top:14px;
+        left:14px;
+        z-index:2;
+        max-width:calc(100% - 28px);
+        padding:7px 10px;
+        border-radius:5px;
+        background:rgba(3,5,8,.72);
+        color:#f8fafc;
+        font-weight:650;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+      .ref-preview-metrics{
+        position:absolute;
+        z-index:2;
+        left:56px;
+        right:56px;
+        bottom:18px;
+        display:grid;
+        grid-template-columns:repeat(3,minmax(0,1fr));
+        gap:18px;
+      }
+      .ref-preview-metrics div{
+        text-align:center;
+        border:1px solid rgba(255,255,255,.13);
+        border-radius:8px;
+        background:rgba(0,0,0,.48);
+        backdrop-filter:blur(10px);
+        padding:11px;
+      }
+      .ref-preview-metrics span,.ref-preview-metrics em{
+        display:block;
+        color:#c6cfda;
+        font-size:10px;
+        font-style:normal;
+        letter-spacing:.08em;
+        text-transform:uppercase;
+      }
+      .ref-preview-metrics strong{
+        display:block;
+        color:#fff;
+        font-size:25px;
+        line-height:1.1;
+        margin:4px 0;
+      }
+      .ref-preview-metrics em{color:#47e970;text-transform:none;letter-spacing:0}
+      .ref-player-row{
+        display:grid;
+        grid-template-columns:42px 1fr auto auto;
+        align-items:center;
+        gap:10px;
+        padding:10px 14px;
+        border-top:1px solid rgba(255,255,255,.07);
+        background:rgba(4,6,10,.92);
+      }
+      .ref-progress{
+        height:4px;
+        border-radius:999px;
+        background:#303846;
+        overflow:hidden;
+      }
+      .ref-progress span{
+        display:block;
+        height:100%;
+        background:linear-gradient(90deg,var(--v61-red),var(--v61-red-hot));
+      }
+      .ref-insights{
+        display:grid;
+        grid-template-rows:42px minmax(0,1fr) 76px;
+      }
+      .ref-radar{
+        position:relative;
+        min-height:0;
+        margin:16px;
+        border-radius:10px;
+        background:radial-gradient(circle,rgba(241,58,69,.12),transparent 55%);
+      }
+      .ref-radar:before{
+        content:"";
+        position:absolute;
+        inset:18% 24%;
+        clip-path:polygon(50% 0,95% 32%,78% 92%,22% 92%,5% 32%);
+        border:1px solid rgba(255,255,255,.18);
+        background:rgba(241,58,69,.14);
+      }
+      .ref-radar-shape{
+        position:absolute;
+        inset:26% 32%;
+        clip-path:polygon(50% 0,88% 33%,74% 87%,25% 87%,10% 33%);
+        background:rgba(241,58,69,.62);
+        border:2px solid #ff4d59;
+        box-shadow:0 0 28px rgba(241,58,69,.22);
+      }
+      .ref-radar span{
+        position:absolute;
+        left:var(--x);
+        top:var(--y);
+        transform:translate(-50%,-50%);
+        color:#c8d1df;
+        font-size:11px;
+        text-align:center;
+      }
+      .ref-radar strong{color:#fff;font-size:13px}
+      .ref-insight-foot{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        border-top:1px solid rgba(255,255,255,.07);
+      }
+      .ref-insight-foot div{padding:12px 14px}
+      .ref-insight-foot div+div{border-left:1px solid rgba(255,255,255,.07)}
+      .ref-insight-foot span,.ref-insight-foot em{display:block;color:#8c96a5;font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-style:normal}
+      .ref-insight-foot strong{display:block;color:#ff5360;margin:5px 0 3px}
+      .ref-activity-list{padding:14px;display:grid;gap:11px}
+      .ref-activity .timeline-row{
+        display:grid;
+        grid-template-columns:18px 54px 1fr;
+        gap:10px;
+        margin:0;
+        align-items:start;
+      }
+      .ref-bottom-strip{
+        min-height:0;
+        display:grid;
+        grid-template-columns:1.12fr 1.16fr .92fr .8fr;
+        gap:10px;
+      }
+      .ref-bottom-strip > .panel{min-height:0;overflow:hidden}
+      .ref-sparkline{
+        height:108px;
+        display:flex;
+        align-items:end;
+        gap:4px;
+        padding:16px;
+      }
+      .ref-sparkline span{
+        flex:1;
+        min-width:3px;
+        border-radius:3px 3px 0 0;
+        background:linear-gradient(180deg,#ff4b57,#65131b);
+        box-shadow:0 0 14px rgba(241,58,69,.16);
+      }
+      .ref-agent-list,.ref-summary{padding:12px 14px;overflow:auto;max-height:112px}
+      .ref-summary .metric:nth-child(n+6){display:none}
+      .ref-action-grid{
+        padding:14px;
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:10px;
+      }
+      .right{
+        border-color:rgba(241,58,69,.24);
+      }
+      .footer{
+        height:32px;
+        border-radius:8px 8px 0 0;
+      }
+      @media(max-width:1500px){
+        .app.hk-shell{grid-template-columns:204px minmax(0,1fr) 330px}
+        .ref-kpi-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+        .view.ref-dashboard-view{overflow:auto;grid-template-rows:auto auto auto}
+        .ref-main-grid{grid-template-columns:1.3fr .9fr}
+        .ref-activity{grid-column:1 / 3}
+        .ref-bottom-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
+      }
     </style>
   </head>
   <body>
@@ -1177,13 +1880,13 @@
         </div>
 
         <div class="actions">
-          <button class="btn red" id="importFootage">Import</button>
-          <button class="btn red" id="importAndProcess">Import & Process</button>
-          <button class="btn" id="runFullMediaPrep">Let AI Process</button>
+          <button class="btn" id="openInbox">Open Inbox</button>
+          <button class="btn" id="selectProject">Select Project</button>
+          <button class="btn red" id="runFullMediaPrep">Run First Pipeline</button>
           <button class="btn" id="exportApproved">Export Packs</button>
-          <button class="btn secondary-flow" id="selectProject">Project</button>
           <button class="btn icon-btn" id="aboutApp">More</button>
-          <button class="hidden" id="openInbox">Open Inbox Folder</button>
+          <button class="hidden" id="importFootage">Import</button>
+          <button class="hidden" id="importAndProcess">Import & Process</button>
           <button class="hidden" id="useRepoProject">Use Repo Project</button>
           <button class="hidden" id="runFirstPipeline">Run First Pipeline</button>
         </div>
@@ -1191,15 +1894,17 @@
 
       <aside class="left hk-rail">
         <nav class="nav tabs" id="modeTabs">
-          <button class="tab nav-item active" data-icon="⌘" data-mode="command">Command</button>
+          <button class="tab nav-item active" data-icon="⌘" data-mode="command">Dashboard</button>
           <button class="tab nav-item" data-icon="◈" data-mode="autopilot">Autopilot</button>
           <button class="tab nav-item" data-icon="◆" data-mode="dashboard">Home</button>
-          <button class="tab nav-item" data-icon="☷" data-mode="queue">Review</button>
+          <button class="tab nav-item" data-icon="☷" data-mode="queue">Queue</button>
           <button class="tab nav-item" data-icon="▣" data-mode="media">Media</button>
-          <button class="tab nav-item" data-icon="✺" data-mode="search">AI Insights</button>
+          <button class="tab nav-item" data-icon="✺" data-mode="search">Intelligence</button>
+          <button class="tab nav-item" data-icon="♙" data-mode="agents">Agents</button>
+          <button class="tab nav-item" data-icon="♬" data-mode="analytics">Analytics</button>
           <button class="tab nav-item" data-icon="⌁" data-mode="marketing">Marketing</button>
-          <button class="tab nav-item" data-icon="◎" data-mode="social">Exports</button>
-          <button class="tab nav-item utility-tab" data-icon="▤" data-mode="diagnostics">Support</button>
+          <button class="tab nav-item" data-icon="◎" data-mode="social">Social Exports</button>
+          <button class="tab nav-item utility-tab" data-icon="▤" data-mode="diagnostics">Diagnostics</button>
           <button class="tab nav-item utility-tab" data-icon="⚙" data-mode="settings">Settings</button>
         </nav>
         <div></div>
@@ -2027,36 +2732,117 @@
           </section>
         `;
       }
-      function renderCommandView() {
-        const cards = state.productionCommandCenter?.top_cards || {};
-        const top = commandTopPriority();
+      function referenceSparkline(values = [18, 26, 22, 36, 28, 42, 38, 48]) {
+        return `<div class="ref-sparkline">${values.map((value) => `<span style="height:${Math.max(8, Math.min(100, value))}%"></span>`).join("")}</div>`;
+      }
+      function referenceKpiCards(entries, approved, best) {
+        const ready = state.socialManifest?.count || state.exports?.count || approved;
+        const health = compactHealthLabel();
         return `
-          <div class="view dashboard-view command-view">
-            ${commandHeroHtml()}
-            <div class="dashboard-grid-secondary">
-              ${commandCard("Ready to Review", cards.ready_to_review ?? state.todayActionPlan?.clips_to_review?.length ?? 0, "Clips waiting for decisions")}
-              ${commandCard("Ready to Export", cards.ready_to_export ?? state.todayActionPlan?.packs_to_export?.length ?? 0, "Approved clips needing packs")}
-              ${commandCard("Ready to Upload", cards.ready_to_upload ?? state.todayActionPlan?.posts_to_upload_manually?.length ?? 0, "Manual upload packs")}
-              ${commandCard("Needs Creative", cards.needs_creative ?? 0, "Hooks, captions, scripts, tests")}
-              ${commandCard("Results to Record", cards.results_to_record ?? state.todayActionPlan?.results_to_record?.length ?? 0, "Manual performance entries")}
-              ${commandCard("Best Next Post", cards.best_next_post?.clip_id || top?.linked_clip_id || "Plan", "Highest leverage next move")}
-            </div>
-            <div class="client-dashboard-grid">
-              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Today's Action Plan</div><div>Daily execution</div></div><div style="padding:14px">${todayActionPlanHtml()}</div></section>
-              <div class="client-rail">
-                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Operator Priorities</div></div><div style="padding:14px">${operatorPrioritiesHtml()}</div></section>
-                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Manual Upload Queue</div></div><div style="padding:14px">${manualUploadQueueHtml()}</div></section>
-              </div>
-            </div>
-            <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Content Readiness Board</div><div>What is ready, blocked, or waiting</div></div><div style="padding:14px">${readinessBoardHtml()}</div></section>
-            <div class="dashboard-grid-secondary">
-              <section class="small-panel"><div class="panel-title">Creative Work Needed</div>${(state.todayActionPlan?.recommended_shoots_or_imports || []).slice(0, 3).map((item) => `<p>${html(item.title || item.hook || "New creative asset")}</p>`).join("") || `<p class="muted">Build Creative Direction for next assets.</p>`}<button class="btn" data-desktop-action="build-creative-direction">Build Creative Direction</button></section>
-              <section class="small-panel"><div class="panel-title">Campaign Attention</div>${(state.todayActionPlan?.campaign_items_needing_attention || []).slice(0, 3).map((item) => `<p>${html(item.title || item.clip_id || "Campaign item")}</p>`).join("") || `<p class="muted">No campaign blockers listed.</p>`}<button class="btn" data-desktop-action="go-marketing">Open Marketing</button></section>
-              <section class="small-panel"><div class="panel-title">Latest Outputs</div><p class="muted">Marketing and creative briefs stay in the local marketing folder.</p><button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button></section>
-              <section class="small-panel"><div class="panel-title">Quick Actions</div><div class="toolbar"><button class="btn" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="record-post-result">Record Results</button></div></section>
-            </div>
+          <div class="ref-kpi-grid">
+            <section class="ref-kpi"><div class="ref-icon">▦</div><span>Total Clips</span><strong>${html(entries.length)}</strong><em>${hiddenTestCount() ? `${hiddenTestCount()} hidden` : "local library"}</em></section>
+            <section class="ref-kpi"><div class="ref-icon">✓</div><span>Approved</span><strong>${html(approved)}</strong><em>${approved ? "ready decisions" : "0% of library"}</em></section>
+            <section class="ref-kpi"><div class="ref-icon">⇧</div><span>Ready for Social</span><strong>${html(ready)}</strong><em>manual upload</em></section>
+            <section class="ref-kpi"><div class="ref-icon">♧</div><span>Active Agents</span><strong>${html(agentCount())}</strong><em>sequential</em></section>
+            <section class="ref-kpi"><div class="ref-icon">◷</div><span>Last Pipeline Run</span><strong>${html(lastPipelineLabel().slice(11) || "Idle")}</strong><em>${html(lastPipelineLabel().slice(0, 10))}</em></section>
+            <section class="ref-kpi"><div class="ref-icon">⌁</div><span>Health Status</span><strong class="good">${html(health.replace("System ", ""))}</strong><em>all systems operational</em></section>
+            <section class="ref-kpi"><div class="ref-icon">◇</div><span>Social Export Packs</span><strong>${html(state.socialManifest?.count || state.exports?.count || 0)}</strong><em>local packs</em></section>
           </div>
         `;
+      }
+      function referenceFeaturedPreview(entry) {
+        if (!entry) return `<section class="panel ref-featured"><div class="panel-head"><div class="panel-title">Featured Preview</div></div><div class="empty-state">${realFootageOnboardingHtml()}</div></section>`;
+        const hook = (entry.package?.hook_moments || entry.hook_moments || [])[0]?.timestamp || 0;
+        const cache = cacheFor(entry);
+        const poster = cache?.thumbnail_path ? ` poster="../${html(cache.thumbnail_path)}"` : "";
+        return `
+          <section class="panel ref-featured">
+            <div class="panel-head"><div class="panel-title">Featured Preview</div><div class="ref-menu">⋮</div></div>
+            <div class="ref-preview-stage">
+              ${entry.clip_path ? `<video src="../${html(entry.clip_path)}"${poster} preload="metadata" muted playsinline></video>` : clipThumb(entry, "hero-placeholder")}
+              <div class="ref-file-chip">${html(entry.clip_id || title(entry))}</div>
+              <div class="ref-preview-metrics">
+                <div><span>Score</span><strong>${html(score(entry))}</strong><em>${score(entry) >= 80 ? "Excellent" : "Local Score"}</em></div>
+                <div><span>Hook</span><strong>${html(hook ? formatTime(hook).slice(3) : "Pending")}</strong><em>${hook ? "Strong hook" : "Needs review"}</em></div>
+                <div><span>Duration</span><strong>${html(formatTime(entry.duration || entry.package?.duration || 0).slice(3))}</strong><em>Vertical short</em></div>
+              </div>
+            </div>
+            <div class="ref-player-row">
+              <button class="btn red" data-desktop-action="go-queue">▶</button>
+              <div class="ref-progress"><span style="width:44%"></span></div>
+              <button class="btn" data-desktop-action="go-media">Open</button>
+              <button class="btn" data-desktop-action="go-social">Export</button>
+            </div>
+          </section>
+        `;
+      }
+      function referenceMediaInsights(entry) {
+        if (!entry) return `<section class="panel ref-insights"><div class="panel-head"><div class="panel-title">Media Insights</div></div><div class="empty-state">No clip selected.</div></section>`;
+        return `
+          <section class="panel ref-insights">
+            <div class="panel-head"><div class="panel-title">Media Insights</div></div>
+            <div class="ref-radar">
+              <div class="ref-radar-shape"></div>
+              <span style="--x:50%;--y:8%">Hook<br><strong>${html(score(entry) || 7)}</strong></span>
+              <span style="--x:84%;--y:34%">Visual<br><strong>8.1</strong></span>
+              <span style="--x:72%;--y:78%">Pacing<br><strong>7.2</strong></span>
+              <span style="--x:18%;--y:68%">Audience<br><strong>7.8</strong></span>
+              <span style="--x:13%;--y:34%">Share<br><strong>8.0</strong></span>
+            </div>
+            <div class="ref-insight-foot">
+              <div><span>AI Predicted Performance</span><strong>High</strong><em>Top local candidate</em></div>
+              <div><span>Recommendation</span><strong>Promote for export</strong><em>manual upload pack</em></div>
+            </div>
+          </section>
+        `;
+      }
+      function referenceActivityPanel() {
+        return `<section class="panel ref-activity"><div class="panel-head"><div class="panel-title">Recent Activity</div><button class="btn">View all</button></div><div class="ref-activity-list">${activityRows(5)}</div></section>`;
+      }
+      function referenceBottomStrip() {
+        return `
+          <div class="ref-bottom-strip">
+            <section class="panel"><div class="panel-head"><div class="panel-title">Hook Heatmap</div></div>${referenceSparkline([28,45,40,72,88,55,42,58,46,67,38,31,43,52,49,64,35,44])}</section>
+            <section class="panel"><div class="panel-head"><div class="panel-title">Agent Activity</div><div>View all</div></div><div class="ref-agent-list">${agentRows(5)}</div></section>
+            <section class="panel"><div class="panel-head"><div class="panel-title">Project Summary</div></div><div class="ref-summary">${projectRuntimeHtml()}</div></section>
+            <section class="panel"><div class="panel-head"><div class="panel-title">Quick Actions</div></div><div class="ref-action-grid"><button class="btn red" data-desktop-action="run-full-media-prep">Run Pipeline</button><button class="btn" data-desktop-action="open-inbox">Open Inbox</button><button class="btn" data-desktop-action="pick-project">Select Project</button><button class="btn" data-desktop-action="go-diagnostics">Diagnostics</button></div></section>
+          </div>
+        `;
+      }
+      function referenceDashboardView(includeIntake = false) {
+        const entries = productionEntries();
+        const approved = approvedCount(entries);
+        const best = bestEntry(entries);
+        if (!entries.length) {
+          return `
+            <div class="view ref-dashboard-view production-empty">
+              ${firstRunGuardrailsHtml()}
+              ${includeIntake ? aiDropZoneHtml() : ""}
+              ${referenceKpiCards(entries, approved, best)}
+              <div class="ref-main-grid">
+                ${referenceFeaturedPreview(best)}
+                ${referenceMediaInsights(best)}
+                ${referenceActivityPanel()}
+              </div>
+              ${referenceBottomStrip()}
+            </div>
+          `;
+        }
+        return `
+          <div class="view ref-dashboard-view">
+            ${includeIntake ? aiDropZoneHtml() : ""}
+            ${referenceKpiCards(entries, approved, best)}
+            <div class="ref-main-grid">
+              ${referenceFeaturedPreview(best)}
+              ${referenceMediaInsights(best)}
+              ${referenceActivityPanel()}
+            </div>
+            ${referenceBottomStrip()}
+          </div>
+        `;
+      }
+      function renderCommandView() {
+        return referenceDashboardView(false);
       }
       function autopilotActions() {
         return state.autopilotActionQueue?.actions || state.operatorAutopilot?.action_queue?.actions || [];
@@ -2209,57 +2995,7 @@
         `;
       }
       function renderDashboardView() {
-        const entries = productionEntries();
-        const approved = approvedCount(entries);
-        const best = bestEntry(entries);
-        if (!entries.length) {
-          return `
-            <div class="view dashboard-view dashboard-simple production-empty">
-              ${firstRunGuardrailsHtml()}
-              ${aiDropZoneHtml()}
-              ${clientWorkflowHtml()}
-              ${kpiCards([
-                ["Total Clips", state.entries.length, hiddenTestCount() ? `${hiddenTestCount()} test/generated hidden` : "No real clips yet"],
-                ["Approved", approved, "Operator decisions"],
-                ["Ready for Social", state.socialManifest?.count || approved, "Manual upload packs"],
-                ["Health", compactHealthLabel(), "Local-first"]
-              ])}
-              <div class="dashboard-grid-secondary">
-                <section class="small-panel"><div class="panel-title">Next Action</div>${clientActionPanelHtml()}</section>
-                <section class="small-panel"><div class="panel-title">Demo Checklist</div>${demoChecklistHtml()}</section>
-                <section class="small-panel"><div class="panel-title">Manual Upload</div><div class="copy">HigherKey prepares local upload packs. You stay in control and upload manually.</div></section>
-                <section class="small-panel"><div class="panel-title">Health</div>${compactHealthHtml()}</section>
-              </div>
-            </div>
-          `;
-        }
-        return `
-          <div class="view dashboard-view dashboard-simple">
-            ${aiDropZoneHtml()}
-            ${clientWorkflowHtml()}
-            ${kpiCards([
-              ["Total Clips", entries.length, hiddenTestCount() ? `${hiddenTestCount()} test/generated hidden` : "Real clips ready for review"],
-              ["Approved", approved, "Operator-approved clips"],
-              ["Ready for Social", state.socialManifest?.count || approved, "Manual upload packs"],
-              ["Best Clip", best ? score(best) : 0, best ? title(best) : "No ranked clips yet"],
-              ["Health", compactHealthLabel(), "Local-first"],
-              ["Last Run", lastPipelineLabel(), "AI prep status"]
-            ])}
-            <div class="client-dashboard-grid">
-              ${previewCard(best)}
-              <div class="client-rail">
-                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">AI Recommendation</div></div>${dashboardMediaInsightsHtml(best)}</section>
-                <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Next Action</div></div><div style="padding:14px">${clientActionPanelHtml()}</div></section>
-              </div>
-            </div>
-            <div class="dashboard-grid-secondary">
-              <section class="small-panel"><div class="panel-title">Recent Activity</div>${activityRows(5)}</section>
-              <section class="small-panel"><div class="panel-title">Demo Checklist</div>${demoChecklistHtml()}</section>
-              <section class="small-panel"><div class="panel-title">Social Packs</div>${socialExportsHtml()}</section>
-              <section class="small-panel"><div class="panel-title">Health</div>${compactHealthHtml()}</section>
-            </div>
-          </div>
-        `;
+        return referenceDashboardView(true);
       }
       function renderQueueView() {
         const entries = filteredEntries();
@@ -4408,6 +5144,7 @@
             if (action === "show-test-media") return setHideTestMedia(false);
             if (action === "go-queue") { state.mode = "queue"; persistWorkspace(); return render(); }
             if (action === "go-autopilot") { state.mode = "autopilot"; persistWorkspace(); return render(); }
+            if (action === "go-media") { state.mode = "media"; persistWorkspace(); return render(); }
             if (action === "go-social") { state.mode = "social"; persistWorkspace(); return render(); }
             if (action === "go-marketing") { state.mode = "marketing"; persistWorkspace(); return render(); }
             if (action === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); return render(); }
