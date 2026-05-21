@@ -1638,7 +1638,7 @@
       .ref-main-grid{
         min-height:0;
         display:grid;
-        grid-template-columns:minmax(0,1.42fr) minmax(300px,.7fr) minmax(300px,.62fr);
+        grid-template-columns:minmax(0,1.34fr) minmax(340px,.78fr) minmax(300px,.62fr);
         gap:10px;
       }
       .ref-featured,.ref-insights,.ref-activity{min-height:0}
@@ -1745,8 +1745,9 @@
       }
       .ref-radar{
         position:relative;
-        min-height:0;
-        margin:16px;
+        min-height:145px;
+        margin:10px 16px;
+        overflow:hidden;
         border-radius:10px;
         background:radial-gradient(circle,rgba(241,58,69,.12),transparent 55%);
       }
@@ -1772,7 +1773,9 @@
         top:var(--y);
         transform:translate(-50%,-50%);
         color:#c8d1df;
-        font-size:11px;
+        font-size:10px;
+        line-height:1.2;
+        max-width:74px;
         text-align:center;
       }
       .ref-radar strong{color:#fff;font-size:13px}
@@ -1781,10 +1784,10 @@
         grid-template-columns:1fr 1fr;
         border-top:1px solid rgba(255,255,255,.07);
       }
-      .ref-insight-foot div{padding:12px 14px}
+      .ref-insight-foot div{padding:10px 14px;min-width:0;overflow:hidden}
       .ref-insight-foot div+div{border-left:1px solid rgba(255,255,255,.07)}
       .ref-insight-foot span,.ref-insight-foot em{display:block;color:#8c96a5;font-size:10px;text-transform:uppercase;letter-spacing:.08em;font-style:normal}
-      .ref-insight-foot strong{display:block;color:#ff5360;margin:5px 0 3px}
+      .ref-insight-foot strong{display:block;color:#ff5360;margin:4px 0 2px;font-size:13px;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
       .ref-activity-list{padding:14px;display:grid;gap:11px}
       .ref-activity .timeline-row{
         display:grid;
@@ -2785,8 +2788,6 @@
               <div class="ref-radar-shape"></div>
               <span style="--x:50%;--y:8%">Hook<br><strong>${html(score(entry) || 7)}</strong></span>
               <span style="--x:84%;--y:34%">Visual<br><strong>8.1</strong></span>
-              <span style="--x:72%;--y:78%">Pacing<br><strong>7.2</strong></span>
-              <span style="--x:18%;--y:68%">Audience<br><strong>7.8</strong></span>
               <span style="--x:13%;--y:34%">Share<br><strong>8.0</strong></span>
             </div>
             <div class="ref-insight-foot">
