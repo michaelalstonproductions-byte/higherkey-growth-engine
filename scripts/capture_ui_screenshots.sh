@@ -3,8 +3,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="$ROOT/out/ui_screenshots"
-DASHBOARD_SHOT="$OUT_DIR/v6_reference_style_dashboard.png"
-REPORT="$OUT_DIR/v6_reference_style_capture_report.txt"
+REPORT="$OUT_DIR/v6_1_reference_style_capture_report.txt"
 
 mkdir -p "$OUT_DIR"
 cd "$ROOT"
@@ -23,8 +22,19 @@ const fs = require("fs");
 const path = require("path");
 
 const root = process.env.HK_CAPTURE_ROOT;
-const dashboardShot = process.env.HK_CAPTURE_DASHBOARD_SHOT;
-const tmpShot = "/private/tmp/higherkey_v6_ui_style_clean.png";
+const outDir = process.env.HK_CAPTURE_OUT_DIR;
+const reportJson = process.env.HK_CAPTURE_JSON_REPORT;
+const tmpShot = "/private/tmp/higherkey_v6_1_ui_style_clean.png";
+const pages = [
+  ["command", "Command/Home", "v6_1_command_home.png"],
+  ["queue", "Review", "v6_1_review.png"],
+  ["media", "Media", "v6_1_media.png"],
+  ["marketing", "Marketing", "v6_1_marketing.png"],
+  ["autopilot", "Autopilot", "v6_1_autopilot.png"],
+  ["social", "Exports", "v6_1_exports.png"],
+  ["diagnostics", "Support", "v6_1_support.png"],
+  ["settings", "Settings", "v6_1_settings.png"]
+];
 
 const timeout = setTimeout(() => {
   console.error("[capture] timed out");
@@ -48,12 +58,24 @@ async function main() {
   await win.loadFile(path.join(root, "dashboard", "review.html"));
   await new Promise((resolve) => setTimeout(resolve, 2500));
   await win.webContents.executeJavaScript(`
-    window.higherkey = window.higherkey || { localOnly: true };
+    window.higherkey = Object.assign({
+      localOnly: true,
+      getAppInfo: async () => ({
+        version: 'V6.1',
+        activeProjectRoot: '${root}',
+        projectRoot: '${root}',
+        contentInbox: 'content_inbox',
+        exportDirectory: 'out/approved_posts',
+        build: { packageVersion: '6.1.0', buildStatus: 'release-candidate' }
+      }),
+      getLocalApiStatus: async () => ({ state: 'ready', running: false }),
+      getTrialReadiness: async () => ({ readiness: { status: 'not run' } })
+    }, window.higherkey || {});
     if (typeof state === 'object') {
       state.mode = 'command';
       state.appInfo = Object.assign({}, state.appInfo || {}, {
-        version: 'V6.0',
-        appVersion: '6.0.0',
+        version: 'V6.1',
+        appVersion: '6.1.0',
         activeProjectRoot: '${root}',
         projectRoot: '${root}',
         devMode: false
@@ -72,11 +94,35 @@ async function main() {
     true;
   `);
   await new Promise((resolve) => setTimeout(resolve, 1200));
-  const image = await win.webContents.capturePage({ x: 0, y: 0, width: 1440, height: 1000 });
-  fs.mkdirSync(path.dirname(dashboardShot), { recursive: true });
-  fs.writeFileSync(dashboardShot, image.toPNG());
-  fs.writeFileSync(tmpShot, image.toPNG());
-  console.log(`[capture] dashboard: ${dashboardShot}`);
+  fs.mkdirSync(outDir, { recursive: true });
+  const captured = [];
+  const missing = [];
+  for (const [mode, label, fileName] of pages) {
+    const shotPath = path.join(outDir, fileName);
+    try {
+      const ok = await win.webContents.executeJavaScript(`
+        if (typeof state !== 'object' || typeof render !== 'function') false;
+        else {
+          state.mode = ${JSON.stringify(mode)};
+          state.workspace = Object.assign({}, state.workspace || {}, { mode: ${JSON.stringify(mode)} });
+          render();
+          document.getElementById('startupOverlay')?.classList.remove('visible');
+          document.getElementById('notice')?.classList.remove('visible');
+          true;
+        }
+      `);
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      const image = await win.webContents.capturePage({ x: 0, y: 0, width: 1440, height: 1000 });
+      fs.writeFileSync(shotPath, image.toPNG());
+      if (mode === "command") fs.writeFileSync(tmpShot, image.toPNG());
+      if (ok) captured.push({ mode, label, path: shotPath });
+      else missing.push({ mode, label, reason: "Dashboard state/render function was unavailable." });
+      console.log(`[capture] ${label}: ${shotPath}`);
+    } catch (error) {
+      missing.push({ mode, label, reason: String(error && error.message ? error.message : error) });
+    }
+  }
+  fs.writeFileSync(reportJson, JSON.stringify({ captured, missing }, null, 2));
   console.log(`[capture] tmp: ${tmpShot}`);
   clearTimeout(timeout);
   process.exit(0);
@@ -88,14 +134,14 @@ main().catch((error) => {
 });
 JS
 
-echo "[capture] screenshot: $DASHBOARD_SHOT"
+echo "[capture] screenshots: $OUT_DIR"
 SCREENSHOT_STATUS=0
-rm -f "$DASHBOARD_SHOT" /private/tmp/higherkey_v6_ui_style_clean.png
-HK_CAPTURE_ROOT="$ROOT" HK_CAPTURE_DASHBOARD_SHOT="$DASHBOARD_SHOT" "$ROOT/node_modules/.bin/electron" "$TMP_HELPER" &
+rm -f "$OUT_DIR"/v6_1_*.png "$OUT_DIR/v6_1_capture_pages.json" /private/tmp/higherkey_v6_1_ui_style_clean.png
+HK_CAPTURE_ROOT="$ROOT" HK_CAPTURE_OUT_DIR="$OUT_DIR" HK_CAPTURE_JSON_REPORT="$OUT_DIR/v6_1_capture_pages.json" "$ROOT/node_modules/.bin/electron" "$TMP_HELPER" &
 CAPTURE_PID=$!
 CAPTURE_DONE=0
-for _ in {1..25}; do
-  if [[ -s "$DASHBOARD_SHOT" && -s /private/tmp/higherkey_v6_ui_style_clean.png ]]; then
+for _ in {1..35}; do
+  if [[ -s "$OUT_DIR/v6_1_capture_pages.json" && -s "$OUT_DIR/v6_1_settings.png" && -s /private/tmp/higherkey_v6_1_ui_style_clean.png ]]; then
     CAPTURE_DONE=1
     break
   fi
@@ -121,17 +167,44 @@ cat > "$REPORT" <<EOF
 HigherKey Operator OS UI screenshot capture
 
 Captured:
-- Dashboard/current launched state: $DASHBOARD_SHOT
+EOF
+
+if [[ -s "$OUT_DIR/v6_1_capture_pages.json" ]]; then
+  python3 - "$OUT_DIR/v6_1_capture_pages.json" >> "$REPORT" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+for item in data.get("captured", []):
+    print(f"- {item['label']}: {item['path']}")
+missing = data.get("missing", [])
+print("")
+print("Missing:")
+if missing:
+    for item in missing:
+        print(f"- {item['label']}: {item['reason']}")
+else:
+    print("- None")
+PY
+else
+  cat >> "$REPORT" <<EOF
+- None
+
+Missing:
+- Command/Home, Review, Media, Marketing, Autopilot, Exports, Support, and Settings: screenshot helper did not complete.
+EOF
+fi
+
+cat >> "$REPORT" <<EOF
 
 Launch:
 - npm run app:open-latest exit code: $APP_OPEN_STATUS
 
 Screenshot:
 - Electron capture exit code: $SCREENSHOT_STATUS
-- Clean temp copy: /private/tmp/higherkey_v6_ui_style_clean.png
+- Clean temp copy: /private/tmp/higherkey_v6_1_ui_style_clean.png
 
 Page switching:
-- Not automated by this helper. Manual page screenshots are still needed for Command/Home, Review, Media, Marketing, Autopilot, Exports, Support, and Settings if exact per-page visual evidence is required.
+- Automated by setting dashboard state.mode for each main page and re-rendering before capture.
 
 Notes:
 - This helper does not call cloud APIs or social posting APIs.

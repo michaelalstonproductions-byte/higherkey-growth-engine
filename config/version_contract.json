@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "6.0.1",
-  "release_version": "V6.0.1",
+  "app_version": "6.1.0",
+  "release_version": "V6.1",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -143,6 +143,12 @@
       "to": "V6.0.1",
       "safe": true,
       "notes": "Update release audit and packaging metadata for V6.0.1 without changing dashboard UI behavior, manual upload workflow, or adding cloud/social posting APIs."
+    },
+    {
+      "from": "V6.0.1",
+      "to": "V6.1",
+      "safe": true,
+      "notes": "Polish the dashboard shell, command center, review, media, marketing, autopilot, exports, support, and settings views against the local UI reference images without changing backend behavior or adding cloud/social posting APIs."
     }
   ],
   "required_runtime_files": [

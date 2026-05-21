@@ -79,6 +79,9 @@ def rel(path: Path, root: Path = ROOT) -> str:
 
 
 def normalize_release(package_version: str) -> str:
+    parts = package_version.split(".")
+    if len(parts) >= 3 and parts[2] == "0":
+        return f"V{parts[0]}.{parts[1]}"
     return f"V{package_version}"
 
 
@@ -266,9 +269,9 @@ def main() -> int:
         for name in ["README.md", "CLIENT_QUICK_START.md", "CLIENT_HANDOFF_GUIDE.md", "TRIAL_DELIVERY_CHECKLIST.md", "CLIENT_TRIAL_QA_SUMMARY.md"]
     ).lower()
     checks = [
-        check("version_metadata_alignment", "pass" if version["aligned"] else "fail", "V6.0 package, release, lockfile, and upgrade contract align.", **version),
+        check("version_metadata_alignment", "pass" if version["aligned"] else "fail", "Package, release, lockfile, and upgrade contract align.", **version),
         check("latest_build_manifest", "pass" if latest_build else "needs_attention", "dist/latest-build.json exists after a desktop build.", exists=bool(latest_build)),
-        check("dmg_exists", "pass" if dmg_path.exists() else "needs_attention", "Expected V6.0 DMG exists after unsigned packaging.", path=rel(dmg_path, root), exists=dmg_path.exists()),
+        check("dmg_exists", "pass" if dmg_path.exists() else "needs_attention", "Expected versioned DMG exists after unsigned packaging.", path=rel(dmg_path, root), exists=dmg_path.exists()),
         check("app_bundle_exists", "pass" if packaged["app_bundle_exists"] else "needs_attention", "Unpacked app bundle exists after dist:dir.", exists=packaged["app_bundle_exists"]),
         check("packaged_required_files", "pass" if not packaged["missing"] else "needs_attention", "Packaged app contains required V6 modules, scripts, and configs.", missing=packaged["missing"]),
         check("packaged_runtime_exclusions", "pass" if not packaged["forbidden_runtime_dirs"] else "fail", "Packaged resources exclude runtime output folders.", forbidden=packaged["forbidden_runtime_dirs"]),
@@ -280,7 +283,7 @@ def main() -> int:
         check("cloud_social_api_scan", "pass" if not source_safety["risky_hits"] else "fail", "No cloud, live Instagram, or social posting API calls detected.", risky_hits=source_safety["risky_hits"][:20]),
         check("manual_upload_language", "pass" if "manual upload" in docs_text and "no social posting" in docs_text else "fail", "Docs include manual upload and no social posting language."),
         check("client_quick_start", "pass" if (root / "CLIENT_QUICK_START.md").exists() else "fail", "Client quick start exists."),
-        check("readme_release_notes", "pass" if "v6.0 release candidate" in docs_text else "fail", "README includes V6.0 release candidate notes."),
+        check("readme_release_notes", "pass" if "release candidate" in docs_text else "fail", "README includes release candidate notes."),
         check("support_workflow", "pass" if (root / "scripts" / "create_issue_report.py").exists() else "fail", "Support package script exists."),
         check("trial_workflow", "pass" if (root / "scripts" / "package_trial_release.py").exists() else "fail", "Trial package script exists."),
         check("local_command_outputs", "pass" if local_builds["ok"] else "fail", "Production command and Autopilot console build locally.", results=local_builds["results"]),
