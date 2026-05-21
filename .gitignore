@@ -10,6 +10,7 @@ captions/
 queue/
 analytics/
 content_inbox/
+docs/ui-reference/
 HIGHERKEY_OPERATOR_OS_SETUP.md
 config/desktop_runtime.json
 config/project_manifest.json

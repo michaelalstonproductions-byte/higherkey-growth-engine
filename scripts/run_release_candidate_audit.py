@@ -79,9 +79,6 @@ def rel(path: Path, root: Path = ROOT) -> str:
 
 
 def normalize_release(package_version: str) -> str:
-    parts = package_version.split(".")
-    if len(parts) >= 2:
-        return f"V{parts[0]}.{parts[1]}"
     return f"V{package_version}"
 
 
@@ -208,8 +205,11 @@ def version_alignment(root: Path) -> dict[str, Any]:
     expected_release = normalize_release(package_version)
     root_lock = lock.get("packages", {}).get("", {}) if isinstance(lock, dict) and isinstance(lock.get("packages"), dict) else {}
     has_path = False
+    has_current_path = False
     if isinstance(contract, dict):
-        has_path = any(item.get("from") == "V5.9" and item.get("to") == "V6.0" for item in contract.get("supported_upgrade_paths", []))
+        supported_paths = contract.get("supported_upgrade_paths", [])
+        has_path = any(item.get("from") == "V5.9" and item.get("to") == "V6.0" for item in supported_paths)
+        has_current_path = any(item.get("to") == expected_release for item in supported_paths)
     return {
         "package_version": package_version,
         "package_lock_version": str(lock.get("version", "")) if isinstance(lock, dict) else "",
@@ -219,14 +219,15 @@ def version_alignment(root: Path) -> dict[str, Any]:
         "contract_app_version": str(contract.get("app_version", "")) if isinstance(contract, dict) else "",
         "contract_release_version": str(contract.get("release_version", "")) if isinstance(contract, dict) else "",
         "has_v59_to_v60_path": has_path,
-        "aligned": package_version == "6.0.0"
-        and str(root_lock.get("version", "")) == package_version
+        "has_current_release_path": has_current_path,
+        "aligned": str(root_lock.get("version", "")) == package_version
         and str(lock.get("version", "")) == package_version
         and str(release.get("version", "")) == expected_release
-        and str(release.get("release_name", "")) == "Release Candidate"
+        and bool(str(release.get("release_name", "")).strip())
         and str(contract.get("app_version", "")) == package_version
         and str(contract.get("release_version", "")) == expected_release
-        and has_path,
+        and has_path
+        and has_current_path,
     }
 
 
