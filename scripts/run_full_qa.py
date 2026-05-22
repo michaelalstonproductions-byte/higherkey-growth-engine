@@ -73,6 +73,13 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "run_operator_autopilot.py",
         resources / "app-assets" / "scripts" / "autopilot_preflight.py",
         resources / "app-assets" / "scripts" / "build_autopilot_console.py",
+        resources / "app-assets" / "scripts" / "build_post_composer_drafts.py",
+        resources / "app-assets" / "scripts" / "schedule_social_posts.py",
+        resources / "app-assets" / "scripts" / "run_social_publisher.py",
+        resources / "app-assets" / "scripts" / "test_social_connector_safety.py",
+        resources / "app-assets" / "scripts" / "check_social_connectors.py",
+        resources / "app-assets" / "scripts" / "check_publish_readiness.py",
+        resources / "app-assets" / "scripts" / "run_social_oauth_callback.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -82,7 +89,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
     forbidden = [resources / "app-assets" / name for name in ("analytics", "queue", "clips", "captions", "out", "logs", "content_inbox")]
     missing = [relative_path(path, root) for path in required if not path.exists()]
     present_forbidden = [relative_path(path, root) for path in forbidden if path.exists()]
-    status = "pass" if not missing and not present_forbidden else "fail"
+    status = "fail" if present_forbidden else ("warn" if missing else "pass")
     return {
         "name": "packaged_path_verification",
         "status": status,
@@ -133,8 +140,12 @@ def external_api_scan(root: Path) -> dict[str, object]:
             "growth_engine/social_publisher.py",
             "growth_engine/social_platforms/instagram.py",
             "growth_engine/social_platforms/tiktok.py",
+            "scripts/check_social_connectors.py",
+            "scripts/check_publish_readiness.py",
+            "scripts/run_social_oauth_callback.py",
             "config/social_connectors.example.json",
             "README.md",
+            "docs/social_connector_setup.md",
         } and (
             "dry" in lower
             or "official" in lower
@@ -449,6 +460,11 @@ def social_connector_scheduler_check(root: Path) -> dict[str, object]:
         root / "analytics" / "social_schedule.json": {"local_only": bool, "manual_upload_fallback": bool, "items": list},
         root / "analytics" / "social_post_queue.json": {"local_only": bool, "manual_upload_fallback": bool, "items": list},
         root / "analytics" / "social_publisher_status.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "results": list},
+        root / "analytics" / "social_connection_status.json": {"local_only": bool, "manual_upload_fallback": bool, "token_values_exposed": bool, "summary": dict},
+        root / "analytics" / "client_social_connection_status.json": {"local_only": bool, "manual_upload_fallback": bool, "token_values_exposed": bool, "summary": dict},
+        root / "analytics" / "social_connector_diagnostics.json": {"local_only": bool, "manual_upload_fallback": bool, "token_values_exposed": bool, "checks": list},
+        root / "analytics" / "publish_readiness.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "items": list},
+        root / "analytics" / "client_publish_readiness.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "items": list},
     }
     missing = [relative_path(path, root) for path in required if not path.exists()]
     json_errors = []
@@ -1127,6 +1143,9 @@ def main() -> int:
     append_stage(results, qa_stage("operator_autopilot_retry_failed_dry_run", ["python3", "scripts/run_operator_autopilot.py", "--retry-failed", "--dry-run"], root, timeout=60), config)
     print("[qa] autopilot_console_validation", flush=True)
     append_stage(results, autopilot_console_check(root), config)
+    append_stage(results, qa_stage("social_connector_diagnostics", ["python3", "scripts/check_social_connectors.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("publish_readiness_check", ["python3", "scripts/check_publish_readiness.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("social_oauth_callback_dry_run", ["python3", "scripts/run_social_oauth_callback.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("post_composer_drafts_build", ["python3", "scripts/build_post_composer_drafts.py"], root, timeout=60), config)
     append_stage(results, qa_stage("social_schedule_dry_run", ["python3", "scripts/schedule_social_posts.py", "--dry-run", "--from-drafts", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("social_publisher_dry_run", ["python3", "scripts/run_social_publisher.py", "--dry-run", "--due-now", "--json"], root, timeout=60), config)

@@ -123,7 +123,8 @@ def publish_drafts(config: AppConfig, *, dry_run: bool = True, live: bool = Fals
             platform_auth = auth_status.get(platform_key, {})
             enabled = platform_config.get("enabled") is True
             live_enabled = platform_config.get("live_api_enabled") is True
-            if live and (not enabled or not live_enabled or platform_auth.get("status") != "connected"):
+            auth_ready = platform_auth.get("status") in {"connected", "ready_for_live_api"}
+            if live and (not enabled or not live_enabled or not auth_ready):
                 result = {
                     "draft_id": draft.get("draft_id"),
                     "platform": draft_platform,

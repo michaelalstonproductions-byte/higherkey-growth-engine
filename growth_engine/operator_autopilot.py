@@ -26,6 +26,10 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "build_task_snapshot": ["python3", "scripts/build_task_snapshot.py"],
     "build_observability_report": ["python3", "scripts/build_observability_report.py"],
     "build_trial_readiness_report": ["python3", "scripts/build_trial_readiness_report.py"],
+    "check_social_connectors": ["python3", "scripts/check_social_connectors.py"],
+    "check_publish_readiness": ["python3", "scripts/check_publish_readiness.py"],
+    "build_post_composer_drafts": ["python3", "scripts/build_post_composer_drafts.py"],
+    "run_social_publisher": ["python3", "scripts/run_social_publisher.py"],
 }
 
 POLICY_PATH = "config/autopilot_policy.json"
@@ -173,6 +177,12 @@ def _title_to_safe_key(title: str, category: str) -> str | None:
         ("preview", "build_media_cache"),
         ("media cache", "build_media_cache"),
         ("trial", "build_trial_readiness_report"),
+        ("connector", "check_social_connectors"),
+        ("account", "check_social_connectors"),
+        ("readiness", "check_publish_readiness"),
+        ("draft", "build_post_composer_drafts"),
+        ("dry-run publisher", "run_social_publisher"),
+        ("dry run publisher", "run_social_publisher"),
     ]
     for needle, key in mapping:
         if needle in lower:
@@ -231,6 +241,10 @@ def _default_safe_cards() -> list[dict[str, Any]]:
         ("refresh_marketing_plan", "Refresh Marketing Plan", "build_marketing_plan"),
         ("refresh_autopilot_plan", "Refresh Operator Autopilot", "build_operator_autopilot"),
         ("refresh_client_workflow", "Refresh Client Workflow", "build_client_workflow"),
+        ("check_social_connectors", "Check Social Connector Status", "check_social_connectors"),
+        ("check_publish_readiness", "Check Publish Readiness", "check_publish_readiness"),
+        ("build_post_composer_drafts", "Build Post Composer Drafts", "build_post_composer_drafts"),
+        ("run_social_publisher_dry_run", "Run Social Publisher Dry Run", "run_social_publisher"),
     ]
     cards: list[dict[str, Any]] = []
     now = utc_now()

@@ -2,6 +2,20 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V6.3 Social Account Connection Wizard
+
+V6.3 adds an in-app Social Accounts panel and Scheduled Posting Readiness checks. The Scheduler now shows Instagram and TikTok setup status, missing environment variables, redacted token state, manual upload fallback, dry-run readiness, auth-required drafts, live-blocked drafts, and posted history context.
+
+Useful local checks:
+
+```bash
+python3 scripts/check_social_connectors.py
+python3 scripts/check_publish_readiness.py
+python3 scripts/run_social_oauth_callback.py --dry-run
+```
+
+HigherKey uses official platform APIs only. Manual upload is always available. There are no password fields, no scraping, no browser automation, and no live posting unless official credentials, account authorization, live mode, due scheduling, and explicit approval are all satisfied. QA runs dry-run checks only and must not make live Instagram/TikTok calls.
+
 ## V6.2 Social Connector + Scheduler
 
 V6.2 adds local Social Connector Studio, Post Composer, and Scheduled Publishing infrastructure. HigherKey can build post drafts from approved clips and social export packs, let the user paste or edit exact post text beside each clip, schedule drafts locally, and run a dry-run publisher. Manual upload remains available at every step.

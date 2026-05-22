@@ -2037,7 +2037,11 @@
         socialPostQueue: "../analytics/social_post_queue.json",
         socialPostHistory: "../analytics/social_post_history.json",
         socialAuthStatus: "../analytics/social_auth_status.json",
+        socialConnectionStatus: "../analytics/social_connection_status.json",
+        socialConnectorDiagnostics: "../analytics/client_social_connector_diagnostics.json",
         socialPublisherStatus: "../analytics/social_publisher_status.json",
+        publishReadiness: "../analytics/publish_readiness.json",
+        socialOAuthStatus: "../analytics/social_oauth_status.json",
         marketingBrief: "../analytics/marketing_brief.json",
         audienceProfile: "../analytics/audience_profile.json",
         marketAttackPlan: "../analytics/market_attack_plan.json",
@@ -2139,7 +2143,11 @@
         socialPostQueue: null,
         socialPostHistory: null,
         socialAuthStatus: null,
+        socialConnectionStatus: null,
+        socialConnectorDiagnostics: null,
         socialPublisherStatus: null,
+        publishReadiness: null,
+        socialOAuthStatus: null,
         marketingBrief: null,
         audienceProfile: null,
         marketAttackPlan: null,
@@ -3474,7 +3482,9 @@
       function renderSchedulerView() {
         const drafts = draftsList();
         const items = schedulerItems();
-        const auth = state.socialAuthStatus || {};
+        const auth = socialConnectionStatus();
+        const readiness = publishReadinessItems();
+        const readinessSummary = state.publishReadiness?.summary || {};
         return `
           <div class="view marketing-view scheduler-view">
             <section class="panel">
@@ -3484,17 +3494,36 @@
                   <button class="btn red" data-desktop-action="build-post-drafts">Build Drafts</button>
                   <button class="btn" data-desktop-action="schedule-selected-posts">Schedule Selected</button>
                   <button class="btn" data-desktop-action="dry-run-publish">Run Dry-Run Publisher</button>
+                  <button class="btn" data-desktop-action="check-publish-readiness">Check Readiness</button>
                   <button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button>
                 </div>
               </div>
               <div class="dashboard-grid-secondary">
-                ${schedulerBucket("Today", (item) => String(item.scheduled_for || "").slice(0, 10) === new Date().toISOString().slice(0, 10))}
-                ${schedulerBucket("Tomorrow", (item) => Boolean(item.scheduled_for))}
-                ${schedulerBucket("This Week", () => true)}
-                ${schedulerBucket("Needs Approval", (item) => item.approval_required || item.status === "approval_required")}
-                ${schedulerBucket("Ready for Manual Upload", (item) => item.status === "manual_upload_required" || item.publish_mode === "manual")}
-                ${schedulerBucket("Connected Accounts", () => auth.instagram?.connected || auth.tiktok?.connected)}
+                ${metricPanel("Drafts Ready", readinessSummary.drafts_ready ?? drafts.length, "Local post composer drafts")}
+                ${metricPanel("Scheduled", readinessSummary.scheduled ?? items.filter((item) => item.scheduled_for).length, "Calendar queue")}
+                ${metricPanel("Ready for Manual Upload", readinessSummary.ready_for_manual_upload ?? 0, "Fallback available")}
+                ${metricPanel("Auth Required", readinessSummary.auth_required ?? 0, "Connector setup needed")}
+                ${metricPanel("Dry Run Ready", readinessSummary.dry_run_ready ?? 0, "Safe publish test")}
+                ${metricPanel("Live Blocked", readinessSummary.live_blocked ?? 0, "Protected by gates")}
               </div>
+            </section>
+            <section class="panel view-scroll">
+              <div class="panel-head">
+                <div><div class="panel-title">Social Accounts</div><div>HigherKey uses official platform APIs only. Manual upload is always available.</div></div>
+                <div class="toolbar">
+                  <button class="btn" data-desktop-action="check-social-connectors">Check Status</button>
+                  <button class="btn" data-desktop-action="run-oauth-dry-run">Start OAuth Dry Run</button>
+                  <button class="btn" data-desktop-action="dry-run-publish">Run Dry-Run Publish Test</button>
+                </div>
+              </div>
+              <div class="dashboard-grid-secondary">
+                ${connectorCard("instagram", "Instagram", auth.instagram || {})}
+                ${connectorCard("tiktok", "TikTok", auth.tiktok || {})}
+              </div>
+            </section>
+            <section class="panel view-scroll">
+              <div class="panel-head"><div class="panel-title">Publishing Readiness</div><div>${html(readiness.length)} draft/post checks</div></div>
+              <div class="card-grid">${readiness.slice(0, 12).map(readinessCard).join("") || `<div class="empty-state"><h2>No readiness data yet</h2><p>Build drafts, then check publish readiness.</p><button class="btn red" data-desktop-action="check-publish-readiness">Check Readiness</button></div>`}</div>
             </section>
             <section class="panel view-scroll">
               <div class="panel-head"><div class="panel-title">Draft Posts</div><div>${html(drafts.length)} local drafts</div></div>
@@ -3512,10 +3541,6 @@
               <div class="panel-head"><div class="panel-title">Scheduled Queue</div><div>${html(items.length)} items</div></div>
               <div class="checklist">${items.slice(0, 16).map((item) => `<span>${html(item.platform)} · ${html(item.clip_id || item.draft_id)} · ${html(item.status)} · ${html(item.scheduled_for || "unscheduled")}</span>`).join("") || `<span>No scheduled posts yet.</span>`}</div>
             </section>
-            <div class="dashboard-grid-secondary">
-              ${connectorCard("instagram", "Instagram", auth.instagram || {})}
-              ${connectorCard("tiktok", "TikTok", auth.tiktok || {})}
-            </div>
           </div>
         `;
       }
@@ -3701,7 +3726,7 @@
           || null;
       }
       function connectorState(platform) {
-        const status = state.socialAuthStatus || {};
+        const status = socialConnectionStatus();
         if (platform === "instagram_reels") return status.instagram || {};
         if (platform === "tiktok") return status.tiktok || {};
         return { status: "manual_upload_required", live_api_enabled: false, connected: false };
@@ -3762,12 +3787,39 @@
         const schedule = state.socialSchedule?.items || [];
         return (Array.isArray(queue) && queue.length ? queue : (Array.isArray(schedule) ? schedule : []));
       }
+      function socialConnectionStatus() {
+        return state.socialConnectionStatus || state.socialAuthStatus || {};
+      }
+      function publishReadinessItems() {
+        const items = state.publishReadiness?.items || [];
+        return Array.isArray(items) ? items : [];
+      }
+      function metricPanel(label, value, detail) {
+        return `<section class="small-panel"><div class="panel-title">${html(label)}</div><strong>${html(value)}</strong><div class="muted">${html(detail)}</div></section>`;
+      }
       function schedulerBucket(label, filter) {
         const items = schedulerItems().filter(filter);
         return `<section class="small-panel"><div class="panel-title">${html(label)}</div><strong>${html(items.length)}</strong><div class="muted">${html(items[0]?.platform || "No posts")}</div></section>`;
       }
+      function readinessCard(item) {
+        const readiness = (item.readiness || []).join(", ") || item.status || "draft";
+        const reason = (item.blocked_reasons || []).join(" ") || "Manual upload and dry-run remain available.";
+        return `
+          <div class="card">
+            <h3>${html(item.title || item.clip_id || item.draft_id || "Draft")}</h3>
+            <p>${html(item.post_text_preview || "No post text saved yet.")}</p>
+            <div class="summary-row"><span>Platform</span><strong>${html(item.platform || "missing")}</strong></div>
+            <div class="summary-row"><span>Scheduled</span><strong>${html(item.scheduled_for || "not scheduled")}</strong></div>
+            <div class="summary-row"><span>Status</span><strong>${html(readiness)}</strong></div>
+            <div class="muted">${html(reason)}</div>
+            <div class="toolbar"><button class="btn" data-desktop-action="dry-run-publish" data-draft-id="${html(item.draft_id || "")}">Run Dry Run</button><button class="btn" data-desktop-action="open-social-exports">Manual Upload Folder</button></div>
+          </div>
+        `;
+      }
       function connectorCard(platform, label, status) {
         const scopes = (status.required_permissions || status.required_scopes || []).join(", ") || "not configured";
+        const env = Object.values(status.credentials || {}).map((item) => `${item.env || "env"}: ${item.present ? "present" : "missing"}`).join(" · ") || "Use config/social_connectors.example.json";
+        const token = status.token || {};
         const oauthButton = platform === "instagram"
           ? `<button class="btn" data-desktop-action="start-instagram-oauth">Start Instagram OAuth</button>`
           : `<button class="btn" data-desktop-action="start-tiktok-oauth">Start TikTok OAuth</button>`;
@@ -3777,12 +3829,17 @@
             <div class="summary-row"><span>Configured</span><strong>${html(status.enabled ? "yes" : "no")}</strong></div>
             <div class="summary-row"><span>Status</span><strong>${html(status.status || "not_configured")}</strong></div>
             <div class="summary-row"><span>Live posting</span><strong>${html(status.live_api_enabled ? "enabled" : "disabled")}</strong></div>
+            <div class="summary-row"><span>Manual fallback</span><strong>enabled</strong></div>
+            <div class="summary-row"><span>Token</span><strong>${html(token.token_present ? "redacted" : "none")}</strong></div>
+            <div class="muted">${html(env)}</div>
             <div class="muted">${html(scopes)}</div>
             <div class="toolbar">
-              <button class="btn" data-desktop-action="check-social-auth">Check Connector Status</button>
+              <button class="btn" data-desktop-action="check-social-connectors">Check Status</button>
+              <button class="btn" data-desktop-action="run-oauth-dry-run" data-platform="${html(platform)}">Start OAuth Dry Run</button>
               ${oauthButton}
               <button class="btn" data-desktop-action="disconnect-social-connector">Disconnect</button>
               <button class="btn" data-desktop-action="dry-run-publish">Run Dry Run</button>
+              <button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button>
             </div>
           </section>
         `;
@@ -5117,6 +5174,41 @@
         return setNotice(result?.code === 0 ? "Connector status refreshed. Tokens are not shown or logged." : "Connector status needs attention.");
       }
 
+      async function checkSocialConnectors() {
+        if (!window.higherkey?.checkSocialConnectors) {
+          return setNotice("Static mode: run python3 scripts/check_social_connectors.py.");
+        }
+        const result = await window.higherkey.checkSocialConnectors();
+        await refreshLiveData();
+        state.mode = "scheduler";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Social account status refreshed. Secrets and tokens remain redacted." : "Social connector diagnostics need attention.");
+      }
+
+      async function checkPublishReadiness() {
+        if (!window.higherkey?.checkPublishReadiness) {
+          return setNotice("Static mode: run python3 scripts/check_publish_readiness.py.");
+        }
+        const result = await window.higherkey.checkPublishReadiness();
+        await refreshLiveData();
+        state.mode = "scheduler";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? `Publish readiness checked: ${result.parsed?.items || 0} item(s).` : "Publish readiness needs attention.");
+      }
+
+      async function runOAuthDryRun(button) {
+        const platform = button?.dataset.platform || "dry_run";
+        if (!window.higherkey?.runSocialOAuthDryRun) {
+          return setNotice("Static mode: run python3 scripts/run_social_oauth_callback.py --dry-run.");
+        }
+        const result = await window.higherkey.runSocialOAuthDryRun({ platform });
+        await refreshLiveData();
+        render();
+        return setNotice(result?.code === 0 ? "OAuth dry run recorded locally. No token exchange or password storage occurred." : "OAuth dry run needs attention.");
+      }
+
       async function buildMarketingPlan() {
         if (!window.higherkey?.buildMarketingPlan) {
           return setNotice("Static mode: run python3 scripts/build_marketing_plan.py to build the local marketing plan.");
@@ -5450,6 +5542,9 @@
             if (action === "dry-run-publish") return runSocialPublisher(button, false);
             if (action === "publish-now") return runSocialPublisher(button, true);
             if (action === "check-social-auth") return checkSocialAuth();
+            if (action === "check-social-connectors") return checkSocialConnectors();
+            if (action === "check-publish-readiness") return checkPublishReadiness();
+            if (action === "run-oauth-dry-run") return runOAuthDryRun(button);
             if (action === "disconnect-social-connector") return setNotice("Connector disconnect is a local-safe placeholder. No token values are shown; remove local token storage from Keychain or encrypted storage when configured.");
             if (action === "start-instagram-oauth") {
               if (!window.higherkey?.startInstagramOAuth) return setNotice("Static mode: configure Meta OAuth locally, then check connector status.");
@@ -5590,7 +5685,11 @@
           state.socialPostQueue = await optionalJson(PATHS.socialPostQueue, null);
           state.socialPostHistory = await optionalJson(PATHS.socialPostHistory, null);
           state.socialAuthStatus = await optionalJson(PATHS.socialAuthStatus, null);
+          state.socialConnectionStatus = await optionalJson(PATHS.socialConnectionStatus, null);
+          state.socialConnectorDiagnostics = await optionalJson(PATHS.socialConnectorDiagnostics, null);
           state.socialPublisherStatus = await optionalJson(PATHS.socialPublisherStatus, null);
+          state.publishReadiness = await optionalJson(PATHS.publishReadiness, null);
+          state.socialOAuthStatus = await optionalJson(PATHS.socialOAuthStatus, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, null);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, null);
@@ -5696,7 +5795,11 @@
           state.socialPostQueue = await optionalJson(PATHS.socialPostQueue, state.socialPostQueue);
           state.socialPostHistory = await optionalJson(PATHS.socialPostHistory, state.socialPostHistory);
           state.socialAuthStatus = await optionalJson(PATHS.socialAuthStatus, state.socialAuthStatus);
+          state.socialConnectionStatus = await optionalJson(PATHS.socialConnectionStatus, state.socialConnectionStatus);
+          state.socialConnectorDiagnostics = await optionalJson(PATHS.socialConnectorDiagnostics, state.socialConnectorDiagnostics);
           state.socialPublisherStatus = await optionalJson(PATHS.socialPublisherStatus, state.socialPublisherStatus);
+          state.publishReadiness = await optionalJson(PATHS.publishReadiness, state.publishReadiness);
+          state.socialOAuthStatus = await optionalJson(PATHS.socialOAuthStatus, state.socialOAuthStatus);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, state.audienceProfile);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, state.marketAttackPlan);

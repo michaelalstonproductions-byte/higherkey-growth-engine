@@ -18,7 +18,11 @@
     "scripts/build_runtime_snapshot.py",
     "scripts/build_task_snapshot.py",
     "scripts/build_observability_report.py",
-    "scripts/build_trial_readiness_report.py"
+    "scripts/build_trial_readiness_report.py",
+    "scripts/check_social_connectors.py",
+    "scripts/check_publish_readiness.py",
+    "scripts/build_post_composer_drafts.py",
+    "scripts/run_social_publisher.py"
   ],
   "approval_required_commands": [
     "scripts/export_social_packs.py",

@@ -12,6 +12,9 @@ from .json_store import load_json_file, save_json_file
 
 
 STATUS_PATH = "social_auth_status.json"
+CONNECTION_STATUS_PATH = "social_connection_status.json"
+CLIENT_CONNECTION_STATUS_PATH = "client_social_connection_status.json"
+PLATFORMS = ("instagram", "tiktok")
 
 
 def connector_config_path(root: Path) -> Path:
@@ -31,6 +34,27 @@ def _env_present(name: str | None) -> bool:
 
 def _redacted_env_status(name: str | None) -> dict[str, Any]:
     return {"env": name or "", "present": _env_present(name)}
+
+
+def _status_file(config: AppConfig) -> dict[str, Any]:
+    return load_json_file(config.analytics_dir / STATUS_PATH, default={})
+
+
+def redacted_token_status(config: AppConfig, platform: str) -> dict[str, Any]:
+    metadata = _status_file(config).get("token_metadata", {})
+    platform_metadata = metadata.get(platform, {}) if isinstance(metadata, dict) else {}
+    status = str(platform_metadata.get("status") or "not_configured")
+    if not platform_metadata:
+        status = "not_configured"
+    return {
+        "platform": platform,
+        "status": status,
+        "token_present": bool(platform_metadata.get("token_present")),
+        "token_preview": "redacted" if platform_metadata.get("token_present") else "",
+        "expires_at": platform_metadata.get("expires_at"),
+        "storage": platform_metadata.get("storage", "local_keychain_or_encrypted_file"),
+        "token_values_exposed": False,
+    }
 
 
 def instagram_auth_url(config: dict[str, Any], state: str = "higherkey-local") -> str:
@@ -57,7 +81,7 @@ def tiktok_auth_url(config: dict[str, Any], state: str = "higherkey-local") -> s
     return "https://www.tiktok.com/v2/auth/authorize/?" + urlencode(params)
 
 
-def platform_status(config: dict[str, Any], platform: str) -> dict[str, Any]:
+def platform_status(config: dict[str, Any], platform: str, app_config: AppConfig | None = None) -> dict[str, Any]:
     platform_config = config.get(platform, {})
     if not platform_config or platform_config.get("enabled") is not True:
         return {
@@ -67,6 +91,9 @@ def platform_status(config: dict[str, Any], platform: str) -> dict[str, Any]:
             "live_api_enabled": False,
             "credentials": {},
             "connected": False,
+            "readiness": "ready_for_manual_upload",
+            "manual_upload_fallback": config.get("manual_upload_fallback", True),
+            "token": {"status": "not_configured", "token_values_exposed": False},
         }
     if platform == "instagram":
         credentials = {
@@ -83,9 +110,20 @@ def platform_status(config: dict[str, Any], platform: str) -> dict[str, Any]:
     else:
         credentials = {}
         auth_url = ""
+    token = redacted_token_status(app_config, platform) if app_config else {"status": "not_configured", "token_values_exposed": False}
     missing = [key for key, value in credentials.items() if not value.get("present")]
+    live_enabled = platform_config.get("live_api_enabled") is True
+    connected = token.get("status") == "connected" and not missing
     if missing:
         status = "credentials_missing"
+    elif token.get("status") in {"expired", "invalid"}:
+        status = str(token.get("status"))
+    elif connected and live_enabled:
+        status = "ready_for_live_api"
+    elif connected:
+        status = "live_disabled"
+    elif not live_enabled:
+        status = "dry_run_only"
     else:
         status = "auth_required"
     return {
@@ -93,20 +131,89 @@ def platform_status(config: dict[str, Any], platform: str) -> dict[str, Any]:
         "status": status,
         "enabled": platform_config.get("enabled") is True,
         "mode": platform_config.get("mode", "official_api"),
-        "live_api_enabled": platform_config.get("live_api_enabled") is True,
+        "live_api_enabled": live_enabled,
         "credentials": credentials,
+        "missing_credentials": missing,
         "required_permissions": platform_config.get("required_permissions", []),
         "required_scopes": platform_config.get("required_scopes", []),
         "redirect_uri": platform_config.get("redirect_uri"),
         "auth_url": auth_url,
-        "connected": False,
+        "connected": connected,
         "token_storage": config.get("storage", {}).get("token_storage", "local_keychain_or_encrypted_file"),
+        "token": token,
         "token_values_exposed": False,
+        "readiness": "ready_for_live_api" if status == "ready_for_live_api" else "ready_for_manual_upload",
+        "manual_upload_fallback": config.get("manual_upload_fallback", True),
+        "last_checked": utc_now(),
     }
 
 
-def check_social_auth_status(config: AppConfig) -> dict[str, Any]:
+def validate_connector_environment(config: AppConfig) -> dict[str, Any]:
     connectors = load_connector_config(config.root)
+    local_config = config.root / "config" / "social_connectors.json"
+    checks = []
+    for platform in PLATFORMS:
+        platform_config = connectors.get(platform, {})
+        env_names = []
+        if platform == "instagram":
+            env_names = [platform_config.get("app_id_env"), platform_config.get("app_secret_env")]
+        if platform == "tiktok":
+            env_names = [platform_config.get("client_key_env"), platform_config.get("client_secret_env")]
+        checks.append({
+            "platform": platform,
+            "enabled": platform_config.get("enabled") is True,
+            "mode": platform_config.get("mode", "official_api"),
+            "environment": [_redacted_env_status(name) for name in env_names if name],
+            "redirect_uri": platform_config.get("redirect_uri", ""),
+            "live_api_enabled": platform_config.get("live_api_enabled") is True,
+        })
+    return {
+        "local_only": True,
+        "config_file": "config/social_connectors.json" if local_config.exists() else "config/social_connectors.example.json",
+        "local_config_exists": local_config.exists(),
+        "manual_upload_fallback": connectors.get("manual_upload_fallback", True),
+        "live_api_enabled_default": connectors.get("live_api_enabled_default", False),
+        "token_storage": connectors.get("storage", {}).get("token_storage", "local_keychain_or_encrypted_file"),
+        "never_commit_tokens": connectors.get("storage", {}).get("never_commit_tokens", True),
+        "checks": checks,
+    }
+
+
+def connector_readiness_summary(statuses: dict[str, Any]) -> dict[str, Any]:
+    platform_statuses = [statuses.get(platform, {}) for platform in PLATFORMS]
+    return {
+        "manual_upload_ready": True,
+        "dry_run_ready": True,
+        "live_ready_count": sum(1 for item in platform_statuses if item.get("status") == "ready_for_live_api"),
+        "auth_required_count": sum(1 for item in platform_statuses if item.get("status") in {"auth_required", "dry_run_only", "live_disabled"}),
+        "credentials_missing_count": sum(1 for item in platform_statuses if item.get("status") == "credentials_missing"),
+        "not_configured_count": sum(1 for item in platform_statuses if item.get("status") == "not_configured"),
+        "manual_upload_fallback": statuses.get("manual_upload_fallback", True),
+        "live_api_enabled_default": statuses.get("live_api_enabled_default", False),
+    }
+
+
+def client_safe_status(payload: dict[str, Any]) -> dict[str, Any]:
+    safe = json.loads(json.dumps(payload))
+    for platform in PLATFORMS:
+        item = safe.get(platform, {})
+        item.pop("auth_url", None)
+        credentials = item.get("credentials", {})
+        for credential in credentials.values():
+            if isinstance(credential, dict):
+                credential.pop("value", None)
+        token = item.get("token", {})
+        if isinstance(token, dict):
+            token["token_preview"] = "redacted" if token.get("token_present") else ""
+            token["token_values_exposed"] = False
+    safe["client_safe"] = True
+    safe["token_values_exposed"] = False
+    return safe
+
+
+def connector_status(config: AppConfig) -> dict[str, Any]:
+    connectors = load_connector_config(config.root)
+    existing_status = _status_file(config)
     payload = {
         "version": 1,
         "updated_at": utc_now(),
@@ -115,16 +222,27 @@ def check_social_auth_status(config: AppConfig) -> dict[str, Any]:
         "live_api_enabled_default": connectors.get("live_api_enabled_default", False),
         "token_values_exposed": False,
         "never_commit_tokens": connectors.get("storage", {}).get("never_commit_tokens", True),
-        "instagram": platform_status(connectors, "instagram"),
-        "tiktok": platform_status(connectors, "tiktok"),
+        "environment": validate_connector_environment(config),
+        "instagram": platform_status(connectors, "instagram", config),
+        "tiktok": platform_status(connectors, "tiktok", config),
         "notes": [
+            "HigherKey uses official platform APIs only.",
+            "Manual upload is always available.",
             "No passwords are accepted or stored.",
-            "Token values are not written to analytics or UI logs.",
-            "Dry-run/manual mode remains the default when credentials or authorization are missing.",
+            "Token values are redacted and are not written to client status files.",
         ],
     }
+    if isinstance(existing_status.get("token_metadata"), dict):
+        payload["token_metadata"] = existing_status["token_metadata"]
+    payload["summary"] = connector_readiness_summary(payload)
+    save_json_file(config.analytics_dir / CONNECTION_STATUS_PATH, payload)
+    save_json_file(config.analytics_dir / CLIENT_CONNECTION_STATUS_PATH, client_safe_status(payload))
     save_json_file(config.analytics_dir / STATUS_PATH, payload)
     return payload
+
+
+def check_social_auth_status(config: AppConfig) -> dict[str, Any]:
+    return connector_status(config)
 
 
 def store_token_metadata(config: AppConfig, platform: str, token_payload: dict[str, Any]) -> dict[str, Any]:

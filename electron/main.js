@@ -1645,6 +1645,60 @@ async function checkSocialAuthStatus() {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function checkSocialConnectors() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/check_social_connectors.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function checkPublishReadiness() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/check_publish_readiness.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function runSocialOAuthDryRun(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/run_social_oauth_callback.py", "--dry-run"];
+  if (options.platform) args.push("--platform", String(options.platform));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getSocialConnectionStatus() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    status: await readAnalyticsJson("social_connection_status.json", {}),
+    clientStatus: await readAnalyticsJson("client_social_connection_status.json", {}),
+    diagnostics: await readAnalyticsJson("client_social_connector_diagnostics.json", {})
+  };
+}
+
+async function getPublishReadiness() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    readiness: await readAnalyticsJson("publish_readiness.json", {}),
+    clientReadiness: await readAnalyticsJson("client_publish_readiness.json", {})
+  };
+}
+
 async function startOAuth(platform) {
   const status = await checkSocialAuthStatus();
   const authUrl = status.parsed?.[platform]?.auth_url;
@@ -1973,6 +2027,11 @@ function registerIpc() {
   ipcMain.handle("socialPublisher:dryRun", runSocialPublisherDryRun);
   ipcMain.handle("socialPublisher:live", runSocialPublisherLive);
   ipcMain.handle("socialAuth:checkStatus", checkSocialAuthStatus);
+  ipcMain.handle("socialAuth:checkConnectors", checkSocialConnectors);
+  ipcMain.handle("socialAuth:getConnectionStatus", getSocialConnectionStatus);
+  ipcMain.handle("socialAuth:oauthDryRun", runSocialOAuthDryRun);
+  ipcMain.handle("socialReadiness:check", checkPublishReadiness);
+  ipcMain.handle("socialReadiness:get", getPublishReadiness);
   ipcMain.handle("socialAuth:startInstagramOAuth", () => startOAuth("instagram"));
   ipcMain.handle("socialAuth:startTikTokOAuth", () => startOAuth("tiktok"));
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
