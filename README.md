@@ -2,6 +2,20 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V6.4 Official OAuth + Token Vault Readiness
+
+V6.4 adds official OAuth readiness, local token vault status, platform capability checks, and dry-run publisher readiness for Instagram and TikTok connectors. Live posting remains disabled by default.
+
+Useful local checks:
+
+```bash
+python3 scripts/check_social_oauth_readiness.py
+python3 scripts/check_social_token_vault.py
+python3 scripts/check_social_connectors.py
+```
+
+The token vault prefers macOS Keychain and writes only redacted metadata to analytics. OAuth callback handling stays local to `127.0.0.1`, token exchange is off by default, and QA never performs live Instagram/TikTok calls. No passwords, scraping, browser automation, committed tokens, or committed `config/social_connectors.json` are supported.
+
 ## V6.3 Social Account Connection Wizard
 
 V6.3 adds an in-app Social Accounts panel and Scheduled Posting Readiness checks. The Scheduler now shows Instagram and TikTok setup status, missing environment variables, redacted token state, manual upload fallback, dry-run readiness, auth-required drafts, live-blocked drafts, and posted history context.

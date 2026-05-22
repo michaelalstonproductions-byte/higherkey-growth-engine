@@ -15,3 +15,4 @@ HIGHERKEY_OPERATOR_OS_SETUP.md
 config/desktop_runtime.json
 config/project_manifest.json
 config/social_connectors.json
+config/.social_token_vault.local

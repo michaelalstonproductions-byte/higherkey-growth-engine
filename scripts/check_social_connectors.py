@@ -12,12 +12,14 @@ if str(ROOT) not in sys.path:
 from growth_engine.config import load_config
 from growth_engine.json_store import save_json_file
 from growth_engine.social_auth import connector_status, validate_connector_environment
+from growth_engine.social_token_vault import vault_status
 
 
 def main() -> int:
     config = load_config(Path.cwd())
     status = connector_status(config)
     environment = validate_connector_environment(config)
+    vault = vault_status(config)
     diagnostics = {
         "version": 1,
         "updated_at": status["updated_at"],
@@ -28,6 +30,7 @@ def main() -> int:
         "config_file": environment.get("config_file"),
         "local_config_exists": environment.get("local_config_exists"),
         "token_storage": environment.get("token_storage"),
+        "vault": vault,
         "never_commit_tokens": environment.get("never_commit_tokens"),
         "token_values_exposed": False,
         "platforms": {

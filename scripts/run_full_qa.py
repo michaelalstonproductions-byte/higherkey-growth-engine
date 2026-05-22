@@ -62,6 +62,8 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "production_command.py",
         resources / "app-assets" / "growth_engine" / "operator_autopilot.py",
         resources / "app-assets" / "growth_engine" / "autopilot_console.py",
+        resources / "app-assets" / "growth_engine" / "oauth_state.py",
+        resources / "app-assets" / "growth_engine" / "social_token_vault.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_marketing_plan.py",
@@ -77,9 +79,13 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "schedule_social_posts.py",
         resources / "app-assets" / "scripts" / "run_social_publisher.py",
         resources / "app-assets" / "scripts" / "test_social_connector_safety.py",
+        resources / "app-assets" / "scripts" / "test_oauth_token_safety.py",
         resources / "app-assets" / "scripts" / "check_social_connectors.py",
         resources / "app-assets" / "scripts" / "check_publish_readiness.py",
         resources / "app-assets" / "scripts" / "run_social_oauth_callback.py",
+        resources / "app-assets" / "scripts" / "check_social_oauth_readiness.py",
+        resources / "app-assets" / "scripts" / "check_social_token_vault.py",
+        resources / "app-assets" / "scripts" / "manage_social_token_vault.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -121,6 +127,8 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "live_call_made" in lower
             or "never_commit_tokens" in lower
             or "token_values_exposed" in lower
+            or "oauth readiness" in lower
+            or "token vault" in lower
             or "client_secret_env" in lower
             or "app_secret_env" in lower
             or ("no " in lower and any(term in lower for term in ("api", "oauth", "telemetry", "token", "posting integration", "social posting")))
@@ -137,12 +145,18 @@ def external_api_scan(root: Path) -> dict[str, object]:
         safe_remote_reference = "w3.org" in lower
         social_connector_source = rel_path in {
             "growth_engine/social_auth.py",
+            "growth_engine/oauth_state.py",
+            "growth_engine/social_token_vault.py",
             "growth_engine/social_publisher.py",
             "growth_engine/social_platforms/instagram.py",
             "growth_engine/social_platforms/tiktok.py",
             "scripts/check_social_connectors.py",
             "scripts/check_publish_readiness.py",
             "scripts/run_social_oauth_callback.py",
+            "scripts/check_social_oauth_readiness.py",
+            "scripts/check_social_token_vault.py",
+            "scripts/manage_social_token_vault.py",
+            "scripts/test_oauth_token_safety.py",
             "config/social_connectors.example.json",
             "README.md",
             "docs/social_connector_setup.md",
@@ -165,7 +179,8 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "explicit" in lower
             or "dry" in lower
         )
-        if local_context or safe_denial_context or qa_scanner_context or safe_remote_reference or social_connector_source or scanner_source or connector_ui_source:
+        autopilot_readiness_source = rel_path == "growth_engine/operator_autopilot.py" and "check_social_oauth_readiness" in lower
+        if local_context or safe_denial_context or qa_scanner_context or safe_remote_reference or social_connector_source or scanner_source or connector_ui_source or autopilot_readiness_source:
             return True
         if pattern_name in {"live_platform_api", "cloud_api", "oauth", "telemetry"}:
             return False
@@ -465,6 +480,13 @@ def social_connector_scheduler_check(root: Path) -> dict[str, object]:
         root / "analytics" / "social_connector_diagnostics.json": {"local_only": bool, "manual_upload_fallback": bool, "token_values_exposed": bool, "checks": list},
         root / "analytics" / "publish_readiness.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "items": list},
         root / "analytics" / "client_publish_readiness.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "items": list},
+        root / "analytics" / "social_oauth_readiness.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "platforms": dict},
+        root / "analytics" / "client_social_oauth_readiness.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "platforms": dict},
+        root / "analytics" / "social_token_vault_status.json": {"local_only": bool, "token_values_exposed": bool, "tokens": dict},
+        root / "analytics" / "client_social_token_vault_status.json": {"local_only": bool, "token_values_exposed": bool, "tokens": dict},
+        root / "analytics" / "oauth_state_status.json": {"local_only": bool, "token_values_exposed": bool, "states": list},
+        root / "analytics" / "client_oauth_state_status.json": {"local_only": bool, "token_values_exposed": bool, "states": list},
+        root / "analytics" / "client_social_oauth_status.json": {"local_only": bool, "token_values_exposed": bool, "state_validation": dict},
     }
     missing = [relative_path(path, root) for path in required if not path.exists()]
     json_errors = []
@@ -482,7 +504,7 @@ def social_connector_scheduler_check(root: Path) -> dict[str, object]:
             if key not in payload or not isinstance(payload.get(key), expected):
                 json_errors.append({"path": relative_path(path, root), "key": key, "expected": expected.__name__})
         text = json.dumps(payload).lower()
-        if any(term in text for term in ("access_token", "refresh_token", "bearer ", "client_secret_value")):
+        if any(term in text for term in ("access_token", "refresh_token", "bearer ", "client_secret_value", "tok_live_nested_secret", "code_nested_secret")):
             token_hits.append(relative_path(path, root))
         if payload.get("live_call_made") is True:
             live_call_hits.append(relative_path(path, root))
@@ -1144,8 +1166,11 @@ def main() -> int:
     print("[qa] autopilot_console_validation", flush=True)
     append_stage(results, autopilot_console_check(root), config)
     append_stage(results, qa_stage("social_connector_diagnostics", ["python3", "scripts/check_social_connectors.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("social_oauth_readiness", ["python3", "scripts/check_social_oauth_readiness.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("social_token_vault_status", ["python3", "scripts/check_social_token_vault.py"], root, timeout=60), config)
     append_stage(results, qa_stage("publish_readiness_check", ["python3", "scripts/check_publish_readiness.py"], root, timeout=60), config)
     append_stage(results, qa_stage("social_oauth_callback_dry_run", ["python3", "scripts/run_social_oauth_callback.py", "--dry-run"], root, timeout=60), config)
+    append_stage(results, qa_stage("oauth_token_safety_fixture", ["python3", "scripts/test_oauth_token_safety.py"], root, timeout=60), config)
     append_stage(results, qa_stage("post_composer_drafts_build", ["python3", "scripts/build_post_composer_drafts.py"], root, timeout=60), config)
     append_stage(results, qa_stage("social_schedule_dry_run", ["python3", "scripts/schedule_social_posts.py", "--dry-run", "--from-drafts", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("social_publisher_dry_run", ["python3", "scripts/run_social_publisher.py", "--dry-run", "--due-now", "--json"], root, timeout=60), config)

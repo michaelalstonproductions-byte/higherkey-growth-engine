@@ -1667,6 +1667,63 @@ async function checkPublishReadiness() {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function checkSocialOAuthReadiness() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/check_social_oauth_readiness.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getSocialOAuthReadiness() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    readiness: await readAnalyticsJson("social_oauth_readiness.json", {}),
+    clientReadiness: await readAnalyticsJson("client_social_oauth_readiness.json", {}),
+    vault: await readAnalyticsJson("client_social_token_vault_status.json", {})
+  };
+}
+
+async function getTokenVaultStatus() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    vault: await readAnalyticsJson("client_social_token_vault_status.json", {})
+  };
+}
+
+async function getOAuthStateStatus() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    status: await readAnalyticsJson("client_oauth_state_status.json", {})
+  };
+}
+
+async function buildAuthUrl(platform) {
+  const status = await checkSocialAuthStatus();
+  const authUrl = status.parsed?.[platform]?.auth_url;
+  if (!authUrl) return { ok: false, status: "auth_required", message: "OAuth configuration is not available.", activeProjectRoot };
+  return { ok: true, status: "ready", platform, authUrl, activeProjectRoot };
+}
+
+async function checkSocialAccountCapabilities() {
+  const status = await checkSocialAuthStatus();
+  return {
+    ok: status.code === 0,
+    activeProjectRoot,
+    capabilities: {
+      instagram: status.parsed?.instagram?.capabilities || {},
+      tiktok: status.parsed?.tiktok?.capabilities || {}
+    },
+    parsed: status.parsed || null
+  };
+}
+
 async function runSocialOAuthDryRun(_event, options = {}) {
   const projectCheck = validateProjectRootSelection(activeProjectRoot);
   if (!projectCheck.ok) return projectCheck;
@@ -2032,6 +2089,14 @@ function registerIpc() {
   ipcMain.handle("socialAuth:oauthDryRun", runSocialOAuthDryRun);
   ipcMain.handle("socialReadiness:check", checkPublishReadiness);
   ipcMain.handle("socialReadiness:get", getPublishReadiness);
+  ipcMain.handle("socialOAuth:checkReadiness", checkSocialOAuthReadiness);
+  ipcMain.handle("socialOAuth:getReadiness", getSocialOAuthReadiness);
+  ipcMain.handle("socialOAuth:buildInstagramAuthUrl", () => buildAuthUrl("instagram"));
+  ipcMain.handle("socialOAuth:buildTikTokAuthUrl", () => buildAuthUrl("tiktok"));
+  ipcMain.handle("socialOAuth:callbackDryRun", runSocialOAuthDryRun);
+  ipcMain.handle("socialOAuth:checkCapabilities", checkSocialAccountCapabilities);
+  ipcMain.handle("socialOAuth:getTokenVaultStatus", getTokenVaultStatus);
+  ipcMain.handle("socialOAuth:getStateStatus", getOAuthStateStatus);
   ipcMain.handle("socialAuth:startInstagramOAuth", () => startOAuth("instagram"));
   ipcMain.handle("socialAuth:startTikTokOAuth", () => startOAuth("tiktok"));
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);

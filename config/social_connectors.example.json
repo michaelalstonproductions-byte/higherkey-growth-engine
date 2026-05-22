@@ -2,6 +2,17 @@
   "local_only": true,
   "manual_upload_fallback": true,
   "live_api_enabled_default": false,
+  "oauth": {
+    "callback_host": "127.0.0.1",
+    "callback_port": 8787,
+    "live_exchange_enabled_default": false,
+    "dry_run_first": true,
+    "token_exchange_notes": [
+      "Authorization codes are accepted only through the local 127.0.0.1 callback.",
+      "Token exchange is disabled by default and must use official platform OAuth endpoints when enabled.",
+      "Token values must be stored in the local token vault and never written to analytics or logs."
+    ]
+  },
   "instagram": {
     "enabled": false,
     "mode": "official_api",
@@ -13,6 +24,12 @@
       "instagram_business_content_publish"
     ],
     "live_api_enabled": false,
+    "capabilities": {
+      "official_api": "Meta Instagram Platform content publishing",
+      "content_types": ["reels"],
+      "requires_hosted_media_or_supported_upload": true,
+      "account_requirements": ["Instagram professional account", "connected Facebook Page", "approved Meta app permissions"]
+    },
     "notes": [
       "Instagram publishing must use the official Meta Instagram content publishing flow.",
       "Live posting requires a connected Instagram professional account, valid permissions, user authorization, and explicit approval.",
@@ -29,6 +46,13 @@
       "video.publish"
     ],
     "live_api_enabled": false,
+    "capabilities": {
+      "official_api": "TikTok Content Posting API",
+      "content_types": ["video"],
+      "requires_registered_app": true,
+      "requires_user_consent": true,
+      "privacy_note": "Unaudited clients may be private-post restricted."
+    },
     "notes": [
       "TikTok publishing must use the official TikTok Content Posting API.",
       "Direct posting requires an approved app, valid scopes, user authorization, and explicit approval.",
@@ -47,6 +71,8 @@
   },
   "storage": {
     "token_storage": "local_keychain_or_encrypted_file",
+    "preferred_provider": "macos_keychain",
+    "local_file_fallback_enabled_default": false,
     "never_commit_tokens": true,
     "notes": "Token values must stay in local secure storage and must never be written to analytics, logs, source files, or committed config."
   }

@@ -2042,6 +2042,8 @@
         socialPublisherStatus: "../analytics/social_publisher_status.json",
         publishReadiness: "../analytics/publish_readiness.json",
         socialOAuthStatus: "../analytics/social_oauth_status.json",
+        socialOAuthReadiness: "../analytics/client_social_oauth_readiness.json",
+        socialTokenVaultStatus: "../analytics/client_social_token_vault_status.json",
         marketingBrief: "../analytics/marketing_brief.json",
         audienceProfile: "../analytics/audience_profile.json",
         marketAttackPlan: "../analytics/market_attack_plan.json",
@@ -2148,6 +2150,8 @@
         socialPublisherStatus: null,
         publishReadiness: null,
         socialOAuthStatus: null,
+        socialOAuthReadiness: null,
+        socialTokenVaultStatus: null,
         marketingBrief: null,
         audienceProfile: null,
         marketAttackPlan: null,
@@ -3485,6 +3489,8 @@
         const auth = socialConnectionStatus();
         const readiness = publishReadinessItems();
         const readinessSummary = state.publishReadiness?.summary || {};
+        const oauthReadiness = state.socialOAuthReadiness || {};
+        const vault = state.socialTokenVaultStatus || auth.vault || {};
         return `
           <div class="view marketing-view scheduler-view">
             <section class="panel">
@@ -3512,9 +3518,17 @@
                 <div><div class="panel-title">Social Accounts</div><div>HigherKey uses official platform APIs only. Manual upload is always available.</div></div>
                 <div class="toolbar">
                   <button class="btn" data-desktop-action="check-social-connectors">Check Status</button>
+                  <button class="btn" data-desktop-action="check-oauth-readiness">Check OAuth Readiness</button>
+                  <button class="btn" data-desktop-action="check-token-status">Check Token Status</button>
+                  <button class="btn" data-desktop-action="check-capabilities">Check Capabilities</button>
                   <button class="btn" data-desktop-action="run-oauth-dry-run">Start OAuth Dry Run</button>
                   <button class="btn" data-desktop-action="dry-run-publish">Run Dry-Run Publish Test</button>
                 </div>
+              </div>
+              <div class="dashboard-grid-secondary" style="margin-bottom:14px">
+                ${metricPanel("Token Vault", vault.keychain_available ? "Keychain ready" : "Vault pending", vault.provider || "macOS Keychain preferred")}
+                ${metricPanel("OAuth Live Exchange", oauthReadiness.live_posting_enabled_by_default ? "enabled" : "disabled", "Dry-run first")}
+                ${metricPanel("Live Ready Accounts", oauthReadiness.summary?.ready_for_live_api_count || 0, "Official gates only")}
               </div>
               <div class="dashboard-grid-secondary">
                 ${connectorCard("instagram", "Instagram", auth.instagram || {})}
@@ -3790,6 +3804,10 @@
       function socialConnectionStatus() {
         return state.socialConnectionStatus || state.socialAuthStatus || {};
       }
+      function oauthReadinessFor(platform) {
+        const readiness = state.socialOAuthReadiness?.platforms || {};
+        return readiness[platform] || {};
+      }
       function publishReadinessItems() {
         const items = state.publishReadiness?.items || [];
         return Array.isArray(items) ? items : [];
@@ -3817,6 +3835,7 @@
         `;
       }
       function connectorCard(platform, label, status) {
+        const oauth = oauthReadinessFor(platform);
         const scopes = (status.required_permissions || status.required_scopes || []).join(", ") || "not configured";
         const env = Object.values(status.credentials || {}).map((item) => `${item.env || "env"}: ${item.present ? "present" : "missing"}`).join(" · ") || "Use config/social_connectors.example.json";
         const token = status.token || {};
@@ -3831,10 +3850,16 @@
             <div class="summary-row"><span>Live posting</span><strong>${html(status.live_api_enabled ? "enabled" : "disabled")}</strong></div>
             <div class="summary-row"><span>Manual fallback</span><strong>enabled</strong></div>
             <div class="summary-row"><span>Token</span><strong>${html(token.token_present ? "redacted" : "none")}</strong></div>
+            <div class="summary-row"><span>OAuth readiness</span><strong>${html(oauth.ready_for_live_api ? "live ready" : "dry-run/manual")}</strong></div>
+            <div class="summary-row"><span>Scopes</span><strong>${html((oauth.missing_permissions_or_scopes || []).length ? "missing" : "ok")}</strong></div>
             <div class="muted">${html(env)}</div>
             <div class="muted">${html(scopes)}</div>
+            <div class="muted">${html(oauth.live_blocked_reason || "Official OAuth and local token vault readiness are checked without exposing secrets.")}</div>
             <div class="toolbar">
               <button class="btn" data-desktop-action="check-social-connectors">Check Status</button>
+              <button class="btn" data-desktop-action="check-oauth-readiness">Check OAuth Readiness</button>
+              <button class="btn" data-desktop-action="check-token-status">Check Token Status</button>
+              <button class="btn" data-desktop-action="check-capabilities">Check Capabilities</button>
               <button class="btn" data-desktop-action="run-oauth-dry-run" data-platform="${html(platform)}">Start OAuth Dry Run</button>
               ${oauthButton}
               <button class="btn" data-desktop-action="disconnect-social-connector">Disconnect</button>
@@ -5198,6 +5223,18 @@
         return setNotice(result?.code === 0 ? `Publish readiness checked: ${result.parsed?.items || 0} item(s).` : "Publish readiness needs attention.");
       }
 
+      async function checkOAuthReadiness() {
+        if (!window.higherkey?.checkSocialOAuthReadiness) {
+          return setNotice("Static mode: run python3 scripts/check_social_oauth_readiness.py.");
+        }
+        const result = await window.higherkey.checkSocialOAuthReadiness();
+        await refreshLiveData();
+        state.mode = "scheduler";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "OAuth and token vault readiness checked. Token values remain redacted." : "OAuth readiness needs attention.");
+      }
+
       async function runOAuthDryRun(button) {
         const platform = button?.dataset.platform || "dry_run";
         if (!window.higherkey?.runSocialOAuthDryRun) {
@@ -5543,6 +5580,9 @@
             if (action === "publish-now") return runSocialPublisher(button, true);
             if (action === "check-social-auth") return checkSocialAuth();
             if (action === "check-social-connectors") return checkSocialConnectors();
+            if (action === "check-oauth-readiness") return checkOAuthReadiness();
+            if (action === "check-token-status") return checkOAuthReadiness();
+            if (action === "check-capabilities") return checkOAuthReadiness();
             if (action === "check-publish-readiness") return checkPublishReadiness();
             if (action === "run-oauth-dry-run") return runOAuthDryRun(button);
             if (action === "disconnect-social-connector") return setNotice("Connector disconnect is a local-safe placeholder. No token values are shown; remove local token storage from Keychain or encrypted storage when configured.");
@@ -5690,6 +5730,8 @@
           state.socialPublisherStatus = await optionalJson(PATHS.socialPublisherStatus, null);
           state.publishReadiness = await optionalJson(PATHS.publishReadiness, null);
           state.socialOAuthStatus = await optionalJson(PATHS.socialOAuthStatus, null);
+          state.socialOAuthReadiness = await optionalJson(PATHS.socialOAuthReadiness, null);
+          state.socialTokenVaultStatus = await optionalJson(PATHS.socialTokenVaultStatus, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, null);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, null);
@@ -5800,6 +5842,8 @@
           state.socialPublisherStatus = await optionalJson(PATHS.socialPublisherStatus, state.socialPublisherStatus);
           state.publishReadiness = await optionalJson(PATHS.publishReadiness, state.publishReadiness);
           state.socialOAuthStatus = await optionalJson(PATHS.socialOAuthStatus, state.socialOAuthStatus);
+          state.socialOAuthReadiness = await optionalJson(PATHS.socialOAuthReadiness, state.socialOAuthReadiness);
+          state.socialTokenVaultStatus = await optionalJson(PATHS.socialTokenVaultStatus, state.socialTokenVaultStatus);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, state.audienceProfile);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, state.marketAttackPlan);

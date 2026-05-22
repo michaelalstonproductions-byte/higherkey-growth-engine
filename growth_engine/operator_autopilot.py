@@ -28,6 +28,8 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "build_trial_readiness_report": ["python3", "scripts/build_trial_readiness_report.py"],
     "check_social_connectors": ["python3", "scripts/check_social_connectors.py"],
     "check_publish_readiness": ["python3", "scripts/check_publish_readiness.py"],
+    "check_social_oauth_readiness": ["python3", "scripts/check_social_oauth_readiness.py"],
+    "check_social_token_vault": ["python3", "scripts/check_social_token_vault.py"],
     "build_post_composer_drafts": ["python3", "scripts/build_post_composer_drafts.py"],
     "run_social_publisher": ["python3", "scripts/run_social_publisher.py"],
 }
@@ -179,6 +181,8 @@ def _title_to_safe_key(title: str, category: str) -> str | None:
         ("trial", "build_trial_readiness_report"),
         ("connector", "check_social_connectors"),
         ("account", "check_social_connectors"),
+        ("oauth", "check_social_oauth_readiness"),
+        ("token vault", "check_social_token_vault"),
         ("readiness", "check_publish_readiness"),
         ("draft", "build_post_composer_drafts"),
         ("dry-run publisher", "run_social_publisher"),
@@ -243,6 +247,8 @@ def _default_safe_cards() -> list[dict[str, Any]]:
         ("refresh_client_workflow", "Refresh Client Workflow", "build_client_workflow"),
         ("check_social_connectors", "Check Social Connector Status", "check_social_connectors"),
         ("check_publish_readiness", "Check Publish Readiness", "check_publish_readiness"),
+        ("check_social_oauth_readiness", "Check OAuth Readiness", "check_social_oauth_readiness"),
+        ("check_social_token_vault", "Check Social Token Vault", "check_social_token_vault"),
         ("build_post_composer_drafts", "Build Post Composer Drafts", "build_post_composer_drafts"),
         ("run_social_publisher_dry_run", "Run Social Publisher Dry Run", "run_social_publisher"),
     ]

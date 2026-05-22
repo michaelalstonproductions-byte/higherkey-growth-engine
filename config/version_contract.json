@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "6.3.0",
-  "release_version": "V6.3",
+  "app_version": "6.4.0",
+  "release_version": "V6.4",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -161,6 +161,12 @@
       "to": "V6.3",
       "safe": true,
       "notes": "Add the in-app Social Account Connection Wizard, local OAuth callback dry-run placeholder, social connector diagnostics, and publish readiness checks while preserving dry-run defaults, manual upload fallback, and live publishing gates."
+    },
+    {
+      "from": "V6.3",
+      "to": "V6.4",
+      "safe": true,
+      "notes": "Add official OAuth readiness checks, local token vault metadata, platform capability readiness, and dry-run-safe account diagnostics while keeping live posting disabled by default."
     }
   ],
   "required_runtime_files": [
@@ -244,9 +250,13 @@
     "scripts/schedule_social_posts.py",
     "scripts/run_social_publisher.py",
     "scripts/test_social_connector_safety.py",
+    "scripts/test_oauth_token_safety.py",
     "scripts/check_social_connectors.py",
     "scripts/check_publish_readiness.py",
-    "scripts/run_social_oauth_callback.py"
+    "scripts/run_social_oauth_callback.py",
+    "scripts/check_social_oauth_readiness.py",
+    "scripts/check_social_token_vault.py",
+    "scripts/manage_social_token_vault.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"

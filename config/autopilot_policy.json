@@ -21,6 +21,8 @@
     "scripts/build_trial_readiness_report.py",
     "scripts/check_social_connectors.py",
     "scripts/check_publish_readiness.py",
+    "scripts/check_social_oauth_readiness.py",
+    "scripts/check_social_token_vault.py",
     "scripts/build_post_composer_drafts.py",
     "scripts/run_social_publisher.py"
   ],

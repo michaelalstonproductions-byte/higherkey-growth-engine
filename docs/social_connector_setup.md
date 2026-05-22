@@ -65,10 +65,18 @@ Unaudited TikTok clients may be private-post restricted. Use dry run first and c
 
 ## OAuth Callback Placeholder
 
-V6.3 includes a local-only callback placeholder:
+V6.4 keeps the callback local and adds OAuth readiness plus token vault status:
 
 ```bash
 python3 scripts/run_social_oauth_callback.py --dry-run
+python3 scripts/check_social_oauth_readiness.py
+python3 scripts/check_social_token_vault.py
 ```
 
 It binds to `127.0.0.1` only when explicitly started with `--serve`. Dry run records redacted callback state in `analytics/social_oauth_status.json` and does not exchange or store real tokens.
+
+## Token Vault
+
+HigherKey prefers macOS Keychain for local token storage. Analytics and client status files contain only metadata such as provider availability, redacted token presence, expiration, and granted scopes. Token values must never be written to `analytics/`, logs, dashboard HTML, source files, or committed config.
+
+Local encrypted-file fallback is disabled by default and should only be used with a local vault key and an explicit operator choice. Live posting remains blocked unless the official connector is enabled, credentials exist, OAuth has completed, required permissions/scopes are present, live mode is enabled, the scheduled post is due, and the user explicitly approves.

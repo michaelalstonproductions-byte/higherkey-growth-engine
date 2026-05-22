@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 from growth_engine.config import load_config
 from growth_engine.social_publisher import publish_drafts
 from growth_engine.social_scheduler import schedule_posts
+from growth_engine.social_token_vault import vault_status
 
 
 def write_json(path: Path, payload: dict) -> None:
@@ -97,12 +98,16 @@ def main() -> int:
         bulk_statuses = {item.get("status") for item in bulk_result["results"]}
         assert "blocked" in bulk_statuses, bulk_result
         assert bulk_result["live_call_made"] is False, bulk_result
+        vault = vault_status(config)
+        assert vault["token_values_exposed"] is False, vault
+        assert "tokens" in vault and vault["tokens"]["tiktok"]["token_preview"] in {"", "redacted"}, vault
 
     print(json.dumps({
         "status": "pass",
         "save_draft_upsert": True,
         "future_live_blocked": True,
         "bulk_live_without_due_now_blocked": True,
+        "token_vault_redacted": True,
         "live_call_made": False,
     }, indent=2, sort_keys=True))
     return 0
