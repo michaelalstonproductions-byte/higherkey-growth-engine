@@ -1828,6 +1828,76 @@ async function getPublishReadiness() {
   };
 }
 
+async function scanPostEditingIntelligence() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/scan_post_editing_intelligence.py", "--dry-run", "--json"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function buildEditPlan(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/build_edit_plan.py", "--dry-run", "--json"];
+  if (options.clipId) args.push("--clip-id", String(options.clipId));
+  if (options.image) args.push("--image", String(options.image));
+  if (options.video) args.push("--video", String(options.video));
+  if (options.platform) args.push("--platform", String(options.platform));
+  if (options.notes) args.push("--notes", String(options.notes));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function renderEditPreview(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/render_edit_preview.py", "--dry-run", "--json"];
+  if (options.planId) args.push("--plan-id", String(options.planId));
+  if (options.clipId) args.push("--clip-id", String(options.clipId));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function renderFinalPostAsset(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/render_final_post_asset.py", "--json"];
+  if (options.dryRun !== false || options.approve !== true) args.push("--dry-run");
+  if (options.approve === true) args.push("--approve");
+  if (options.planId) args.push("--plan-id", String(options.planId));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getEditingState() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    plans: await readAnalyticsJson("edit_plans.json", { plans: [] }),
+    jobs: await readAnalyticsJson("edit_jobs.json", { jobs: [] }),
+    capabilities: await readAnalyticsJson("editing_capabilities.json", {}),
+    clientState: await readAnalyticsJson("client_editing_state.json", {}),
+    recommendations: await readAnalyticsJson("post_editing_recommendations.json", {}),
+    clientPlan: await readAnalyticsJson("client_post_editing_plan.json", {})
+  };
+}
+
 async function startOAuth(platform) {
   const status = await checkSocialAuthStatus();
   const authUrl = status.parsed?.[platform]?.auth_url;
@@ -1968,6 +2038,15 @@ async function openSocialExportsFolder() {
   await fsp.mkdir(exportDir, { recursive: true });
   await shell.openPath(exportDir);
   return { path: exportDir, activeProjectRoot };
+}
+
+async function openEditedAssetsFolder() {
+  const editorDir = path.join(activeProjectRoot, "out", "post_editor");
+  await fsp.mkdir(path.join(editorDir, "previews"), { recursive: true });
+  await fsp.mkdir(path.join(editorDir, "renders"), { recursive: true });
+  await fsp.mkdir(path.join(editorDir, "thumbnails"), { recursive: true });
+  await shell.openPath(editorDir);
+  return { path: editorDir, activeProjectRoot };
 }
 
 async function runFirstRunSetup(force = false) {
@@ -2174,6 +2253,11 @@ function registerIpc() {
   ipcMain.handle("socialOAuth:checkCapabilities", checkSocialAccountCapabilities);
   ipcMain.handle("socialOAuth:getTokenVaultStatus", getTokenVaultStatus);
   ipcMain.handle("socialOAuth:getStateStatus", getOAuthStateStatus);
+  ipcMain.handle("editor:scanIntelligence", scanPostEditingIntelligence);
+  ipcMain.handle("editor:buildPlan", buildEditPlan);
+  ipcMain.handle("editor:renderPreview", renderEditPreview);
+  ipcMain.handle("editor:renderFinal", renderFinalPostAsset);
+  ipcMain.handle("editor:getState", getEditingState);
   ipcMain.handle("socialAuth:startInstagramOAuth", () => startOAuth("instagram"));
   ipcMain.handle("socialAuth:startTikTokOAuth", () => startOAuth("tiktok"));
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
@@ -2242,6 +2326,7 @@ function registerIpc() {
   ipcMain.handle("setup:firstRun", () => runFirstRunSetup(true));
   ipcMain.handle("folder:openContentInbox", openContentInbox);
   ipcMain.handle("folder:openSocialExports", openSocialExportsFolder);
+  ipcMain.handle("folder:openEditedAssets", openEditedAssetsFolder);
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
   ipcMain.handle("notify:test", () => {
     notify("HigherKey notification test", "Local notifications are wired.");

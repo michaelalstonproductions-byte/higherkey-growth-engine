@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally by default. Controlled live publish remains disabled unless configured, due, receipt-approved, and explicitly confirmed for one draft.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. AI Post Editing Studio creates non-destructive edit plans and local render jobs without overwriting original media.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "Controlled Live Publish Enablement",
-  "version": "V6.5"
+  "release_name": "AI Post Editing Studio",
+  "version": "V6.6"
 }

@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "6.5.0",
-  "release_version": "V6.5",
+  "app_version": "6.6.0",
+  "release_version": "V6.6",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -173,6 +173,12 @@
       "to": "V6.5",
       "safe": true,
       "notes": "Add controlled single-post live publish readiness, approval receipts, confirmation phrase gates, live sandbox checks, and strict no-bulk/no-background publishing policy while preserving dry-run defaults and manual upload fallback."
+    },
+    {
+      "from": "V6.5",
+      "to": "V6.6",
+      "safe": true,
+      "notes": "Add local AI Post Editing Studio, non-destructive edit plans, preview render jobs, thumbnail/platform output paths, and approval-gated final renders while preserving original media and existing social publishing safety gates."
     }
   ],
   "required_runtime_files": [
@@ -266,7 +272,12 @@
     "scripts/run_social_oauth_callback.py",
     "scripts/check_social_oauth_readiness.py",
     "scripts/check_social_token_vault.py",
-    "scripts/manage_social_token_vault.py"
+    "scripts/manage_social_token_vault.py",
+    "scripts/scan_post_editing_intelligence.py",
+    "scripts/build_edit_plan.py",
+    "scripts/render_edit_preview.py",
+    "scripts/render_final_post_asset.py",
+    "scripts/test_media_editor_safety.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"

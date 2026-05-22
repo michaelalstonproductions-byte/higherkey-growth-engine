@@ -45,6 +45,8 @@ REQUIRED_MODULES = [
     "growth_engine/social_token_vault.py",
     "growth_engine/social_scheduler.py",
     "growth_engine/social_publisher.py",
+    "growth_engine/media_editor.py",
+    "growth_engine/post_editing_intelligence.py",
     "growth_engine/social_platforms/instagram.py",
     "growth_engine/social_platforms/tiktok.py",
 ]
@@ -72,6 +74,11 @@ REQUIRED_SCRIPTS = [
     "scripts/check_social_oauth_readiness.py",
     "scripts/check_social_token_vault.py",
     "scripts/manage_social_token_vault.py",
+    "scripts/scan_post_editing_intelligence.py",
+    "scripts/build_edit_plan.py",
+    "scripts/render_edit_preview.py",
+    "scripts/render_final_post_asset.py",
+    "scripts/test_media_editor_safety.py",
 ]
 REQUIRED_CONFIGS = [
     "config/autopilot_policy.json",

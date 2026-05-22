@@ -1939,6 +1939,7 @@
           <button class="tab nav-item active" data-icon="⌘" data-mode="command">Command</button>
           <button class="tab nav-item" data-icon="☷" data-mode="queue">Review</button>
           <button class="tab nav-item" data-icon="▣" data-mode="media">Media</button>
+          <button class="tab nav-item" data-icon="✎" data-mode="editor">Editor</button>
           <button class="tab nav-item" data-icon="⌁" data-mode="marketing">Marketing</button>
           <button class="tab nav-item" data-icon="◷" data-mode="scheduler">Scheduler</button>
           <button class="tab nav-item" data-icon="◈" data-mode="autopilot">Autopilot</button>
@@ -2067,6 +2068,13 @@
         socialOAuthStatus: "../analytics/social_oauth_status.json",
         socialOAuthReadiness: "../analytics/client_social_oauth_readiness.json",
         socialTokenVaultStatus: "../analytics/client_social_token_vault_status.json",
+        editPlans: "../analytics/edit_plans.json",
+        editJobs: "../analytics/edit_jobs.json",
+        editingCapabilities: "../analytics/editing_capabilities.json",
+        clientEditingState: "../analytics/client_editing_state.json",
+        postEditingRecommendations: "../analytics/post_editing_recommendations.json",
+        clientPostEditingPlan: "../analytics/client_post_editing_plan.json",
+        postEditingScan: "../analytics/post_editing_intelligence_scan.json",
         marketingBrief: "../analytics/marketing_brief.json",
         audienceProfile: "../analytics/audience_profile.json",
         marketAttackPlan: "../analytics/market_attack_plan.json",
@@ -2178,6 +2186,13 @@
         socialOAuthStatus: null,
         socialOAuthReadiness: null,
         socialTokenVaultStatus: null,
+        editPlans: null,
+        editJobs: null,
+        editingCapabilities: null,
+        clientEditingState: null,
+        postEditingRecommendations: null,
+        clientPostEditingPlan: null,
+        postEditingScan: null,
         marketingBrief: null,
         audienceProfile: null,
         marketAttackPlan: null,
@@ -3122,6 +3137,62 @@
           </div>
         `;
       }
+      function renderEditorView() {
+        const active = modeEntry();
+        const plan = latestEditPlan(active);
+        const recommendations = editingRecommendationsFor(active);
+        const jobs = state.editJobs?.jobs || [];
+        const lastJob = Array.isArray(jobs) ? jobs.slice(-1)[0] : null;
+        const capabilities = state.editingCapabilities || {};
+        const media = active?.clip_path
+          ? `<video src="../${html(active.clip_path)}" controls preload="metadata" playsinline></video>`
+          : clipThumb(active, "hero-placeholder");
+        return `
+          <div class="view media-view">
+            <section class="panel hero-panel">
+              <div class="hero-copy">
+                <span class="eyebrow">AI Post Editing Studio</span>
+                <h1>Edit locally. Keep originals untouched.</h1>
+                <p>Build safe edit plans, preview renders, thumbnails, captions, and platform versions without overwriting source footage.</p>
+                <div class="toolbar">
+                  <button class="btn red" data-desktop-action="build-edit-plan">Build Edit Plan</button>
+                  <button class="btn" data-desktop-action="render-edit-preview">Render Preview</button>
+                  <button class="btn" data-desktop-action="open-edited-assets">Open Edited Assets</button>
+                </div>
+              </div>
+              <div class="hero-metrics">
+                ${metricPanel("Originals", capabilities.original_media_protected === false ? "risk" : "protected", "No source overwrite")}
+                ${metricPanel("FFmpeg", capabilities.ffmpeg_available ? "ready" : "required", "Local render engine")}
+                ${metricPanel("Cloud APIs", capabilities.cloud_editing_api_enabled ? "enabled" : "off", "Local by default")}
+              </div>
+            </section>
+            <div class="asset-preview">
+              <section class="asset-stage">${active ? media : realFootageOnboardingHtml()}</section>
+              <section class="panel view-scroll">
+                <div class="panel-head"><div><div class="panel-title">Edit Workspace</div><div>${html(active?.clip_id || "Select a clip to plan edits.")}</div></div></div>
+                <label>Edit Notes
+                  <textarea class="search editor-notes" rows="5" placeholder="Tell HigherKey what you want changed.">${html(plan?.user_edit_notes || "")}</textarea>
+                </label>
+                <div class="toolbar">
+                  <button class="btn red" data-desktop-action="build-edit-plan" data-clip-id="${html(active?.clip_id || "")}">Build Edit Plan</button>
+                  <button class="btn" data-desktop-action="render-edit-preview" data-plan-id="${html(plan?.plan_id || "")}">Render Preview</button>
+                  <button class="btn" data-desktop-action="approve-final-render" data-plan-id="${html(plan?.plan_id || "")}">Approve Final Render</button>
+                  <button class="btn" data-desktop-action="use-creative-notes">Use Creative Director Notes</button>
+                </div>
+                <details class="advanced-details" open><summary>Current edit plan</summary>${editPlanHtml(plan)}</details>
+              </section>
+            </div>
+            <div class="analysis-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">AI Edit Suggestions</div></div>${editSuggestionsHtml(recommendations)}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Preview Render</div></div>${editJobHtml(lastJob, "preview")}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Final Render</div></div>${editJobHtml(lastJob, "final_render")}<div class="toolbar"><button class="btn" data-desktop-action="export-edited-pack">Export Edited Pack</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Thumbnail Concepts</div></div>${thumbnailConceptsHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Platform Versions</div></div>${platformVersionHtml(plan)}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Protection</div></div><div class="checklist"><span>Original media preserved</span><span>Preview renders write to out/post_editor/previews</span><span>Final renders require approval</span><span>No cloud editing APIs by default</span></div></section>
+            </div>
+          </div>
+        `;
+      }
       function renderIntelligenceView() {
         const entry = modeEntry();
         return `
@@ -3718,7 +3789,7 @@
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
-        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, search: renderIntelligenceView, marketing: renderMarketingView, scheduler: renderSchedulerView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
+        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, editor: renderEditorView, search: renderIntelligenceView, marketing: renderMarketingView, scheduler: renderSchedulerView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
         $("mainContent").innerHTML = (views[mode] || renderDashboardView)();
       }
 
@@ -3951,6 +4022,9 @@
             <label>Post Text
               <textarea class="search composer-text" rows="5" placeholder="Paste or edit what you want the post to say.">${html(text)}</textarea>
             </label>
+            <label>Edit Notes
+              <textarea class="search composer-edit-notes" rows="3" placeholder="Tell HigherKey what you want changed.">${html(latestEditPlan(entry)?.user_edit_notes || "")}</textarea>
+            </label>
             <div class="composer-grid">
               <label>Publish mode
                 <select class="select composer-mode">
@@ -3967,6 +4041,8 @@
               <button class="btn red" data-desktop-action="save-post-draft" data-clip-id="${html(entry.clip_id)}">Save Draft</button>
               <button class="btn" data-desktop-action="schedule-post" data-clip-id="${html(entry.clip_id)}">Schedule Post</button>
               <button class="btn" data-desktop-action="dry-run-publish" data-draft-id="${html(draftId)}">Dry Run Publish</button>
+              <button class="btn" data-desktop-action="build-edit-plan" data-clip-id="${html(entry.clip_id)}">Build Edit Plan</button>
+              <button class="btn" data-desktop-action="render-edit-preview" data-clip-id="${html(entry.clip_id)}">Render Preview</button>
               <button class="btn" data-desktop-action="open-social-exports">Open Export Folder</button>
             </div>
             <div class="small-panel">
@@ -3987,6 +4063,40 @@
             <div class="muted">Connector: ${html(connectorState(platform).status || "manual_upload_required")}. Approval recorded does not mean live ready.</div>
           </section>
         `;
+      }
+      function editPlansList() {
+        const plans = state.editPlans?.plans || [];
+        return Array.isArray(plans) ? plans : [];
+      }
+      function latestEditPlan(entry) {
+        const clipId = entry?.clip_id || entry?.id || "";
+        return editPlansList().slice().reverse().find((plan) => String(plan.clip_id || "") === String(clipId)) || editPlansList().slice(-1)[0] || null;
+      }
+      function editingRecommendationsFor(entry) {
+        const items = state.postEditingRecommendations?.recommendations || state.clientPostEditingPlan?.recommendations || [];
+        if (!Array.isArray(items)) return [];
+        const clipId = entry?.clip_id || entry?.id || "";
+        return (clipId ? items.filter((item) => String(item.clip_id || "") === String(clipId)) : items).slice(0, 6);
+      }
+      function editPlanHtml(plan) {
+        if (!plan) return `<div class="empty-state"><h2>No edit plan yet</h2><p>Build a non-destructive plan before rendering previews.</p><button class="btn red" data-desktop-action="build-edit-plan">Build Edit Plan</button></div>`;
+        return `<div class="summary-row"><span>Plan</span><strong>${html(plan.plan_id)}</strong></div><div class="summary-row"><span>Platform</span><strong>${html(plan.platform || "tiktok")}</strong></div><div class="summary-row"><span>Source</span><strong>${html(plan.source_exists ? "found" : "missing")}</strong></div><div class="summary-row"><span>Output</span><strong>${html(plan.render_path || "pending")}</strong></div><div class="checklist">${(plan.operations || []).slice(0, 6).map((item) => `<span>${html(item.operation || item.id || "edit")}</span>`).join("")}</div>`;
+      }
+      function editSuggestionsHtml(recommendations) {
+        const suggestions = recommendations.flatMap((item) => item.suggestions || []);
+        return suggestions.slice(0, 10).map((item) => `<div class="summary-row"><span>${html(item.id || item.label || "Suggestion")}</span><strong>${html(item.destructive ? "blocked" : "safe")}</strong></div><p class="muted">${html(item.label || "")}</p>`).join("") || `<div class="empty-state"><h2>No suggestions yet</h2><p>Build an edit plan to inspect local creative, campaign, and clip context.</p><button class="btn red" data-desktop-action="build-edit-plan">Build Edit Plan</button></div>`;
+      }
+      function editJobHtml(job, type) {
+        if (!job || (type && job.type !== type)) return `<div class="muted">No ${html(type || "render")} job yet.</div>`;
+        return `<div class="summary-row"><span>Status</span><strong>${html(job.status || "pending")}</strong></div><div class="summary-row"><span>Output</span><strong>${html(job.output_path || "pending")}</strong></div><div class="summary-row"><span>Originals</span><strong>${html(job.original_media_protected ? "protected" : "check")}</strong></div>`;
+      }
+      function thumbnailConceptsHtml() {
+        const concepts = state.thumbnailConcepts?.concepts || state.clientCreativePlan?.thumbnail_concepts || [];
+        return (Array.isArray(concepts) ? concepts : []).slice(0, 5).map((item) => `<div class="summary-row"><span>${html(item.title || item.concept || "Thumbnail")}</span><strong>${html(item.platform || "social")}</strong></div>`).join("") || `<div class="muted">Build Creative Direction or an edit plan for thumbnail concepts.</div>`;
+      }
+      function platformVersionHtml(plan) {
+        const platforms = ["tiktok", "instagram_reels", "youtube_shorts", "facebook_reels"];
+        return platforms.map((platform) => `<div class="summary-row"><span>${html(platform.replace("_", " "))}</span><strong>${html(plan?.platform === platform ? "planned" : "available")}</strong></div>`).join("");
       }
       function schedulerItems() {
         const queue = state.socialPostQueue?.items || [];
@@ -4743,6 +4853,9 @@
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Selected Clip</h3><div class="summary-row"><span>Clip</span><strong>${html(entry.clip_id || title(entry))}</strong></div><div class="summary-row"><span>Score</span><strong>${html(score(entry))}</strong></div><div class="summary-row"><span>Status</span><strong>${html(statusOf(entry))}</strong></div></section><section class="inspector-section"><h3>Approve</h3><div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div></section><details class="advanced-details"><summary>Caption details</summary><div class="copy">${html(entry.package?.caption || entry.caption?.caption || "No caption package loaded.")}</div></details>` : `<section class="inspector-section"><h3>Review</h3><div class="copy">Pick the best clips, then approve them for export.</div></section>`;
         } else if (mode === "media") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Media</h3><div class="summary-row"><span>Clip</span><strong>${html(entry.clip_id || title(entry))}</strong></div><div class="summary-row"><span>Cache</span><strong>${html(cacheFor(entry)?.status || "pending")}</strong></div></section><details class="advanced-details"><summary>Media details</summary>${metadataPanel(entry)}${mediaCacheHtml(entry)}</details>` : `<section class="inspector-section"><h3>Media</h3><div class="muted">No media selected.</div></section>`;
+        } else if (mode === "editor") {
+          const plan = latestEditPlan(entry);
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Edit Plan</h3>${editPlanHtml(plan)}</section><section class="inspector-section"><h3>Protection</h3><div class="summary-row"><span>Originals</span><strong>protected</strong></div><div class="summary-row"><span>Final render</span><strong>approval required</strong></div><div class="summary-row"><span>Cloud editing APIs</span><strong>off</strong></div></section><section class="inspector-section"><h3>Controls</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-edit-plan">Build Plan</button><button class="btn" data-desktop-action="render-edit-preview">Preview</button><button class="btn" data-desktop-action="open-edited-assets">Open Assets</button></div></section>`;
         } else if (mode === "search") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section>${schoolCompactHtml(entry)}<section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div>${schoolControlsHtml()}</section>`;
         } else if (mode === "marketing") {
@@ -5334,6 +5447,7 @@
           draftId,
           platform,
           caption: panel?.querySelector(".composer-text")?.value || "",
+          editNotes: panel?.querySelector(".composer-edit-notes")?.value || document.querySelector(".editor-notes")?.value || "",
           when: panel?.querySelector(".composer-when")?.value || "",
           mode: panel?.querySelector(".composer-mode")?.value || "manual",
           approved: Boolean(panel?.querySelector(".composer-approve")?.checked),
@@ -5352,6 +5466,51 @@
         persistWorkspace();
         render();
         return setNotice(result?.code === 0 ? `Post drafts ready: ${result.parsed?.draft_count || 0}.` : "Post draft build needs attention. Open Support for details.");
+      }
+
+      async function buildEditPlan(button) {
+        const entry = modeEntry() || activeEntry();
+        const payload = activeComposerPayload(button);
+        const notes = payload.editNotes || document.querySelector(".editor-notes")?.value || "";
+        if (!window.higherkey?.buildEditPlan) {
+          return setNotice("Static mode: run python3 scripts/build_edit_plan.py --dry-run.");
+        }
+        setNotice("Building a non-destructive local edit plan...");
+        const result = await window.higherkey.buildEditPlan({ clipId: payload.clipId || entry?.clip_id || "", notes, platform: payload.platform || "tiktok", dryRun: true });
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Edit plan created locally. Original media remains protected." : "Edit plan needs attention. Open Support for details.");
+      }
+
+      async function renderEditPreview(button) {
+        const payload = activeComposerPayload(button);
+        const planId = button?.dataset.planId || latestEditPlan(modeEntry() || activeEntry())?.plan_id || "";
+        if (!window.higherkey?.renderEditPreview) {
+          return setNotice("Static mode: run python3 scripts/render_edit_preview.py --dry-run.");
+        }
+        setNotice("Preparing safe preview render job...");
+        const result = await window.higherkey.renderEditPreview({ planId, clipId: payload.clipId, dryRun: true });
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Preview render job prepared under out/post_editor/previews." : "Preview render needs attention. FFmpeg may be required.");
+      }
+
+      async function renderFinalPostAsset(button) {
+        const planId = button?.dataset.planId || latestEditPlan(modeEntry() || activeEntry())?.plan_id || "";
+        if (!window.higherkey?.renderFinalPostAsset) {
+          return setNotice("Static mode: final renders require python3 scripts/render_final_post_asset.py --approve.");
+        }
+        const approved = confirm("Approve final render? HigherKey will write a new asset under out/post_editor/renders and will not overwrite original footage.");
+        const result = await window.higherkey.renderFinalPostAsset({ planId, approve: approved, dryRun: !approved });
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(approved && result?.code === 0 ? "Final render job approved locally. Original media remains untouched." : "Final render stayed in dry-run/approval-required mode.");
       }
 
       async function saveOrSchedulePost(button, schedule = false) {
@@ -5807,6 +5966,7 @@
             if (action === "go-queue") { state.mode = "queue"; persistWorkspace(); return render(); }
             if (action === "go-autopilot") { state.mode = "autopilot"; persistWorkspace(); return render(); }
             if (action === "go-media") { state.mode = "media"; persistWorkspace(); return render(); }
+            if (action === "go-editor") { state.mode = "editor"; persistWorkspace(); return render(); }
             if (action === "go-social") { state.mode = "social"; persistWorkspace(); return render(); }
             if (action === "go-marketing") { state.mode = "marketing"; persistWorkspace(); return render(); }
             if (action === "go-scheduler") { state.mode = "scheduler"; persistWorkspace(); return render(); }
@@ -5838,6 +5998,17 @@
             if (action === "build-autopilot-console") return buildAutopilotConsole();
             if (action === "retry-autopilot-failed-dry") return retryAutopilotFailedDryRun();
             if (action === "build-post-drafts") return buildPostDrafts();
+            if (action === "build-edit-plan") return buildEditPlan(button);
+            if (action === "render-edit-preview") return renderEditPreview(button);
+            if (action === "approve-final-render") return renderFinalPostAsset(button);
+            if (action === "use-creative-notes") {
+              const notes = state.creativeDirectorBrief?.creative_thesis || state.clientCreativePlan?.headline || "Use the strongest local hook, readable captions, and a clean CTA.";
+              const target = document.querySelector(".editor-notes") || button.closest(".composer-panel")?.querySelector(".composer-edit-notes");
+              if (target) target.value = notes;
+              return setNotice("Creative Director notes loaded into edit notes.");
+            }
+            if (action === "apply-caption-overlay") return setNotice("Caption overlay is included in the non-destructive edit plan. Build or refresh the plan before preview rendering.");
+            if (action === "export-edited-pack") return setNotice("Edited pack export uses local render outputs under out/post_editor/renders. Run final render with approval first.");
             if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
@@ -5940,6 +6111,10 @@
               if (window.higherkey.openSocialExports) await window.higherkey.openSocialExports();
               return setNotice("Social exports folder opened. Upload prepared files manually.");
             }
+            if (action === "open-edited-assets") {
+              if (window.higherkey.openEditedAssetsFolder) await window.higherkey.openEditedAssetsFolder();
+              return setNotice("Edited assets folder opened. Original media is not modified.");
+            }
             if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
             if (action === "first-run-setup") await window.higherkey.runFirstRunSetup();
             if (action === "start-watcher") await window.higherkey.startWatcher();
@@ -6000,6 +6175,13 @@
           state.socialOAuthStatus = await optionalJson(PATHS.socialOAuthStatus, null);
           state.socialOAuthReadiness = await optionalJson(PATHS.socialOAuthReadiness, null);
           state.socialTokenVaultStatus = await optionalJson(PATHS.socialTokenVaultStatus, null);
+          state.editPlans = await optionalJson(PATHS.editPlans, null);
+          state.editJobs = await optionalJson(PATHS.editJobs, null);
+          state.editingCapabilities = await optionalJson(PATHS.editingCapabilities, null);
+          state.clientEditingState = await optionalJson(PATHS.clientEditingState, null);
+          state.postEditingRecommendations = await optionalJson(PATHS.postEditingRecommendations, null);
+          state.clientPostEditingPlan = await optionalJson(PATHS.clientPostEditingPlan, null);
+          state.postEditingScan = await optionalJson(PATHS.postEditingScan, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, null);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, null);
@@ -6115,6 +6297,13 @@
           state.socialOAuthStatus = await optionalJson(PATHS.socialOAuthStatus, state.socialOAuthStatus);
           state.socialOAuthReadiness = await optionalJson(PATHS.socialOAuthReadiness, state.socialOAuthReadiness);
           state.socialTokenVaultStatus = await optionalJson(PATHS.socialTokenVaultStatus, state.socialTokenVaultStatus);
+          state.editPlans = await optionalJson(PATHS.editPlans, state.editPlans);
+          state.editJobs = await optionalJson(PATHS.editJobs, state.editJobs);
+          state.editingCapabilities = await optionalJson(PATHS.editingCapabilities, state.editingCapabilities);
+          state.clientEditingState = await optionalJson(PATHS.clientEditingState, state.clientEditingState);
+          state.postEditingRecommendations = await optionalJson(PATHS.postEditingRecommendations, state.postEditingRecommendations);
+          state.clientPostEditingPlan = await optionalJson(PATHS.clientPostEditingPlan, state.clientPostEditingPlan);
+          state.postEditingScan = await optionalJson(PATHS.postEditingScan, state.postEditingScan);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, state.audienceProfile);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, state.marketAttackPlan);

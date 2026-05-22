@@ -84,6 +84,7 @@ def main() -> int:
         "dashboard": "renderDashboardView",
         "queue": "renderQueueView",
         "media": "renderMediaView",
+        "editor": "renderEditorView",
         "search": "renderIntelligenceView",
         "marketing": "renderMarketingView",
         "agents": "renderAgentsView",

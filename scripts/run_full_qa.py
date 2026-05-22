@@ -65,6 +65,8 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "oauth_state.py",
         resources / "app-assets" / "growth_engine" / "live_publish_readiness.py",
         resources / "app-assets" / "growth_engine" / "social_token_vault.py",
+        resources / "app-assets" / "growth_engine" / "media_editor.py",
+        resources / "app-assets" / "growth_engine" / "post_editing_intelligence.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_marketing_plan.py",
@@ -90,6 +92,11 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "check_social_oauth_readiness.py",
         resources / "app-assets" / "scripts" / "check_social_token_vault.py",
         resources / "app-assets" / "scripts" / "manage_social_token_vault.py",
+        resources / "app-assets" / "scripts" / "scan_post_editing_intelligence.py",
+        resources / "app-assets" / "scripts" / "build_edit_plan.py",
+        resources / "app-assets" / "scripts" / "render_edit_preview.py",
+        resources / "app-assets" / "scripts" / "render_final_post_asset.py",
+        resources / "app-assets" / "scripts" / "test_media_editor_safety.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -189,8 +196,24 @@ def external_api_scan(root: Path) -> dict[str, object]:
             or "explicit" in lower
             or "dry" in lower
         )
+        editing_studio_source = rel_path in {
+            "growth_engine/media_editor.py",
+            "growth_engine/post_editing_intelligence.py",
+            "scripts/scan_post_editing_intelligence.py",
+            "scripts/build_edit_plan.py",
+            "scripts/render_edit_preview.py",
+            "scripts/render_final_post_asset.py",
+            "README.md",
+        } and (
+            "local" in lower
+            or "dry" in lower
+            or "no cloud" in lower
+            or "cloud_editing_api_enabled" in lower
+            or "non_destructive" in lower
+            or "original" in lower
+        )
         autopilot_readiness_source = rel_path == "growth_engine/operator_autopilot.py" and "check_social_oauth_readiness" in lower
-        if local_context or safe_denial_context or qa_scanner_context or safe_remote_reference or social_connector_source or scanner_source or connector_ui_source or autopilot_readiness_source:
+        if local_context or safe_denial_context or qa_scanner_context or safe_remote_reference or social_connector_source or scanner_source or connector_ui_source or editing_studio_source or autopilot_readiness_source:
             return True
         if pattern_name in {"live_platform_api", "cloud_api", "oauth", "telemetry"}:
             return False
@@ -531,6 +554,43 @@ def social_connector_scheduler_check(root: Path) -> dict[str, object]:
         "json_errors": json_errors,
         "token_hits": token_hits,
         "live_call_hits": live_call_hits,
+    }
+
+
+def editing_studio_check(root: Path) -> dict[str, object]:
+    required = {
+        root / "analytics" / "post_editing_intelligence_scan.json": {"read_only": bool, "findings": list},
+        root / "analytics" / "post_editing_recommendations.json": {"local_only": bool, "cloud_editing_api_enabled": bool, "recommendations": list},
+        root / "analytics" / "client_post_editing_plan.json": {"non_destructive": bool, "original_media_protected": bool, "recommendations": list},
+        root / "analytics" / "edit_plans.json": {"plans": list},
+        root / "analytics" / "edit_jobs.json": {"jobs": list},
+        root / "analytics" / "editing_capabilities.json": {"non_destructive": bool, "original_media_protected": bool, "source_overwrite_allowed": bool},
+        root / "analytics" / "client_editing_state.json": {"status": str},
+    }
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    json_errors = []
+    protection_failures = []
+    for path, fields in required.items():
+        if not path.exists():
+            continue
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception as error:
+            json_errors.append({"path": relative_path(path, root), "error": str(error)})
+            continue
+        for key, expected in fields.items():
+            if key not in payload or not isinstance(payload.get(key), expected):
+                json_errors.append({"path": relative_path(path, root), "key": key, "expected": expected.__name__})
+        text = json.dumps(payload).lower()
+        if '"source_overwrite_allowed": true' in text or '"delete_source_allowed": true' in text or '"cloud_editing_api_enabled": true' in text:
+            protection_failures.append(relative_path(path, root))
+    status = "pass" if not missing and not json_errors and not protection_failures else "fail"
+    return {
+        "name": "editing_studio_validation",
+        "status": status,
+        "missing": missing,
+        "json_errors": json_errors,
+        "protection_failures": protection_failures,
     }
 
 
@@ -1164,6 +1224,13 @@ def main() -> int:
     append_stage(results, qa_stage("creative_direction_build", ["python3", "scripts/build_creative_direction.py"], root, timeout=60), config)
     print("[qa] creative_direction_validation", flush=True)
     append_stage(results, creative_direction_check(root), config)
+    append_stage(results, qa_stage("post_editing_intelligence_scan", ["python3", "scripts/scan_post_editing_intelligence.py", "--dry-run", "--json"], root, timeout=120), config)
+    append_stage(results, qa_stage("edit_plan_dry_run", ["python3", "scripts/build_edit_plan.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("edit_preview_dry_run", ["python3", "scripts/render_edit_preview.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("final_post_asset_dry_run", ["python3", "scripts/render_final_post_asset.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("media_editor_safety_fixture", ["python3", "scripts/test_media_editor_safety.py"], root, timeout=60), config)
+    print("[qa] editing_studio_validation", flush=True)
+    append_stage(results, editing_studio_check(root), config)
     append_stage(results, qa_stage("production_command_dry_run", ["python3", "scripts/build_production_command.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("production_command_build", ["python3", "scripts/build_production_command.py"], root, timeout=60), config)
     print("[qa] production_command_validation", flush=True)

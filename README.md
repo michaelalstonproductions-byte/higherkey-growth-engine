@@ -2,6 +2,21 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V6.6 AI Post Editing Studio
+
+V6.6 adds a local, non-destructive AI Post Editing Studio. HigherKey can inspect a selected clip or image, suggest an edit plan, prepare preview render jobs, generate thumbnail/platform output paths, add caption/text-overlay steps, and create approval-gated final render jobs without overwriting original footage.
+
+Useful local checks:
+
+```bash
+python3 scripts/scan_post_editing_intelligence.py --dry-run
+python3 scripts/build_edit_plan.py --dry-run
+python3 scripts/render_edit_preview.py --dry-run
+python3 scripts/render_final_post_asset.py --dry-run
+```
+
+Preview and final assets are written under `out/post_editor/`. Final renders require explicit approval, source overwrite is disabled, original media deletion is blocked, and no cloud editing APIs are enabled by default. FFmpeg is used only when available through safe subprocess arguments, with dry-run remaining safe for QA.
+
 ## V6.5 Controlled Live Publish Enablement
 
 V6.5 adds a controlled live publish layer for one supported draft at a time. Live publishing is disabled by default and requires a supported platform, due scheduled draft, valid connector readiness, local approval receipt, exact confirmation phrase, and explicit user action. This is not bulk autoposting and does not run in the background.

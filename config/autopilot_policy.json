@@ -25,14 +25,18 @@
     "scripts/check_social_token_vault.py",
     "scripts/check_live_publish_readiness.py",
     "scripts/build_post_composer_drafts.py",
-    "scripts/run_social_publisher.py"
+    "scripts/run_social_publisher.py",
+    "scripts/scan_post_editing_intelligence.py",
+    "scripts/build_edit_plan.py",
+    "scripts/render_edit_preview.py"
   ],
   "approval_required_commands": [
     "scripts/export_social_packs.py",
     "scripts/export_approved_posts.py",
     "scripts/repair_project_media.py",
     "scripts/archive_project_artifacts.py",
-    "scripts/reset_demo_workspace.py"
+    "scripts/reset_demo_workspace.py",
+    "scripts/render_final_post_asset.py"
   ],
   "blocked_commands": [
     "delete_original_media",

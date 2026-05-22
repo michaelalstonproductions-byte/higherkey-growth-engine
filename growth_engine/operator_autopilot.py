@@ -33,6 +33,9 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "check_live_publish_readiness": ["python3", "scripts/check_live_publish_readiness.py"],
     "build_post_composer_drafts": ["python3", "scripts/build_post_composer_drafts.py"],
     "run_social_publisher": ["python3", "scripts/run_social_publisher.py"],
+    "scan_post_editing_intelligence": ["python3", "scripts/scan_post_editing_intelligence.py"],
+    "build_edit_plan": ["python3", "scripts/build_edit_plan.py"],
+    "render_edit_preview": ["python3", "scripts/render_edit_preview.py"],
 }
 
 POLICY_PATH = "config/autopilot_policy.json"
@@ -189,6 +192,10 @@ def _title_to_safe_key(title: str, category: str) -> str | None:
         ("token vault", "check_social_token_vault"),
         ("live publish readiness", "check_live_publish_readiness"),
         ("readiness", "check_publish_readiness"),
+        ("editing intelligence", "scan_post_editing_intelligence"),
+        ("post editing", "build_edit_plan"),
+        ("edit plan", "build_edit_plan"),
+        ("preview render", "render_edit_preview"),
         ("draft", "build_post_composer_drafts"),
         ("dry-run publisher", "run_social_publisher"),
         ("dry run publisher", "run_social_publisher"),
@@ -255,6 +262,9 @@ def _default_safe_cards() -> list[dict[str, Any]]:
         ("check_social_oauth_readiness", "Check OAuth Readiness", "check_social_oauth_readiness"),
         ("check_social_token_vault", "Check Social Token Vault", "check_social_token_vault"),
         ("check_live_publish_readiness", "Check Live Publish Readiness", "check_live_publish_readiness"),
+        ("scan_post_editing_intelligence", "Scan Post Editing Intelligence", "scan_post_editing_intelligence"),
+        ("build_edit_plan", "Build Safe Edit Plan", "build_edit_plan"),
+        ("render_edit_preview", "Render Safe Edit Preview", "render_edit_preview"),
         ("build_post_composer_drafts", "Build Post Composer Drafts", "build_post_composer_drafts"),
         ("run_social_publisher_dry_run", "Run Social Publisher Dry Run", "run_social_publisher"),
     ]
