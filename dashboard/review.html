@@ -1059,6 +1059,12 @@
       .marketing-view{display:grid;gap:14px;grid-template-rows:auto auto 1fr auto;min-height:0}
       .marketing-hero{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(280px,.8fr);gap:14px}
       .marketing-card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      .card-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:14px}
+      .composer-panel{margin-top:14px}
+      .composer-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:10px 0}
+      .composer-panel label{display:grid;gap:6px;color:var(--muted);font-size:12px;font-weight:800;text-transform:uppercase}
+      .composer-panel textarea{min-height:110px;resize:vertical;text-transform:none;font-weight:600;color:var(--text)}
+      .checkline{align-content:end;grid-template-columns:auto 1fr!important;align-items:center;text-transform:none!important;color:var(--text)!important}
       .marketing-panel-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:14px;min-height:0}
       .marketing-recommendation{display:grid;grid-template-columns:74px minmax(0,1fr) auto;gap:12px;align-items:center;border:1px solid var(--line);border-radius:14px;background:rgba(255,255,255,.025);padding:10px;margin-bottom:10px}
       .marketing-recommendation strong{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1916,6 +1922,7 @@
           <button class="tab nav-item" data-icon="☷" data-mode="queue">Review</button>
           <button class="tab nav-item" data-icon="▣" data-mode="media">Media</button>
           <button class="tab nav-item" data-icon="⌁" data-mode="marketing">Marketing</button>
+          <button class="tab nav-item" data-icon="◷" data-mode="scheduler">Scheduler</button>
           <button class="tab nav-item" data-icon="◈" data-mode="autopilot">Autopilot</button>
           <button class="tab nav-item" data-icon="◎" data-mode="social">Exports</button>
           <button class="tab nav-item" data-icon="▤" data-mode="diagnostics">Support</button>
@@ -2025,6 +2032,12 @@
         socialManifest: "../out/social_exports/manifest.json",
         socialHistory: "../analytics/social_export_history.json",
         socialPresets: "../config/social_platform_presets.json",
+        postComposerDrafts: "../analytics/post_composer_drafts.json",
+        socialSchedule: "../analytics/social_schedule.json",
+        socialPostQueue: "../analytics/social_post_queue.json",
+        socialPostHistory: "../analytics/social_post_history.json",
+        socialAuthStatus: "../analytics/social_auth_status.json",
+        socialPublisherStatus: "../analytics/social_publisher_status.json",
         marketingBrief: "../analytics/marketing_brief.json",
         audienceProfile: "../analytics/audience_profile.json",
         marketAttackPlan: "../analytics/market_attack_plan.json",
@@ -2121,6 +2134,12 @@
         socialManifest: null,
         socialHistory: null,
         socialPresets: null,
+        postComposerDrafts: null,
+        socialSchedule: null,
+        socialPostQueue: null,
+        socialPostHistory: null,
+        socialAuthStatus: null,
+        socialPublisherStatus: null,
         marketingBrief: null,
         audienceProfile: null,
         marketAttackPlan: null,
@@ -3005,7 +3024,7 @@
               <section class="small-panel"><div class="panel-title">Blocked Actions</div>${autopilotQueueHtml((item) => item.safety_level === "blocked")}</section>
               <section class="small-panel"><div class="panel-title">Recent Runs</div>${autopilotRunsHtml()}</section>
               <section class="small-panel"><div class="panel-title">Approval Receipts</div>${autopilotReceiptsHtml()}<button class="btn" data-desktop-action="approve-autopilot-action">Approve Selected Action</button></section>
-              <section class="small-panel"><div class="panel-title">Next Step</div><p class="muted">Run safe local actions, then approve exports or uploads manually.</p><div class="toolbar"><button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button></div></section>
+              <section class="small-panel"><div class="panel-title">Next Step</div><p class="muted">Run safe local actions, build drafts, and approve uploads manually. Autopilot cannot live post without connector auth and explicit approval.</p><div class="toolbar"><button class="btn" data-desktop-action="build-post-drafts">Build Drafts</button><button class="btn" data-desktop-action="dry-run-publish">Dry-Run Publisher</button><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button></div></section>
             </div>
           </div>
         `;
@@ -3040,7 +3059,7 @@
             <div class="media-library-head"><div><div class="panel-title">Media Library</div><p class="muted">Cached thumbnails, local clips, metadata, and review state.</p></div><div class="toolbar"><input class="search" id="searchInput" type="search" placeholder="Search media"><select class="select" id="statusFilter"><option value="all">All Clips</option><option value="approved">Approved</option><option value="pending">Pending</option></select><button class="btn" data-desktop-action="build-media-cache">Re-cache Media</button></div></div>
             <div class="asset-preview">
               <section class="asset-stage">${active ? `<video src="../${html(active.clip_path)}" controls preload="metadata" playsinline></video>` : realFootageOnboardingHtml()}</section>
-              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Media Inspector</div></div>${active ? mediaCacheHtml(active) + metadataPanel(active) : `<div class="empty-state">No asset selected.</div>`}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Media Inspector</div></div>${active ? mediaCacheHtml(active) + metadataPanel(active) + postComposerPanel(active, "media") : `<div class="empty-state">No asset selected.</div>`}</section>
             </div>
             ${compactClipGrid(filteredEntries())}
           </div>
@@ -3450,7 +3469,55 @@
       }
       function renderSocialExportsView() {
         const manifest = state.socialManifest || {};
-        return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Social Export Folders</div><div>HigherKey prepares posts. You upload manually.</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Checklist</div><div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button><button class="btn" data-desktop-action="record-post-result">Record Results</button></div></div><div class="checklist"><span>✓ Open the TikTok, Instagram Reels, YouTube Shorts, or Facebook Reels folder.</span><span>✓ Review caption.txt, hashtags.txt, title.txt, and posting_notes.txt.</span><span>✓ Confirm thumbnail.jpg when available.</span><span>✓ Upload manually. HigherKey does not post directly.</span><span>✓ After posting manually, record results to improve the next campaign plan.</span></div></section></div>`;
+        return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Social Export Folders</div><div>HigherKey prepares posts. You upload manually or dry-run official connectors.</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Checklist</div><div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button><button class="btn" data-desktop-action="record-post-result">Record Results</button></div></div><div class="checklist"><span>✓ Open the TikTok, Instagram Reels, YouTube Shorts, or Facebook Reels folder.</span><span>✓ Review caption.txt, hashtags.txt, title.txt, and posting_notes.txt.</span><span>✓ Paste your final post text into the platform composer.</span><span>✓ Use dry run before any live official API attempt.</span><span>✓ Upload manually whenever credentials or permissions are missing.</span></div></section></div>`;
+      }
+      function renderSchedulerView() {
+        const drafts = draftsList();
+        const items = schedulerItems();
+        const auth = state.socialAuthStatus || {};
+        return `
+          <div class="view marketing-view scheduler-view">
+            <section class="panel">
+              <div class="panel-head">
+                <div><div class="panel-title">Social Scheduler</div><div>Draft, schedule, dry-run, and keep manual upload fallback available.</div></div>
+                <div class="toolbar">
+                  <button class="btn red" data-desktop-action="build-post-drafts">Build Drafts</button>
+                  <button class="btn" data-desktop-action="schedule-selected-posts">Schedule Selected</button>
+                  <button class="btn" data-desktop-action="dry-run-publish">Run Dry-Run Publisher</button>
+                  <button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button>
+                </div>
+              </div>
+              <div class="dashboard-grid-secondary">
+                ${schedulerBucket("Today", (item) => String(item.scheduled_for || "").slice(0, 10) === new Date().toISOString().slice(0, 10))}
+                ${schedulerBucket("Tomorrow", (item) => Boolean(item.scheduled_for))}
+                ${schedulerBucket("This Week", () => true)}
+                ${schedulerBucket("Needs Approval", (item) => item.approval_required || item.status === "approval_required")}
+                ${schedulerBucket("Ready for Manual Upload", (item) => item.status === "manual_upload_required" || item.publish_mode === "manual")}
+                ${schedulerBucket("Connected Accounts", () => auth.instagram?.connected || auth.tiktok?.connected)}
+              </div>
+            </section>
+            <section class="panel view-scroll">
+              <div class="panel-head"><div class="panel-title">Draft Posts</div><div>${html(drafts.length)} local drafts</div></div>
+              <div class="card-grid">${drafts.slice(0, 12).map((draft) => `
+                <div class="card">
+                  <h3>${html(draft.platform)} · ${html(draft.clip_id)}</h3>
+                  <p>${html((draft.user_post_text || draft.generated_caption || "No text yet").slice(0, 180))}</p>
+                  <div class="summary-row"><span>Status</span><strong>${html(draft.status)}</strong></div>
+                  <div class="summary-row"><span>Mode</span><strong>${html(draft.publish_mode)}</strong></div>
+                  <div class="toolbar"><button class="btn" data-desktop-action="dry-run-publish" data-draft-id="${html(draft.draft_id)}">Dry Run</button><button class="btn" data-desktop-action="open-social-exports">Open Folder</button></div>
+                </div>
+              `).join("") || `<div class="empty-state"><h2>No drafts yet</h2><p>Build drafts from approved clips and social export packs.</p><button class="btn red" data-desktop-action="build-post-drafts">Build Drafts</button></div>`}</div>
+            </section>
+            <section class="panel view-scroll">
+              <div class="panel-head"><div class="panel-title">Scheduled Queue</div><div>${html(items.length)} items</div></div>
+              <div class="checklist">${items.slice(0, 16).map((item) => `<span>${html(item.platform)} · ${html(item.clip_id || item.draft_id)} · ${html(item.status)} · ${html(item.scheduled_for || "unscheduled")}</span>`).join("") || `<span>No scheduled posts yet.</span>`}</div>
+            </section>
+            <div class="dashboard-grid-secondary">
+              ${connectorCard("instagram", "Instagram", auth.instagram || {})}
+              ${connectorCard("tiktok", "TikTok", auth.tiktok || {})}
+            </div>
+          </div>
+        `;
       }
       function renderDiagnosticsView() {
         const diagnosticsStatus = state.diagnostics?.status || "not run";
@@ -3543,7 +3610,7 @@
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
-        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, search: renderIntelligenceView, marketing: renderMarketingView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
+        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, search: renderIntelligenceView, marketing: renderMarketingView, scheduler: renderSchedulerView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
         $("mainContent").innerHTML = (views[mode] || renderDashboardView)();
       }
 
@@ -3578,6 +3645,7 @@
           </div>
           <div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div>
           <p class="copy">${html(entry.package?.caption || entry.caption?.caption || "Approve this clip to prepare it for social packs.")}</p>
+          ${postComposerPanel(entry)}
         </div>`;
       }
       function metadataPanel(entry) {
@@ -3620,7 +3688,104 @@
       }
       function platformCard(key, label, manifest) {
         const count = (manifest.exports || []).filter((item) => item.platform === key || (item.platforms || []).includes(key)).length || manifest.count || 0;
-        return `<div class="platform-card" data-note="manual upload"><h2>${html(label)} Pack</h2><div class="summary-row"><span>Ready count</span><strong>${html(count)}</strong></div><div class="checklist"><span>✓ Format optimized</span><span>✓ Captions</span><span>✓ Thumbnail</span><span>✓ Hashtags</span><span>✓ Manifest</span></div><button class="btn" data-social-export="${html(key)}">Prepare More</button><button class="btn" data-desktop-action="open-social-exports">View Exports</button></div>`;
+        return `<div class="platform-card" data-note="manual upload"><h2>${html(label)} Pack</h2><div class="summary-row"><span>Ready count</span><strong>${html(count)}</strong></div><div class="checklist"><span>✓ Format optimized</span><span>✓ Captions</span><span>✓ Thumbnail</span><span>✓ Hashtags</span><span>✓ Manifest</span></div><button class="btn" data-social-export="${html(key)}">Prepare More</button><button class="btn" data-desktop-action="build-post-drafts">Build Drafts</button><button class="btn" data-desktop-action="open-social-exports">View Exports</button></div>`;
+      }
+      function draftsList() {
+        const drafts = state.postComposerDrafts?.drafts || [];
+        return Array.isArray(drafts) ? drafts : [];
+      }
+      function draftFor(entry, platform = "tiktok") {
+        const clipId = entry?.clip_id || "";
+        return draftsList().find((draft) => draft.clip_id === clipId && draft.platform === platform)
+          || draftsList().find((draft) => draft.clip_id === clipId)
+          || null;
+      }
+      function connectorState(platform) {
+        const status = state.socialAuthStatus || {};
+        if (platform === "instagram_reels") return status.instagram || {};
+        if (platform === "tiktok") return status.tiktok || {};
+        return { status: "manual_upload_required", live_api_enabled: false, connected: false };
+      }
+      function composerText(entry, draft) {
+        return draft?.user_post_text || draft?.user_caption_override || draft?.generated_caption || entry?.package?.caption || entry?.caption?.caption || "";
+      }
+      function postComposerPanel(entry, context = "review") {
+        if (!entry) return "";
+        const draft = draftFor(entry);
+        const text = composerText(entry, draft);
+        const draftId = draft?.draft_id || `tiktok_${entry.clip_id || entry.id}`;
+        return `
+          <section class="panel composer-panel" data-composer-context="${html(context)}">
+            <div class="panel-head">
+              <div><div class="panel-title">Post Composer</div><div class="muted">You can paste exactly what you want this post to say.</div></div>
+              <span class="badge">Manual fallback</span>
+            </div>
+            <p class="copy">HigherKey can suggest text, but you stay in control. Manual upload is always available. Live posting requires official account connection.</p>
+            <div class="composer-grid">
+              <label>Platform
+                <select class="select composer-platform" data-draft-id="${html(draftId)}">
+                  ${SOCIAL_PLATFORMS.map(([key, label]) => `<option value="${html(key)}" ${draft?.platform === key ? "selected" : ""}>${html(label)}</option>`).join("")}
+                </select>
+              </label>
+              <label>Schedule
+                <input class="search composer-when" type="datetime-local" value="${html((draft?.scheduled_for || "").slice(0, 16))}">
+              </label>
+            </div>
+            <label>Post Text
+              <textarea class="search composer-text" rows="5" placeholder="Paste or edit what you want the post to say.">${html(text)}</textarea>
+            </label>
+            <div class="composer-grid">
+              <label>Publish mode
+                <select class="select composer-mode">
+                  <option value="manual" ${draft?.publish_mode === "manual" ? "selected" : ""}>Manual Upload</option>
+                  <option value="dry_run" ${draft?.publish_mode === "dry_run" ? "selected" : ""}>Dry Run</option>
+                  <option value="live_api" ${draft?.publish_mode === "live_api" ? "selected" : ""}>Live API if connected</option>
+                </select>
+              </label>
+              <label class="checkline"><input class="composer-approve" type="checkbox"> I approve this post.</label>
+            </div>
+            <div class="toolbar">
+              <button class="btn" data-desktop-action="suggest-post-text">AI Suggest</button>
+              <button class="btn" data-desktop-action="use-ai-draft">Use AI Draft</button>
+              <button class="btn red" data-desktop-action="save-post-draft" data-clip-id="${html(entry.clip_id)}">Save Draft</button>
+              <button class="btn" data-desktop-action="schedule-post" data-clip-id="${html(entry.clip_id)}">Schedule Post</button>
+              <button class="btn" data-desktop-action="dry-run-publish" data-draft-id="${html(draftId)}">Dry Run Publish</button>
+              <button class="btn" data-desktop-action="publish-now" data-draft-id="${html(draftId)}">Publish Now</button>
+              <button class="btn" data-desktop-action="open-social-exports">Open Export Folder</button>
+            </div>
+            <div class="muted">Connector: ${html(connectorState(draft?.platform || "tiktok").status || "manual_upload_required")}</div>
+          </section>
+        `;
+      }
+      function schedulerItems() {
+        const queue = state.socialPostQueue?.items || [];
+        const schedule = state.socialSchedule?.items || [];
+        return (Array.isArray(queue) && queue.length ? queue : (Array.isArray(schedule) ? schedule : []));
+      }
+      function schedulerBucket(label, filter) {
+        const items = schedulerItems().filter(filter);
+        return `<section class="small-panel"><div class="panel-title">${html(label)}</div><strong>${html(items.length)}</strong><div class="muted">${html(items[0]?.platform || "No posts")}</div></section>`;
+      }
+      function connectorCard(platform, label, status) {
+        const scopes = (status.required_permissions || status.required_scopes || []).join(", ") || "not configured";
+        const oauthButton = platform === "instagram"
+          ? `<button class="btn" data-desktop-action="start-instagram-oauth">Start Instagram OAuth</button>`
+          : `<button class="btn" data-desktop-action="start-tiktok-oauth">Start TikTok OAuth</button>`;
+        return `
+          <section class="small-panel">
+            <div class="panel-title">${html(label)} Connector</div>
+            <div class="summary-row"><span>Configured</span><strong>${html(status.enabled ? "yes" : "no")}</strong></div>
+            <div class="summary-row"><span>Status</span><strong>${html(status.status || "not_configured")}</strong></div>
+            <div class="summary-row"><span>Live posting</span><strong>${html(status.live_api_enabled ? "enabled" : "disabled")}</strong></div>
+            <div class="muted">${html(scopes)}</div>
+            <div class="toolbar">
+              <button class="btn" data-desktop-action="check-social-auth">Check Connector Status</button>
+              ${oauthButton}
+              <button class="btn" data-desktop-action="disconnect-social-connector">Disconnect</button>
+              <button class="btn" data-desktop-action="dry-run-publish">Run Dry Run</button>
+            </div>
+          </section>
+        `;
       }
       function settingsCard(titleText, rows) {
         return `<section class="settings-card"><h2>${html(titleText)}</h2>${rows.map(([label, value]) => `<div class="setting-row"><span>${html(label)}</span><strong>${html(value)}</strong></div>`).join("")}</section>`;
@@ -4865,6 +5030,93 @@
         }
       }
 
+      function activeComposerPayload(button) {
+        const panel = button?.closest(".composer-panel") || document.querySelector(".composer-panel");
+        const entry = modeEntry() || activeEntry();
+        const clipId = button?.dataset.clipId || entry?.clip_id || "";
+        const platform = panel?.querySelector(".composer-platform")?.value || "tiktok";
+        return {
+          panel,
+          clipId,
+          draftId: `${platform}_${clipId}` || button?.dataset.draftId || panel?.querySelector(".composer-platform")?.dataset.draftId || "",
+          platform,
+          caption: panel?.querySelector(".composer-text")?.value || "",
+          when: panel?.querySelector(".composer-when")?.value || "",
+          mode: panel?.querySelector(".composer-mode")?.value || "manual",
+          approved: Boolean(panel?.querySelector(".composer-approve")?.checked)
+        };
+      }
+
+      async function buildPostDrafts() {
+        if (!window.higherkey?.buildPostComposerDrafts) {
+          return setNotice("Static mode: run python3 scripts/build_post_composer_drafts.py.");
+        }
+        setNotice("Building local post composer drafts...");
+        const result = await window.higherkey.buildPostComposerDrafts();
+        await refreshLiveData();
+        state.mode = state.mode === "social" ? "social" : "scheduler";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? `Post drafts ready: ${result.parsed?.draft_count || 0}.` : "Post draft build needs attention. Open Support for details.");
+      }
+
+      async function saveOrSchedulePost(button, schedule = false) {
+        const payload = activeComposerPayload(button);
+        if (!window.higherkey?.scheduleSocialPost) {
+          return setNotice("Static mode: run python3 scripts/schedule_social_posts.py --dry-run --from-drafts.");
+        }
+        const result = await window.higherkey.scheduleSocialPost({
+          fromDrafts: true,
+          clipId: payload.clipId,
+          platform: payload.platform,
+          when: schedule ? payload.when : "",
+          caption: payload.caption,
+          publishMode: payload.mode,
+          approvalRequired: true
+        });
+        await refreshLiveData();
+        render();
+        const changed = Number(result?.parsed?.changed_count ?? result?.parsed?.created_count ?? 0);
+        if (result?.code === 0 && changed > 0) {
+          return setNotice(schedule ? "Post scheduled locally. Dry-run/manual mode remains available." : "Post draft saved locally.");
+        }
+        if (result?.code === 0) return setNotice("No draft was saved. Select a clip and platform, then try again.");
+        return setNotice("Post scheduler needs attention. Open Support for details.");
+      }
+
+      async function runSocialPublisher(button, live = false) {
+        const payload = activeComposerPayload(button);
+        if (live && !payload.approved) return setNotice("Check approval before live publishing. Dry run and manual upload remain available.");
+        const method = live ? "runSocialPublisherLive" : "runSocialPublisherDryRun";
+        if (!window.higherkey?.[method]) {
+          return setNotice("Static mode: run python3 scripts/run_social_publisher.py --dry-run --due-now.");
+        }
+        setNotice(live ? "Checking official connector, approval, and live-posting gates..." : "Running dry-run publisher...");
+        const result = await window.higherkey[method]({
+          dueNow: true,
+          platform: payload.platform,
+          draftId: payload.draftId,
+          approve: payload.approved
+        });
+        await refreshLiveData();
+        render();
+        const parsed = result?.parsed || {};
+        if (live) {
+          return setNotice(parsed.live_call_made ? "Live publisher returned a live-call receipt." : "Live publishing was blocked or requires auth. Manual upload remains available.");
+        }
+        return setNotice(parsed.live_call_made ? "Unexpected live call detected. Open Support." : `Dry run complete for ${parsed.publish_count || 0} draft(s). No live call made.`);
+      }
+
+      async function checkSocialAuth() {
+        if (!window.higherkey?.checkSocialAuthStatus) {
+          return setNotice("Static mode: run python3 -m growth_engine.social_auth.");
+        }
+        const result = await window.higherkey.checkSocialAuthStatus();
+        await refreshLiveData();
+        render();
+        return setNotice(result?.code === 0 ? "Connector status refreshed. Tokens are not shown or logged." : "Connector status needs attention.");
+      }
+
       async function buildMarketingPlan() {
         if (!window.higherkey?.buildMarketingPlan) {
           return setNotice("Static mode: run python3 scripts/build_marketing_plan.py to build the local marketing plan.");
@@ -5163,6 +5415,7 @@
             if (action === "go-media") { state.mode = "media"; persistWorkspace(); return render(); }
             if (action === "go-social") { state.mode = "social"; persistWorkspace(); return render(); }
             if (action === "go-marketing") { state.mode = "marketing"; persistWorkspace(); return render(); }
+            if (action === "go-scheduler") { state.mode = "scheduler"; persistWorkspace(); return render(); }
             if (action === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); return render(); }
             if (action === "go-agents") { state.mode = "agents"; persistWorkspace(); return render(); }
             if (action === "go-analytics") { state.mode = "analytics"; persistWorkspace(); return render(); }
@@ -5190,6 +5443,32 @@
             if (action === "approve-autopilot-action") return approveAutopilotAction();
             if (action === "build-autopilot-console") return buildAutopilotConsole();
             if (action === "retry-autopilot-failed-dry") return retryAutopilotFailedDryRun();
+            if (action === "build-post-drafts") return buildPostDrafts();
+            if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
+            if (action === "save-post-draft") return saveOrSchedulePost(button, false);
+            if (action === "schedule-post") return saveOrSchedulePost(button, true);
+            if (action === "dry-run-publish") return runSocialPublisher(button, false);
+            if (action === "publish-now") return runSocialPublisher(button, true);
+            if (action === "check-social-auth") return checkSocialAuth();
+            if (action === "disconnect-social-connector") return setNotice("Connector disconnect is a local-safe placeholder. No token values are shown; remove local token storage from Keychain or encrypted storage when configured.");
+            if (action === "start-instagram-oauth") {
+              if (!window.higherkey?.startInstagramOAuth) return setNotice("Static mode: configure Meta OAuth locally, then check connector status.");
+              const result = await window.higherkey.startInstagramOAuth();
+              return setNotice(result?.ok ? "Instagram OAuth opened in the browser. No passwords are stored." : "Instagram OAuth is not configured.");
+            }
+            if (action === "start-tiktok-oauth") {
+              if (!window.higherkey?.startTikTokOAuth) return setNotice("Static mode: configure TikTok OAuth locally, then check connector status.");
+              const result = await window.higherkey.startTikTokOAuth();
+              return setNotice(result?.ok ? "TikTok OAuth opened in the browser. Unaudited clients may be private-post restricted." : "TikTok OAuth is not configured.");
+            }
+            if (action === "suggest-post-text" || action === "use-ai-draft") {
+              const panel = button.closest(".composer-panel");
+              const entry = modeEntry() || activeEntry();
+              const text = composerText(entry, draftFor(entry));
+              const target = panel?.querySelector(".composer-text");
+              if (target && text) target.value = text;
+              return setNotice("AI draft loaded locally. Edit or paste exactly what you want before saving.");
+            }
             if (action === "record-post-result") return recordPostResult();
             if (action === "copy-7-day-plan") return copyCampaignText("7-day");
             if (action === "copy-campaign-brief") return copyCampaignText("brief");
@@ -5306,6 +5585,12 @@
           state.socialManifest = await optionalJson(PATHS.socialManifest, null);
           state.socialHistory = await optionalJson(PATHS.socialHistory, null);
           state.socialPresets = await optionalJson(PATHS.socialPresets, null);
+          state.postComposerDrafts = await optionalJson(PATHS.postComposerDrafts, null);
+          state.socialSchedule = await optionalJson(PATHS.socialSchedule, null);
+          state.socialPostQueue = await optionalJson(PATHS.socialPostQueue, null);
+          state.socialPostHistory = await optionalJson(PATHS.socialPostHistory, null);
+          state.socialAuthStatus = await optionalJson(PATHS.socialAuthStatus, null);
+          state.socialPublisherStatus = await optionalJson(PATHS.socialPublisherStatus, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, null);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, null);
@@ -5406,6 +5691,12 @@
           state.socialManifest = await optionalJson(PATHS.socialManifest, state.socialManifest);
           state.socialHistory = await optionalJson(PATHS.socialHistory, state.socialHistory);
           state.socialPresets = await optionalJson(PATHS.socialPresets, state.socialPresets);
+          state.postComposerDrafts = await optionalJson(PATHS.postComposerDrafts, state.postComposerDrafts);
+          state.socialSchedule = await optionalJson(PATHS.socialSchedule, state.socialSchedule);
+          state.socialPostQueue = await optionalJson(PATHS.socialPostQueue, state.socialPostQueue);
+          state.socialPostHistory = await optionalJson(PATHS.socialPostHistory, state.socialPostHistory);
+          state.socialAuthStatus = await optionalJson(PATHS.socialAuthStatus, state.socialAuthStatus);
+          state.socialPublisherStatus = await optionalJson(PATHS.socialPublisherStatus, state.socialPublisherStatus);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, state.audienceProfile);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, state.marketAttackPlan);

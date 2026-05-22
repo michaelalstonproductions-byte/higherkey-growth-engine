@@ -1,16 +1,39 @@
 {
   "local_only": true,
+  "manual_upload_fallback": true,
+  "live_api_enabled_default": false,
   "instagram": {
     "enabled": false,
-    "mode": "manual_import",
+    "mode": "official_api",
+    "app_id_env": "HIGHERKEY_META_APP_ID",
+    "app_secret_env": "HIGHERKEY_META_APP_SECRET",
+    "redirect_uri": "http://127.0.0.1:8787/oauth/meta/callback",
+    "required_permissions": [
+      "instagram_business_basic",
+      "instagram_business_content_publish"
+    ],
     "live_api_enabled": false,
-    "token_storage": "not_configured",
-    "notes": "Live Instagram API integration requires Meta app setup, permissions, account authorization, and token storage. V5.1 supports local manual import only."
+    "notes": [
+      "Instagram publishing must use the official Meta Instagram content publishing flow.",
+      "Live posting requires a connected Instagram professional account, valid permissions, user authorization, and explicit approval.",
+      "If media cannot be supplied through a supported official upload or hosted URL flow, HigherKey falls back to manual upload."
+    ]
   },
   "tiktok": {
     "enabled": false,
-    "mode": "manual_upload",
-    "live_api_enabled": false
+    "mode": "official_api",
+    "client_key_env": "HIGHERKEY_TIKTOK_CLIENT_KEY",
+    "client_secret_env": "HIGHERKEY_TIKTOK_CLIENT_SECRET",
+    "redirect_uri": "http://127.0.0.1:8787/oauth/tiktok/callback",
+    "required_scopes": [
+      "video.publish"
+    ],
+    "live_api_enabled": false,
+    "notes": [
+      "TikTok publishing must use the official TikTok Content Posting API.",
+      "Direct posting requires an approved app, valid scopes, user authorization, and explicit approval.",
+      "Unaudited clients may be restricted to private posting."
+    ]
   },
   "youtube": {
     "enabled": false,
@@ -21,5 +44,10 @@
     "enabled": false,
     "mode": "manual_upload",
     "live_api_enabled": false
+  },
+  "storage": {
+    "token_storage": "local_keychain_or_encrypted_file",
+    "never_commit_tokens": true,
+    "notes": "Token values must stay in local secure storage and must never be written to analytics, logs, source files, or committed config."
   }
 }

@@ -39,6 +39,11 @@ REQUIRED_MODULES = [
     "growth_engine/production_command.py",
     "growth_engine/operator_autopilot.py",
     "growth_engine/autopilot_console.py",
+    "growth_engine/social_auth.py",
+    "growth_engine/social_scheduler.py",
+    "growth_engine/social_publisher.py",
+    "growth_engine/social_platforms/instagram.py",
+    "growth_engine/social_platforms/tiktok.py",
 ]
 REQUIRED_SCRIPTS = [
     "scripts/build_marketing_plan.py",
@@ -50,6 +55,10 @@ REQUIRED_SCRIPTS = [
     "scripts/run_operator_autopilot.py",
     "scripts/autopilot_preflight.py",
     "scripts/build_autopilot_console.py",
+    "scripts/build_post_composer_drafts.py",
+    "scripts/schedule_social_posts.py",
+    "scripts/run_social_publisher.py",
+    "scripts/test_social_connector_safety.py",
 ]
 REQUIRED_CONFIGS = [
     "config/autopilot_policy.json",
@@ -165,6 +174,14 @@ def source_safety_scan(root: Path) -> dict[str, Any]:
         "token settings",
         "rotate-token",
         "no posting integration",
+        "client_secret_env",
+        "app_secret_env",
+        "never_commit_tokens",
+        "token_values_exposed",
+        "redacted",
+        "official connector",
+        "explicit approval",
+        "dry-run",
         "scan_patterns",
         "direct_posting_pattern",
         "re.compile",

@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally. No cloud APIs or social APIs are configured.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. Official social connectors stay disabled unless configured and explicitly approved.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "UI Reference Polish",
-  "version": "V6.1"
+  "release_name": "Social Connector Studio",
+  "version": "V6.2"
 }

@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "6.1.0",
-  "release_version": "V6.1",
+  "app_version": "6.2.0",
+  "release_version": "V6.2",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -149,6 +149,12 @@
       "to": "V6.1",
       "safe": true,
       "notes": "Polish the dashboard shell, command center, review, media, marketing, autopilot, exports, support, and settings views against the local UI reference images without changing backend behavior or adding cloud/social posting APIs."
+    },
+    {
+      "from": "V6.1",
+      "to": "V6.2",
+      "safe": true,
+      "notes": "Add local Social Connector Studio, Post Composer, scheduler, dry-run publisher, and official Instagram/TikTok connector architecture while preserving manual upload fallback and gating live publishing behind credentials, authorization, approval, and live mode."
     }
   ],
   "required_runtime_files": [
@@ -227,7 +233,11 @@
     "scripts/update_manual_post_status.py",
     "scripts/import_instagram_insights.py",
     "scripts/collect_client_feedback.py",
-    "scripts/create_issue_report.py"
+    "scripts/create_issue_report.py",
+    "scripts/build_post_composer_drafts.py",
+    "scripts/schedule_social_posts.py",
+    "scripts/run_social_publisher.py",
+    "scripts/test_social_connector_safety.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"

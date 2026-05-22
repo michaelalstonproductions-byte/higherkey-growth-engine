@@ -2,6 +2,37 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V6.2 Social Connector + Scheduler
+
+V6.2 adds local Social Connector Studio, Post Composer, and Scheduled Publishing infrastructure. HigherKey can build post drafts from approved clips and social export packs, let the user paste or edit exact post text beside each clip, schedule drafts locally, and run a dry-run publisher. Manual upload remains available at every step.
+
+Official connector architecture is included for Instagram Reels and TikTok:
+
+- Instagram uses the official Meta/Instagram content publishing flow only. It requires a Meta app, an Instagram professional account, `instagram_business_basic`, `instagram_business_content_publish`, valid user authorization, and supported hosted media or upload support.
+- TikTok uses the official TikTok Content Posting API only. It requires an approved app, `video.publish`, valid user authorization, and explicit user approval. Unaudited clients may be private-post restricted.
+- No password login, scraping, unofficial browser bots, or fake posting are supported.
+- If credentials, tokens, permissions, or approval are missing, HigherKey stays in dry-run/manual mode.
+
+Create local drafts:
+
+```bash
+python3 scripts/build_post_composer_drafts.py
+```
+
+Schedule from drafts without live calls:
+
+```bash
+python3 scripts/schedule_social_posts.py --dry-run --from-drafts --json
+```
+
+Run the publisher in dry-run mode:
+
+```bash
+python3 scripts/run_social_publisher.py --dry-run --due-now --json
+```
+
+Connector setup starts from `config/social_connectors.example.json`. Do not commit `config/social_connectors.json`, tokens, app secrets, refresh tokens, or user-specific OAuth state. Live mode requires official account connection, valid credentials, an approved draft, explicit approval, and `--live --approve`; QA never performs live platform calls.
+
 ## V1 Scope
 
 - Scan or watch `content_inbox/` for local video files.

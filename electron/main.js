@@ -516,9 +516,11 @@ function runPython(args) {
   return new Promise((resolve) => {
     const cwd = activeProjectRoot;
     const [script, ...rest] = args;
-    const scriptPath = path.isAbsolute(script) ? script : path.join(APP_ROOT, script);
+    const moduleMode = script === "-m";
+    const scriptPath = moduleMode ? script : (path.isAbsolute(script) ? script : path.join(APP_ROOT, script));
+    const pythonArgs = moduleMode ? [script, ...rest] : [scriptPath, ...rest];
     const startedAt = new Date().toISOString();
-    const child = spawn("python3", [scriptPath, ...rest], {
+    const child = spawn("python3", pythonArgs, {
       cwd,
       env: { ...process.env, PYTHONPATH: APP_ROOT }
     });
@@ -1554,6 +1556,103 @@ async function retryAutopilotFailedDryRun() {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function buildPostComposerDrafts() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_post_composer_drafts.py"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function scheduleSocialPost(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/schedule_social_posts.py", "--dry-run", "--json"];
+  if (options.fromDrafts !== false) args.push("--from-drafts");
+  if (options.clipId) args.push("--clip-id", String(options.clipId));
+  if (options.platform) args.push("--platform", String(options.platform));
+  if (options.when) args.push("--when", String(options.when));
+  if (options.caption) args.push("--caption", String(options.caption));
+  if (options.publishMode) args.push("--publish-mode", String(options.publishMode));
+  if (options.approvalRequired === true) args.push("--approval-required");
+  if (options.approvalRequired === false) args.push("--no-approval-required");
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function runSocialPublisherDryRun(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/run_social_publisher.py", "--dry-run", "--json"];
+  if (options.dueNow !== false) args.push("--due-now");
+  if (options.platform) args.push("--platform", String(options.platform));
+  if (options.draftId) args.push("--draft-id", String(options.draftId));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function runSocialPublisherLive(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  if (options.approve !== true) {
+    return { ok: false, status: "approval_required", message: "Live publishing requires explicit user approval.", activeProjectRoot };
+  }
+  const args = ["scripts/run_social_publisher.py", "--live", "--approve", "--json"];
+  if (options.dueNow !== false) args.push("--due-now");
+  if (options.platform) args.push("--platform", String(options.platform));
+  if (options.draftId) args.push("--draft-id", String(options.draftId));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getPostComposerDrafts() {
+  return { ok: true, activeProjectRoot, drafts: await readAnalyticsJson("post_composer_drafts.json", { drafts: [] }) };
+}
+
+async function getSocialSchedule() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    schedule: await readAnalyticsJson("social_schedule.json", { items: [] }),
+    queue: await readAnalyticsJson("social_post_queue.json", { items: [] }),
+    history: await readAnalyticsJson("social_post_history.json", { items: [] })
+  };
+}
+
+async function checkSocialAuthStatus() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["-m", "growth_engine.social_auth"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function startOAuth(platform) {
+  const status = await checkSocialAuthStatus();
+  const authUrl = status.parsed?.[platform]?.auth_url;
+  if (!authUrl) return { ok: false, status: "auth_required", message: "OAuth configuration is not available.", activeProjectRoot };
+  await shell.openExternal(authUrl);
+  return { ok: true, status: "opened", platform, activeProjectRoot };
+}
+
 async function openMarketingFolder() {
   const folder = path.join(activeProjectRoot, "out", "marketing");
   await fsp.mkdir(folder, { recursive: true });
@@ -1867,6 +1966,15 @@ function registerIpc() {
   ipcMain.handle("autopilot:buildConsole", buildAutopilotConsole);
   ipcMain.handle("autopilot:getConsole", getAutopilotConsole);
   ipcMain.handle("autopilot:retryFailedDryRun", retryAutopilotFailedDryRun);
+  ipcMain.handle("socialComposer:buildDrafts", buildPostComposerDrafts);
+  ipcMain.handle("socialComposer:getDrafts", getPostComposerDrafts);
+  ipcMain.handle("socialScheduler:schedulePost", scheduleSocialPost);
+  ipcMain.handle("socialScheduler:getSchedule", getSocialSchedule);
+  ipcMain.handle("socialPublisher:dryRun", runSocialPublisherDryRun);
+  ipcMain.handle("socialPublisher:live", runSocialPublisherLive);
+  ipcMain.handle("socialAuth:checkStatus", checkSocialAuthStatus);
+  ipcMain.handle("socialAuth:startInstagramOAuth", () => startOAuth("instagram"));
+  ipcMain.handle("socialAuth:startTikTokOAuth", () => startOAuth("tiktok"));
   ipcMain.handle("marketing:importInstagramInsightsManual", importInstagramInsightsManual);
   ipcMain.handle("diagnostics:run", () => runPython(["scripts/run_diagnostics.py"]));
   ipcMain.handle("runtime:runMaintenance", runMaintenance);
