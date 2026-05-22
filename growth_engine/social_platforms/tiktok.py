@@ -45,15 +45,26 @@ class TikTokAdapter:
         payload = self.prepare_payload(draft, config)
         if not live:
             return {"status": "dry_run", "platform": self.platform, "payload": payload, "live_call_made": False}
-        ok, error = self.validate_media(draft, root)
-        if not ok:
-            return {"status": "manual_upload_required", "platform": self.platform, "error": error, "payload": payload, "live_call_made": False}
-        if auth.get("status") != "connected":
-            return {"status": "auth_required", "platform": self.platform, "error": "TikTok account is not connected.", "live_call_made": False}
-        return {
-            "status": "blocked",
-            "platform": self.platform,
-            "error": "Live TikTok calls are gated until app approval, valid scopes, token storage, and explicit approval are present.",
-            "payload": payload,
-            "live_call_made": False,
-        }
+        return perform_tiktok_live_publish(draft, config, auth, root, payload=payload)
+
+
+def perform_tiktok_live_publish(draft: dict[str, Any], config: dict[str, Any], auth: dict[str, Any], root: Path, *, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    adapter = TikTokAdapter()
+    payload = payload or adapter.prepare_payload(draft, config)
+    ok, error = adapter.validate_media(draft, root)
+    if not ok:
+        return {"status": "manual_upload_required", "platform": adapter.platform, "error": error, "payload": payload, "live_call_made": False}
+    if auth.get("status") not in {"connected", "ready_for_live_api"}:
+        return {"status": "auth_required", "platform": adapter.platform, "error": "TikTok account is not connected.", "live_call_made": False}
+    required = set(config.get("required_scopes", []))
+    scopes = set(auth.get("token", {}).get("scopes", []) if isinstance(auth.get("token"), dict) else [])
+    if required and not required.issubset(scopes):
+        return {"status": "scope_missing", "platform": adapter.platform, "error": "TikTok video.publish scope is not confirmed.", "payload": payload, "live_call_made": False}
+    return {
+        "status": "live_publish_not_fully_supported",
+        "platform": adapter.platform,
+        "error": "TikTok direct post readiness passed, but upload execution is not enabled in this build.",
+        "payload": payload,
+        "manual_upload_fallback": True,
+        "live_call_made": False,
+    }

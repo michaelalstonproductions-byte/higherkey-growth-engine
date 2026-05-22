@@ -7,6 +7,7 @@ from typing import Any
 from .config import AppConfig
 from .index import utc_now
 from .json_store import load_json_file, save_json_file
+from .live_publish_readiness import append_live_publish_log, validate_live_publish_conditions
 from .social_auth import check_social_auth_status, load_connector_config
 from .social_platforms import InstagramAdapter, TikTokAdapter
 from .social_scheduler import due_drafts
@@ -79,26 +80,83 @@ def live_due_status(draft: dict[str, Any], now: datetime) -> dict[str, Any] | No
     return None
 
 
-def publish_drafts(config: AppConfig, *, dry_run: bool = True, live: bool = False, due_now: bool = False, platform: str | None = None, draft_id: str | None = None, approve: bool = False) -> dict[str, Any]:
+def publish_drafts(
+    config: AppConfig,
+    *,
+    dry_run: bool = True,
+    live: bool = False,
+    live_single: bool = False,
+    live_sandbox: bool = False,
+    due_now: bool = False,
+    platform: str | None = None,
+    draft_id: str | None = None,
+    approve: bool = False,
+    receipt_id: str | None = None,
+) -> dict[str, Any]:
     connectors = load_connector_config(config.root)
     auth_status = check_social_auth_status(config)
     selected = due_drafts(config, due_now=False if live else due_now, platform=platform, draft_id=draft_id)
+    if live and not live_sandbox and len(selected) != 1:
+        status = {
+            "version": 1,
+            "updated_at": utc_now(),
+            "local_only": True,
+            "dry_run": False,
+            "live_requested": True,
+            "approval_present": approve,
+            "manual_upload_fallback": True,
+            "live_call_made": False,
+            "count": 1,
+            "results": [{
+                "status": "blocked",
+                "message": "Live publishing is one-post-at-a-time and requires exactly one matching draft.",
+                "live_call_made": False,
+            }],
+        }
+        save_json_file(config.analytics_dir / "social_publisher_status.json", status)
+        save_json_file(config.analytics_dir / "social_live_publish_status.json", status)
+        append_live_publish_log(config, status)
+        return status
     results = []
     live_call_made = False
     now = datetime.now(timezone.utc)
     for draft in selected:
         draft_platform = str(draft.get("platform") or "")
         if live:
+            if live_sandbox:
+                readiness = validate_live_publish_conditions(config, draft_id=str(draft.get("draft_id")), platform=draft_platform, require_receipt=False)
+                results.append({
+                    "draft_id": draft.get("draft_id"),
+                    "platform": draft_platform,
+                    "status": "live_sandbox",
+                    "message": "Live sandbox validated gates without making a platform call.",
+                    "readiness": readiness,
+                    "manual_upload_fallback": True,
+                    "live_call_made": False,
+                })
+                continue
             due_result = live_due_status(draft, now)
             if due_result:
                 results.append(due_result)
                 continue
-            if not due_now and not draft_id:
+            if not live_single and not draft_id:
                 results.append({
                     "draft_id": draft.get("draft_id"),
                     "platform": draft_platform,
                     "status": "blocked",
-                    "message": "Live publishing requires a specific draft or the due-now publisher path.",
+                    "message": "Bulk live publishing is blocked. Use one specific draft.",
+                    "live_call_made": False,
+                })
+                continue
+            readiness = validate_live_publish_conditions(config, draft_id=str(draft.get("draft_id")), platform=draft_platform, require_receipt=True, receipt_id=receipt_id)
+            if not readiness.get("ready"):
+                results.append({
+                    "draft_id": draft.get("draft_id"),
+                    "platform": draft_platform,
+                    "status": readiness.get("status", "blocked"),
+                    "message": "Live publishing blocked by readiness gates.",
+                    "readiness": readiness,
+                    "manual_upload_fallback": True,
                     "live_call_made": False,
                 })
                 continue
@@ -159,6 +217,9 @@ def publish_drafts(config: AppConfig, *, dry_run: bool = True, live: bool = Fals
         "results": results,
     }
     save_json_file(config.analytics_dir / "social_publisher_status.json", status)
+    if live or live_sandbox:
+        save_json_file(config.analytics_dir / "social_live_publish_status.json", status)
+        append_live_publish_log(config, status)
     log_path = config.analytics_dir / "social_publish_log.json"
     existing = load_json_file(log_path, default={"runs": []})
     runs = existing.get("runs", []) if isinstance(existing.get("runs"), list) else []

@@ -2,6 +2,20 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V6.5 Controlled Live Publish Enablement
+
+V6.5 adds a controlled live publish layer for one supported draft at a time. Live publishing is disabled by default and requires a supported platform, due scheduled draft, valid connector readiness, local approval receipt, exact confirmation phrase, and explicit user action. This is not bulk autoposting and does not run in the background.
+
+Useful local checks:
+
+```bash
+python3 scripts/check_live_publish_readiness.py --dry-run --platform all
+python3 scripts/run_social_publisher.py --live-sandbox --dry-run --due-now --json
+python3 scripts/test_live_publish_safety.py
+```
+
+Supported live-readiness platforms are Instagram Reels and TikTok. YouTube Shorts and Facebook Reels stay manual-upload only. If official upload execution, permissions, token validity, due time, or user confirmation is not ready, HigherKey blocks live publish and keeps manual upload available. QA never performs live platform calls, and there are still no password logins, scraping, browser automation, token commits, or bulk live publishing.
+
 ## V6.4 Official OAuth + Token Vault Readiness
 
 V6.4 adds official OAuth readiness, local token vault status, platform capability checks, and dry-run publisher readiness for Instagram and TikTok connectors. Live posting remains disabled by default.

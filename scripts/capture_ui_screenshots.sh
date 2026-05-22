@@ -3,7 +3,92 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT_DIR="$ROOT/out/ui_screenshots"
-REPORT="$OUT_DIR/v6_1_reference_style_capture_report.txt"
+REPORT="$OUT_DIR/v6_5_reference_style_capture_report.txt"
+CAPTURE_PID=""
+PRE_EXISTING_HIGHERKEY_PIDS=""
+LAUNCHED_HIGHERKEY_PIDS=""
+HELPER_CLEANUP_STATUS="not_started"
+APP_CLEANUP_STATUS="not_started"
+FINAL_EXIT_STATUS=0
+
+higherkey_pids() {
+  set +e
+  local pids
+  pids="$(ps aux 2>/dev/null | rg "HigherKey Operator OS.app/Contents/" | rg -v rg | awk '{print $2}')"
+  local status=$?
+  set -e
+  if [[ "$status" -eq 0 && -n "$pids" ]]; then
+    printf '%s\n' "$pids" | sort -n | tr '\n' ' ' | sed 's/[[:space:]]*$//'
+  fi
+}
+
+pid_in_list() {
+  local needle="$1"
+  local list="${2:-}"
+  for pid in $list; do
+    [[ "$pid" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
+new_pids_since_launch() {
+  local after="$1"
+  local before="$2"
+  local new_pids=""
+  for pid in $after; do
+    if ! pid_in_list "$pid" "$before"; then
+      new_pids="$new_pids $pid"
+    fi
+  done
+  echo "$new_pids" | xargs
+}
+
+cleanup_capture() {
+  local status=$?
+  FINAL_EXIT_STATUS=$status
+
+  if [[ -n "${CAPTURE_PID:-}" ]] && kill -0 "$CAPTURE_PID" 2>/dev/null; then
+    kill "$CAPTURE_PID" 2>/dev/null || true
+    sleep 1
+    if kill -0 "$CAPTURE_PID" 2>/dev/null; then
+      kill -9 "$CAPTURE_PID" 2>/dev/null || true
+      HELPER_CLEANUP_STATUS="killed_force"
+    else
+      HELPER_CLEANUP_STATUS="killed"
+    fi
+    wait "$CAPTURE_PID" 2>/dev/null || true
+  elif [[ -n "${CAPTURE_PID:-}" ]]; then
+    HELPER_CLEANUP_STATUS="already_exited"
+  else
+    HELPER_CLEANUP_STATUS="not_started"
+  fi
+
+  local after_pids
+  after_pids="$(higherkey_pids)"
+  LAUNCHED_HIGHERKEY_PIDS="$(new_pids_since_launch "$after_pids" "$PRE_EXISTING_HIGHERKEY_PIDS")"
+  if [[ -n "$LAUNCHED_HIGHERKEY_PIDS" ]]; then
+    kill $LAUNCHED_HIGHERKEY_PIDS 2>/dev/null || true
+    sleep 1
+    local still_running=""
+    for pid in $LAUNCHED_HIGHERKEY_PIDS; do
+      if kill -0 "$pid" 2>/dev/null; then
+        still_running="$still_running $pid"
+      fi
+    done
+    if [[ -n "$still_running" ]]; then
+      kill -9 $still_running 2>/dev/null || true
+      APP_CLEANUP_STATUS="killed_force:$(echo "$still_running" | xargs)"
+    else
+      APP_CLEANUP_STATUS="killed"
+    fi
+  else
+    APP_CLEANUP_STATUS="no_new_app_process"
+  fi
+
+  return "$status"
+}
+
+trap cleanup_capture EXIT INT TERM
 
 mkdir -p "$OUT_DIR"
 cd "$ROOT"
@@ -13,6 +98,7 @@ npm run dist:dir
 
 echo "[capture] launching latest packaged app"
 APP_OPEN_STATUS=0
+PRE_EXISTING_HIGHERKEY_PIDS="$(higherkey_pids)"
 npm run app:open-latest || APP_OPEN_STATUS=$?
 
 TMP_HELPER="/private/tmp/hk_capture_ui.js"
@@ -24,16 +110,17 @@ const path = require("path");
 const root = process.env.HK_CAPTURE_ROOT;
 const outDir = process.env.HK_CAPTURE_OUT_DIR;
 const reportJson = process.env.HK_CAPTURE_JSON_REPORT;
-const tmpShot = "/private/tmp/higherkey_v6_1_ui_style_clean.png";
+const tmpShot = "/private/tmp/higherkey_v6_5_ui_style_clean.png";
 const pages = [
-  ["command", "Command/Home", "v6_1_command_home.png"],
-  ["queue", "Review", "v6_1_review.png"],
-  ["media", "Media", "v6_1_media.png"],
-  ["marketing", "Marketing", "v6_1_marketing.png"],
-  ["autopilot", "Autopilot", "v6_1_autopilot.png"],
-  ["social", "Exports", "v6_1_exports.png"],
-  ["diagnostics", "Support", "v6_1_support.png"],
-  ["settings", "Settings", "v6_1_settings.png"]
+  ["command", "Command/Home", "v6_5_command_home.png"],
+  ["queue", "Review", "v6_5_review.png"],
+  ["media", "Media", "v6_5_media.png"],
+  ["marketing", "Marketing", "v6_5_marketing.png"],
+  ["scheduler", "Scheduler", "v6_5_scheduler.png"],
+  ["autopilot", "Autopilot", "v6_5_autopilot.png"],
+  ["social", "Exports", "v6_5_exports.png"],
+  ["diagnostics", "Support", "v6_5_support.png"],
+  ["settings", "Settings", "v6_5_settings.png"]
 ];
 
 const timeout = setTimeout(() => {
@@ -61,12 +148,12 @@ async function main() {
     window.higherkey = Object.assign({
       localOnly: true,
       getAppInfo: async () => ({
-        version: 'V6.1',
+        version: 'V6.5',
         activeProjectRoot: '${root}',
         projectRoot: '${root}',
         contentInbox: 'content_inbox',
         exportDirectory: 'out/approved_posts',
-        build: { packageVersion: '6.1.0', buildStatus: 'release-candidate' }
+        build: { packageVersion: '6.5.0', buildStatus: 'release-candidate' }
       }),
       getLocalApiStatus: async () => ({ state: 'ready', running: false }),
       getTrialReadiness: async () => ({ readiness: { status: 'not run' } })
@@ -74,8 +161,8 @@ async function main() {
     if (typeof state === 'object') {
       state.mode = 'command';
       state.appInfo = Object.assign({}, state.appInfo || {}, {
-        version: 'V6.1',
-        appVersion: '6.1.0',
+        version: 'V6.5',
+        appVersion: '6.5.0',
         activeProjectRoot: '${root}',
         projectRoot: '${root}',
         devMode: false
@@ -136,12 +223,12 @@ JS
 
 echo "[capture] screenshots: $OUT_DIR"
 SCREENSHOT_STATUS=0
-rm -f "$OUT_DIR"/v6_1_*.png "$OUT_DIR/v6_1_capture_pages.json" /private/tmp/higherkey_v6_1_ui_style_clean.png
-HK_CAPTURE_ROOT="$ROOT" HK_CAPTURE_OUT_DIR="$OUT_DIR" HK_CAPTURE_JSON_REPORT="$OUT_DIR/v6_1_capture_pages.json" "$ROOT/node_modules/.bin/electron" "$TMP_HELPER" &
+rm -f "$OUT_DIR"/v6_5_*.png "$OUT_DIR/v6_5_capture_pages.json" /private/tmp/higherkey_v6_5_ui_style_clean.png
+HK_CAPTURE_ROOT="$ROOT" HK_CAPTURE_OUT_DIR="$OUT_DIR" HK_CAPTURE_JSON_REPORT="$OUT_DIR/v6_5_capture_pages.json" "$ROOT/node_modules/.bin/electron" "$TMP_HELPER" &
 CAPTURE_PID=$!
 CAPTURE_DONE=0
 for _ in {1..35}; do
-  if [[ -s "$OUT_DIR/v6_1_capture_pages.json" && -s "$OUT_DIR/v6_1_settings.png" && -s /private/tmp/higherkey_v6_1_ui_style_clean.png ]]; then
+  if [[ -s "$OUT_DIR/v6_5_capture_pages.json" && -s "$OUT_DIR/v6_5_settings.png" && -s /private/tmp/higherkey_v6_5_ui_style_clean.png ]]; then
     CAPTURE_DONE=1
     break
   fi
@@ -151,9 +238,18 @@ for _ in {1..35}; do
   sleep 1
 done
 if [[ "$CAPTURE_DONE" == "1" ]]; then
-  kill "$CAPTURE_PID" 2>/dev/null || true
-  sleep 1
-  kill -9 "$CAPTURE_PID" 2>/dev/null || true
+  if kill -0 "$CAPTURE_PID" 2>/dev/null; then
+    kill "$CAPTURE_PID" 2>/dev/null || true
+    sleep 1
+    if kill -0 "$CAPTURE_PID" 2>/dev/null; then
+      kill -9 "$CAPTURE_PID" 2>/dev/null || true
+      HELPER_CLEANUP_STATUS="killed_force"
+    else
+      HELPER_CLEANUP_STATUS="killed"
+    fi
+  else
+    HELPER_CLEANUP_STATUS="already_exited"
+  fi
   wait "$CAPTURE_PID" 2>/dev/null || true
 else
   SCREENSHOT_STATUS=124
@@ -161,6 +257,34 @@ else
   sleep 1
   kill -9 "$CAPTURE_PID" 2>/dev/null || true
   wait "$CAPTURE_PID" 2>/dev/null || true
+  HELPER_CLEANUP_STATUS="timeout_killed"
+fi
+
+AFTER_CAPTURE_HIGHERKEY_PIDS="$(higherkey_pids)"
+LAUNCHED_HIGHERKEY_PIDS="$(new_pids_since_launch "$AFTER_CAPTURE_HIGHERKEY_PIDS" "$PRE_EXISTING_HIGHERKEY_PIDS")"
+if [[ -n "$LAUNCHED_HIGHERKEY_PIDS" ]]; then
+  kill $LAUNCHED_HIGHERKEY_PIDS 2>/dev/null || true
+  sleep 1
+  STILL_RUNNING_HIGHERKEY_PIDS=""
+  for pid in $LAUNCHED_HIGHERKEY_PIDS; do
+    if kill -0 "$pid" 2>/dev/null; then
+      STILL_RUNNING_HIGHERKEY_PIDS="$STILL_RUNNING_HIGHERKEY_PIDS $pid"
+    fi
+  done
+  if [[ -n "$STILL_RUNNING_HIGHERKEY_PIDS" ]]; then
+    kill -9 $STILL_RUNNING_HIGHERKEY_PIDS 2>/dev/null || true
+    APP_CLEANUP_STATUS="killed_force:$(echo "$STILL_RUNNING_HIGHERKEY_PIDS" | xargs)"
+  else
+    APP_CLEANUP_STATUS="killed"
+  fi
+else
+  APP_CLEANUP_STATUS="no_new_app_process"
+fi
+
+if [[ "$SCREENSHOT_STATUS" -ne 0 ]]; then
+  FINAL_EXIT_STATUS="$SCREENSHOT_STATUS"
+else
+  FINAL_EXIT_STATUS="$APP_OPEN_STATUS"
 fi
 
 cat > "$REPORT" <<EOF
@@ -169,8 +293,16 @@ HigherKey Operator OS UI screenshot capture
 Captured:
 EOF
 
-if [[ -s "$OUT_DIR/v6_1_capture_pages.json" ]]; then
-  python3 - "$OUT_DIR/v6_1_capture_pages.json" >> "$REPORT" <<'PY'
+MISSING_SCREENSHOTS_COUNT=9
+if [[ -s "$OUT_DIR/v6_5_capture_pages.json" ]]; then
+  MISSING_SCREENSHOTS_COUNT="$(python3 - "$OUT_DIR/v6_5_capture_pages.json" <<'PY'
+import json
+import sys
+data = json.load(open(sys.argv[1], encoding="utf-8"))
+print(len(data.get("missing", [])))
+PY
+)"
+  python3 - "$OUT_DIR/v6_5_capture_pages.json" >> "$REPORT" <<'PY'
 import json
 import sys
 data = json.load(open(sys.argv[1], encoding="utf-8"))
@@ -190,7 +322,7 @@ else
 - None
 
 Missing:
-- Command/Home, Review, Media, Marketing, Autopilot, Exports, Support, and Settings: screenshot helper did not complete.
+- Command/Home, Review, Media, Marketing, Scheduler, Autopilot, Exports, Support, and Settings: screenshot helper did not complete.
 EOF
 fi
 
@@ -198,10 +330,16 @@ cat >> "$REPORT" <<EOF
 
 Launch:
 - npm run app:open-latest exit code: $APP_OPEN_STATUS
+- pre_existing_higherkey_pids: ${PRE_EXISTING_HIGHERKEY_PIDS:-none}
+- launched_higherkey_pids: ${LAUNCHED_HIGHERKEY_PIDS:-none}
 
 Screenshot:
 - Electron capture exit code: $SCREENSHOT_STATUS
-- Clean temp copy: /private/tmp/higherkey_v6_1_ui_style_clean.png
+- Clean temp copy: /private/tmp/higherkey_v6_5_ui_style_clean.png
+- helper_cleanup_status: $HELPER_CLEANUP_STATUS
+- app_cleanup_status: $APP_CLEANUP_STATUS
+- missing_screenshots count: $MISSING_SCREENSHOTS_COUNT
+- exit_status: $FINAL_EXIT_STATUS
 
 Page switching:
 - Automated by setting dashboard state.mode for each main page and re-rendering before capture.

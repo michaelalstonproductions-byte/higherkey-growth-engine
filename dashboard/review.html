@@ -1576,6 +1576,24 @@
         font-size:12px;
         margin-bottom:4px;
       }
+      .rail-advanced{
+        margin-top:8px;
+        border-top:1px solid rgba(255,255,255,.06);
+        padding-top:8px;
+      }
+      .rail-advanced summary{
+        cursor:pointer;
+        color:#707d8c;
+        font-size:10px;
+        font-weight:850;
+        letter-spacing:.14em;
+        text-transform:uppercase;
+        padding:8px 14px;
+      }
+      .rail-advanced .nav-item{
+        width:100%;
+        justify-content:flex-start;
+      }
       .tab.nav-item::before{font-size:16px;width:22px}
       .system{margin:12px;border-radius:8px;padding:14px}
       .mode-workspace{overflow:hidden}
@@ -1885,7 +1903,7 @@
             <div class="brand-title">HigherKey <span>Operator OS</span></div>
             <div id="sessionLine" class="session-line">Loading local session</div>
           </div>
-          <span class="badge" id="versionBadge">V2.8 RC</span>
+          <span class="badge" id="versionBadge">V6.5</span>
         </div>
 
         <div class="project-line">
@@ -1927,9 +1945,11 @@
           <button class="tab nav-item" data-icon="◎" data-mode="social">Exports</button>
           <button class="tab nav-item" data-icon="▤" data-mode="diagnostics">Support</button>
           <button class="tab nav-item" data-icon="⚙" data-mode="settings">Settings</button>
-          <button class="tab nav-item" data-icon="✺" data-mode="search">Intelligence</button>
-          <button class="tab nav-item" data-icon="♙" data-mode="agents">Agents</button>
-          <button class="tab nav-item" data-icon="♬" data-mode="analytics">Analytics</button>
+          <details class="advanced-details rail-advanced"><summary>Advanced</summary>
+            <button class="tab nav-item" data-icon="✺" data-mode="search">Intelligence</button>
+            <button class="tab nav-item" data-icon="♙" data-mode="agents">Agents</button>
+            <button class="tab nav-item" data-icon="♬" data-mode="analytics">Analytics</button>
+          </details>
           <button class="tab nav-item hidden" data-icon="◆" data-mode="dashboard">Home</button>
         </nav>
         <div></div>
@@ -1971,7 +1991,7 @@
 
       <footer class="footer" id="bottomTelemetry">
         <span>HigherKey Operator OS</span>
-        <span id="footerVersion">V2.8 RC</span>
+        <span id="footerVersion">V6.5</span>
         <span id="footerProject">Project: loading</span>
         <span>Mode: Local</span>
           <span id="pipelineLine">Status unavailable</span>
@@ -2040,6 +2060,9 @@
         socialConnectionStatus: "../analytics/social_connection_status.json",
         socialConnectorDiagnostics: "../analytics/client_social_connector_diagnostics.json",
         socialPublisherStatus: "../analytics/social_publisher_status.json",
+        livePublishReadiness: "../analytics/live_publish_readiness.json",
+        livePublishStatus: "../analytics/social_live_publish_status.json",
+        livePublishReceipts: "../analytics/live_publish_receipts.json",
         publishReadiness: "../analytics/publish_readiness.json",
         socialOAuthStatus: "../analytics/social_oauth_status.json",
         socialOAuthReadiness: "../analytics/client_social_oauth_readiness.json",
@@ -2148,6 +2171,9 @@
         socialConnectionStatus: null,
         socialConnectorDiagnostics: null,
         socialPublisherStatus: null,
+        livePublishReadiness: null,
+        livePublishStatus: null,
+        livePublishReceipts: null,
         publishReadiness: null,
         socialOAuthStatus: null,
         socialOAuthReadiness: null,
@@ -2251,6 +2277,8 @@
       function versionLabel() {
         const release = releaseInfo();
         const build = state.appInfo?.build;
+        if (state.release?.version) return state.release.version;
+        if (state.appInfo?.packageVersion) return `V${state.appInfo.packageVersion.replace(/\.0$/, "")}`;
         if (build?.packageVersion) return `V${build.packageVersion.replace(/\.0$/, "")} RC`;
         const status = String(release.build_status || "").toLowerCase().includes("release") ? "RC" : (release.build_status || "local");
         return `${release.version || "V2.7"} ${status}`;
@@ -2856,6 +2884,25 @@
           </div>
         `;
       }
+      function commandFocusStrip(best) {
+        const workflow = clientWorkflow();
+        return `
+          <div class="ref-main-grid command-focus-grid">
+            <section class="panel ref-activity">
+              <div class="panel-head"><div><div class="panel-title">What should I do today?</div><div>${html(workflow.next_action || "Review clips")}</div></div><button class="btn red" data-desktop-action="import-and-process">Import & Process</button></div>
+              <div style="padding:16px" class="checklist">
+                <span>${html(workflow.client_message || "Import footage, review the best clips, then open manual upload packs.")}</span>
+                <span>Manual upload packs remain available.</span>
+                <span>Live publishing stays gated behind approval and account readiness.</span>
+              </div>
+            </section>
+            <section class="panel ref-insights">
+              <div class="panel-head"><div class="panel-title">Priority Clip</div><div>${best ? html(best.clip_id || title(best)) : "No clip selected"}</div></div>
+              <div style="padding:16px">${best ? `<div class="summary-row"><span>Score</span><strong>${html(score(best))}</strong></div><p class="copy">${html((best.package?.caption || state.recommendations?.recommendations?.[0]?.reason || "Highest local score among visible clips.").slice(0, 180))}</p><div class="toolbar"><button class="btn" data-desktop-action="go-queue">Review Clips</button><button class="btn" data-desktop-action="open-social-exports">Open Packs</button></div>` : `<p class="muted">Import and process footage to create clip recommendations.</p>`}</div>
+            </section>
+          </div>
+        `;
+      }
       function referenceDashboardView(includeIntake = false) {
         const entries = productionEntries();
         const approved = approvedCount(entries);
@@ -2879,12 +2926,8 @@
           <div class="view ref-dashboard-view ${includeIntake ? "has-intake" : ""}">
             ${includeIntake ? aiDropZoneHtml() : ""}
             ${referenceKpiCards(entries, approved, best)}
-            <div class="ref-main-grid">
-              ${referenceFeaturedPreview(best)}
-              ${referenceMediaInsights(best)}
-              ${referenceActivityPanel()}
-            </div>
-            ${referenceBottomStrip()}
+            ${includeIntake ? commandFocusStrip(best) : `<div class="ref-main-grid">${referenceFeaturedPreview(best)}${referenceMediaInsights(best)}${referenceActivityPanel()}</div>${referenceBottomStrip()}`}
+            ${includeIntake ? `<details class="advanced-details"><summary>Advanced command details</summary><div style="margin-top:12px">${referenceBottomStrip()}</div></details>` : ""}
           </div>
         `;
       }
@@ -2982,14 +3025,16 @@
                 <h1>HigherKey can prepare the next moves. You approve anything sensitive.</h1>
                 <p>HigherKey prepares local actions. You stay in control. Manual upload only. No direct posting APIs.</p>
               </div>
-              <div class="hero-actions">
-                <button class="btn" data-desktop-action="run-autopilot-preflight">Run Safety Preflight</button>
+            <div class="hero-actions">
                 <button class="btn red" data-desktop-action="build-autopilot-plan">Build Autopilot Plan</button>
                 <button class="btn" data-desktop-action="run-autopilot-safe-dry">Run Safe Auto Dry Run</button>
-                <button class="btn" data-desktop-action="run-autopilot-safe">Run Safe Auto</button>
-                <button class="btn" data-desktop-action="retry-autopilot-failed-dry">Retry Failed Dry Run</button>
                 <button class="btn" data-desktop-action="build-autopilot-console">Build Run Console</button>
-                <button class="btn" data-desktop-action="build-production-command">Refresh Command Center</button>
+                <details class="advanced-details"><summary>More local actions</summary><div class="toolbar" style="margin-top:10px">
+                  <button class="btn" data-desktop-action="run-autopilot-preflight">Safety Preflight</button>
+                  <button class="btn" data-desktop-action="run-autopilot-safe">Run Safe Auto</button>
+                  <button class="btn" data-desktop-action="retry-autopilot-failed-dry">Retry Failed Dry Run</button>
+                  <button class="btn" data-desktop-action="build-production-command">Refresh Command Center</button>
+                </div></details>
               </div>
             </section>
             <div class="marketing-mode-tabs">
@@ -3003,10 +3048,8 @@
             </div>
             <div class="dashboard-grid-secondary">
               ${commandCard("Safe Actions Ready", summary.safe_auto ?? cards.safe_actions_ready ?? 0, "Local tasks HigherKey can run")}
-              ${commandCard("Running", summary.running ?? 0, "Current local actions")}
-              ${commandCard("Completed Today", summary.completed ?? cards.completed_today ?? 0, "Safe local runs")}
-              ${commandCard("Failed", summary.failed ?? 0, "Retry by dry-run first")}
               ${commandCard("Awaiting Approval", summary.awaiting_approval ?? cards.awaiting_approval ?? 0, "Sensitive actions need you")}
+              ${commandCard("Completed Today", summary.completed ?? cards.completed_today ?? 0, "Safe local runs")}
               ${commandCard("Last Preflight", state.autopilotSafetyReport?.status || "Not run", "Policy and command safety")}
             </div>
             ${autopilotMode === "overview" ? `<div class="client-dashboard-grid">
@@ -3032,12 +3075,14 @@
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Run History</div><div>Local run records</div></div><div style="padding:14px">${autopilotRunConsoleHtml()}</div></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Approval Receipts</div><div>Local confirmations</div></div><div style="padding:14px">${autopilotReceiptsHtml()}</div></section>
             </div>` : ""}
-            <div class="dashboard-grid-secondary">
-              <section class="small-panel"><div class="panel-title">Blocked Actions</div>${autopilotQueueHtml((item) => item.safety_level === "blocked")}</section>
-              <section class="small-panel"><div class="panel-title">Recent Runs</div>${autopilotRunsHtml()}</section>
-              <section class="small-panel"><div class="panel-title">Approval Receipts</div>${autopilotReceiptsHtml()}<button class="btn" data-desktop-action="approve-autopilot-action">Approve Selected Action</button></section>
-              <section class="small-panel"><div class="panel-title">Next Step</div><p class="muted">Run safe local actions, build drafts, and approve uploads manually. Autopilot cannot live post without connector auth and explicit approval.</p><div class="toolbar"><button class="btn" data-desktop-action="build-post-drafts">Build Drafts</button><button class="btn" data-desktop-action="dry-run-publish">Dry-Run Publisher</button><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button></div></section>
-            </div>
+            <details class="advanced-details">
+              <summary>Advanced autopilot records</summary>
+              <div class="dashboard-grid-secondary" style="margin-top:12px">
+                <section class="small-panel"><div class="panel-title">Blocked Actions</div>${autopilotQueueHtml((item) => item.safety_level === "blocked")}</section>
+                <section class="small-panel"><div class="panel-title">Recent Runs</div>${autopilotRunsHtml()}</section>
+                <section class="small-panel"><div class="panel-title">Approval Receipts</div>${autopilotReceiptsHtml()}<button class="btn" data-desktop-action="approve-autopilot-action">Approve Selected Action</button></section>
+              </div>
+            </details>
           </div>
         `;
       }
@@ -3129,15 +3174,17 @@
                   </div>
                   <div class="toolbar">
                     <button class="btn red" data-desktop-action="build-campaign-plan">Build Campaign Plan</button>
-                    <button class="btn" data-desktop-action="refresh-marketing">Refresh Marketing Intelligence</button>
                     <button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button>
-                    <button class="btn" data-desktop-action="open-marketing-folder">Open Marketing Folder</button>
                     <button class="btn" data-desktop-action="copy-7-day-plan">Copy 7-Day Plan</button>
-                    <button class="btn" data-desktop-action="copy-campaign-brief">Copy Campaign Brief</button>
-                    <button class="btn" data-desktop-action="build-performance-feedback">Build Feedback Loop</button>
-                    <button class="btn" data-desktop-action="build-growth-strategy">Build Growth Strategy</button>
-                    <button class="btn" data-desktop-action="build-creative-direction">Build Creative Direction</button>
-                    <button class="btn" data-desktop-action="record-post-result">Record Results</button>
+                    <details class="advanced-details"><summary>More campaign tools</summary><div class="toolbar" style="margin-top:10px">
+                      <button class="btn" data-desktop-action="refresh-marketing">Refresh Intelligence</button>
+                      <button class="btn" data-desktop-action="open-marketing-folder">Open Folder</button>
+                      <button class="btn" data-desktop-action="copy-campaign-brief">Copy Brief</button>
+                      <button class="btn" data-desktop-action="build-performance-feedback">Build Feedback</button>
+                      <button class="btn" data-desktop-action="build-growth-strategy">Build Growth Strategy</button>
+                      <button class="btn" data-desktop-action="build-creative-direction">Build Creative Direction</button>
+                      <button class="btn" data-desktop-action="record-post-result">Record Results</button>
+                    </div></details>
                   </div>
                 </div>
               </section>
@@ -3157,14 +3204,11 @@
                 ["recommendations", "Clip Recommendations"]
               ].map(([mode, label]) => `<button class="btn ${marketingMode === mode ? "active" : ""}" data-marketing-view="${mode}">${label}</button>`).join("")}
             </div>
-            <div class="marketing-card-grid">
+            <div class="marketing-card-grid simplified-strip">
               ${marketingMetricCard("Growth Score", growthCards.growth_score?.score ?? state.growthScorecard?.overall_growth_score?.score ?? growth.growth_score?.score ?? "Build", growthCards.growth_score?.status || "Next best actions")}
               ${marketingMetricCard("Audience Profile", audience.segments?.[0]?.name || "Local audience", audience.target_audience || "Clip-based segment fit")}
               ${marketingMetricCard("Market Position", attack.primary_market || "Primary market", attack.positioning_statement || "Positioning generated locally")}
-              ${marketingMetricCard("Content Pillars", (attack.content_pillars || []).slice(0, 3).join(" · ") || "Proof · Process · Transformation", "Campaign pillars")}
-              ${marketingMetricCard("Platform Strategy", `${state.platformStrategy?.manual_upload_only === false ? "Review" : "Manual upload"}`, "TikTok, Reels, Shorts, Facebook")}
               ${marketingMetricCard("Campaign Plan", `${schedule.seven_day_schedule?.length || calendar.next_7_posts?.length || 0} next posts`, "7-day sequence")}
-              ${marketingMetricCard("Clip Recommendations", recs.length, "Approved and high-scoring clips")}
             </div>
             ${marketingMode === "campaign" ? `<section class="panel view-scroll">
               <div class="panel-head"><div class="panel-title">Campaign Board</div><div>${board.cards?.length || 0} campaign cards</div></div>
@@ -3481,7 +3525,14 @@
       }
       function renderSocialExportsView() {
         const manifest = state.socialManifest || {};
-        return `<div class="view social-view"><div class="platform-grid">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div><section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Social Export Folders</div><div>HigherKey prepares posts. You upload manually or dry-run official connectors.</div></div>${socialExportsHtml()}</section><section class="panel"><div class="panel-head"><div class="panel-title">Manual Upload Checklist</div><div class="toolbar"><button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button><button class="btn" data-desktop-action="record-post-result">Record Results</button></div></div><div class="checklist"><span>✓ Open the TikTok, Instagram Reels, YouTube Shorts, or Facebook Reels folder.</span><span>✓ Review caption.txt, hashtags.txt, title.txt, and posting_notes.txt.</span><span>✓ Paste your final post text into the platform composer.</span><span>✓ Use dry run before any live official API attempt.</span><span>✓ Upload manually whenever credentials or permissions are missing.</span></div></section></div>`;
+        return `<div class="view social-view">
+          <section class="panel">
+            <div class="panel-head"><div><div class="panel-title">Manual Upload Packs</div><div>Open prepared TikTok, Reels, Shorts, and Facebook folders.</div></div><div class="toolbar"><button class="btn red" data-desktop-action="open-social-exports">Open Social Exports</button><button class="btn" data-desktop-action="build-post-drafts">Build Drafts</button></div></div>
+            <div class="platform-grid" style="padding:14px">${SOCIAL_PLATFORMS.map(([key,label]) => platformCard(key,label,manifest)).join("")}</div>
+          </section>
+          <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Social Export Folders</div><div>Prepared files stay local.</div></div>${socialExportsHtml()}</section>
+          <details class="advanced-details"><summary>Manual upload checklist</summary><div class="checklist" style="margin-top:10px"><span>Open the platform folder.</span><span>Review captions, title, hashtags, and notes.</span><span>Paste your final post text into the platform composer.</span><span>Use dry run before any official API attempt.</span><span>Upload manually whenever credentials or permissions are missing.</span></div><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="record-post-result">Record Results</button></div></details>
+        </div>`;
       }
       function renderSchedulerView() {
         const drafts = draftsList();
@@ -3500,8 +3551,7 @@
                   <button class="btn red" data-desktop-action="build-post-drafts">Build Drafts</button>
                   <button class="btn" data-desktop-action="schedule-selected-posts">Schedule Selected</button>
                   <button class="btn" data-desktop-action="dry-run-publish">Run Dry-Run Publisher</button>
-                  <button class="btn" data-desktop-action="check-publish-readiness">Check Readiness</button>
-                  <button class="btn" data-desktop-action="open-social-exports">Open Social Exports</button>
+                  <button class="btn" data-desktop-action="open-social-exports">Open Exports</button>
                 </div>
               </div>
               <div class="dashboard-grid-secondary">
@@ -3509,36 +3559,55 @@
                 ${metricPanel("Scheduled", readinessSummary.scheduled ?? items.filter((item) => item.scheduled_for).length, "Calendar queue")}
                 ${metricPanel("Ready for Manual Upload", readinessSummary.ready_for_manual_upload ?? 0, "Fallback available")}
                 ${metricPanel("Auth Required", readinessSummary.auth_required ?? 0, "Connector setup needed")}
-                ${metricPanel("Dry Run Ready", readinessSummary.dry_run_ready ?? 0, "Safe publish test")}
-                ${metricPanel("Live Blocked", readinessSummary.live_blocked ?? 0, "Protected by gates")}
               </div>
             </section>
-            <section class="panel view-scroll">
-              <div class="panel-head">
-                <div><div class="panel-title">Social Accounts</div><div>HigherKey uses official platform APIs only. Manual upload is always available.</div></div>
-                <div class="toolbar">
-                  <button class="btn" data-desktop-action="check-social-connectors">Check Status</button>
-                  <button class="btn" data-desktop-action="check-oauth-readiness">Check OAuth Readiness</button>
-                  <button class="btn" data-desktop-action="check-token-status">Check Token Status</button>
-                  <button class="btn" data-desktop-action="check-capabilities">Check Capabilities</button>
-                  <button class="btn" data-desktop-action="run-oauth-dry-run">Start OAuth Dry Run</button>
-                  <button class="btn" data-desktop-action="dry-run-publish">Run Dry-Run Publish Test</button>
+            <details class="advanced-details">
+              <summary>Social accounts and connector details</summary>
+              <section class="panel view-scroll" style="margin-top:12px">
+                <div class="panel-head">
+                  <div><div class="panel-title">Social Accounts</div><div>Official APIs only. Manual upload is always available.</div></div>
+                  <div class="toolbar">
+                    <button class="btn" data-desktop-action="check-social-connectors">Check Status</button>
+                    <button class="btn" data-desktop-action="check-oauth-readiness">OAuth</button>
+                    <button class="btn" data-desktop-action="check-token-status">Token</button>
+                    <button class="btn" data-desktop-action="check-capabilities">Capabilities</button>
+                    <button class="btn" data-desktop-action="run-oauth-dry-run">OAuth Dry Run</button>
+                  </div>
                 </div>
-              </div>
-              <div class="dashboard-grid-secondary" style="margin-bottom:14px">
-                ${metricPanel("Token Vault", vault.keychain_available ? "Keychain ready" : "Vault pending", vault.provider || "macOS Keychain preferred")}
-                ${metricPanel("OAuth Live Exchange", oauthReadiness.live_posting_enabled_by_default ? "enabled" : "disabled", "Dry-run first")}
-                ${metricPanel("Live Ready Accounts", oauthReadiness.summary?.ready_for_live_api_count || 0, "Official gates only")}
-              </div>
-              <div class="dashboard-grid-secondary">
-                ${connectorCard("instagram", "Instagram", auth.instagram || {})}
-                ${connectorCard("tiktok", "TikTok", auth.tiktok || {})}
-              </div>
-            </section>
+                <div class="dashboard-grid-secondary" style="margin-bottom:14px">
+                  ${metricPanel("Token Vault", vault.keychain_available ? "Keychain ready" : "Vault pending", vault.provider || "macOS Keychain preferred")}
+                  ${metricPanel("OAuth Live Exchange", oauthReadiness.live_posting_enabled_by_default ? "enabled" : "disabled", "Dry-run first")}
+                  ${metricPanel("Live Ready Accounts", oauthReadiness.summary?.ready_for_live_api_count || 0, "Official gates only")}
+                </div>
+                <div class="dashboard-grid-secondary">
+                  ${connectorCard("instagram", "Instagram", auth.instagram || {})}
+                  ${connectorCard("tiktok", "TikTok", auth.tiktok || {})}
+                </div>
+              </section>
+            </details>
             <section class="panel view-scroll">
               <div class="panel-head"><div class="panel-title">Publishing Readiness</div><div>${html(readiness.length)} draft/post checks</div></div>
               <div class="card-grid">${readiness.slice(0, 12).map(readinessCard).join("") || `<div class="empty-state"><h2>No readiness data yet</h2><p>Build drafts, then check publish readiness.</p><button class="btn red" data-desktop-action="check-publish-readiness">Check Readiness</button></div>`}</div>
             </section>
+            <details class="advanced-details">
+              <summary>Controlled live publish status</summary>
+              <section class="panel view-scroll" style="margin-top:12px">
+              <div class="panel-head">
+                <div><div class="panel-title">Controlled Live Publish</div><div>One due draft, approval receipt, and exact confirmation phrase required.</div></div>
+                <div class="toolbar"><button class="btn" data-desktop-action="check-live-readiness">Check Live Readiness</button><button class="btn" data-desktop-action="live-sandbox">Run Live Sandbox</button></div>
+              </div>
+              <div class="dashboard-grid-secondary" style="margin-bottom:14px">
+                ${metricPanel("Live Disabled", "default", "Opt-in per connector")}
+                ${metricPanel("Ready", state.livePublishReadiness?.ready_count ?? 0, "Strict gates passed")}
+                ${metricPanel("Blocked", state.livePublishReadiness?.blocked_count ?? 0, "Manual fallback available")}
+              </div>
+              <div class="checklist">
+                <span>Live publishing uses official APIs only.</span>
+                <span>No bulk live publishing or background autoposting.</span>
+                <span>HigherKey will never publish without explicit approval.</span>
+              </div>
+              </section>
+            </details>
             <section class="panel view-scroll">
               <div class="panel-head"><div class="panel-title">Draft Posts</div><div>${html(drafts.length)} local drafts</div></div>
               <div class="card-grid">${drafts.slice(0, 12).map((draft) => `
@@ -3547,7 +3616,7 @@
                   <p>${html((draft.user_post_text || draft.generated_caption || "No text yet").slice(0, 180))}</p>
                   <div class="summary-row"><span>Status</span><strong>${html(draft.status)}</strong></div>
                   <div class="summary-row"><span>Mode</span><strong>${html(draft.publish_mode)}</strong></div>
-                  <div class="toolbar"><button class="btn" data-desktop-action="dry-run-publish" data-draft-id="${html(draft.draft_id)}">Dry Run</button><button class="btn" data-desktop-action="open-social-exports">Open Folder</button></div>
+                  <div class="toolbar"><button class="btn" data-desktop-action="dry-run-publish" data-draft-id="${html(draft.draft_id)}">Dry Run</button><button class="btn" data-desktop-action="live-sandbox" data-draft-id="${html(draft.draft_id)}" data-platform="${html(draft.platform)}">Live Sandbox</button><button class="btn" data-desktop-action="open-social-exports">Open Folder</button></div>
                 </div>
               `).join("") || `<div class="empty-state"><h2>No drafts yet</h2><p>Build drafts from approved clips and social export packs.</p><button class="btn red" data-desktop-action="build-post-drafts">Build Drafts</button></div>`}</div>
             </section>
@@ -3745,6 +3814,110 @@
         if (platform === "tiktok") return status.tiktok || {};
         return { status: "manual_upload_required", live_api_enabled: false, connected: false };
       }
+      function parseLiveTime(value) {
+        if (!value) return null;
+        const parsed = new Date(String(value));
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      }
+      function liveReadinessFor(draftId, platform) {
+        const items = state.livePublishReadiness?.items || [];
+        if (!Array.isArray(items)) return null;
+        return items.find((item) => String(item?.draft_id || "") === String(draftId || "") && String(item?.platform || "") === String(platform || "")) || null;
+      }
+      function liveReceiptFor(draftId, platform, readiness) {
+        const receipts = state.livePublishReceipts?.receipts || [];
+        if (!Array.isArray(receipts) || !draftId || !platform) return null;
+        const now = Date.now();
+        return receipts.slice().reverse().find((item) => {
+          if (String(item?.draft_id || "") !== String(draftId)) return false;
+          if (String(item?.platform || "") !== String(platform)) return false;
+          if (item?.publish_mode && item.publish_mode !== "live_api") return false;
+          if (item?.confirmation_phrase_used !== true) return false;
+          const expires = parseLiveTime(item?.expires_at);
+          if (!expires || expires.getTime() <= now) return false;
+          if (readiness && readiness.ready !== true) return false;
+          return true;
+        }) || null;
+      }
+      function draftDueNow(draft) {
+        const scheduled = parseLiveTime(draft?.scheduled_for);
+        return Boolean(scheduled && scheduled.getTime() <= Date.now());
+      }
+      function liveReasonFromReadiness(readiness) {
+        const reason = Array.isArray(readiness?.reasons) ? readiness.reasons[0] : null;
+        const status = reason?.status || readiness?.status || "";
+        if (status === "scheduled_not_due") return "Post is scheduled for later";
+        if (status === "unsupported_platform") return "Unsupported platform";
+        if (status === "auth_required") return "Account connection required";
+        if (status === "live_disabled") return "Live API disabled";
+        if (status === "scope_missing") return "Scope missing";
+        if (status === "capability_missing") return "Capability missing";
+        if (status === "approval_required") return "Approve this post";
+        return reason?.message || "Manual upload recommended";
+      }
+      function getSelectedLivePublishState(input = {}) {
+        const draft = input.draft || null;
+        const platform = input.platform || draft?.platform || "tiktok";
+        const draftId = input.draftId || draft?.draft_id || "";
+        const readiness = liveReadinessFor(draftId, platform);
+        const receipt = liveReceiptFor(draftId, platform, readiness);
+        const connector = connectorState(platform);
+        const approved = Boolean(input.approved);
+        const confirmationOk = input.confirmationPhrase === LIVE_CONFIRMATION_PHRASE;
+        let disabledReason = "";
+        if (!draft || !draftId) disabledReason = "Save draft first";
+        else if (!LIVE_SUPPORTED_PLATFORMS.has(platform)) disabledReason = "Unsupported platform";
+        else if (!draftDueNow(draft)) disabledReason = "Post is scheduled for later";
+        else if (!readiness) disabledReason = "Check Live Readiness";
+        else if (readiness.ready !== true) disabledReason = liveReasonFromReadiness(readiness);
+        else if (connector.enabled !== true) disabledReason = "Account connection required";
+        else if (connector.live_api_enabled !== true) disabledReason = "Live API disabled";
+        else if (!["connected", "ready_for_live_api"].includes(connector.status || "")) disabledReason = "Account connection required";
+        else if (!approved) disabledReason = "Approve this post";
+        else if (!confirmationOk) disabledReason = "Enter confirmation phrase";
+        else if (!receipt) disabledReason = "Approval receipt required";
+        return {
+          draft,
+          draftId,
+          platform,
+          readiness,
+          receipt,
+          approved,
+          confirmationOk,
+          canPublishNow: !disabledReason,
+          disabledReason,
+          manualUploadAvailable: true
+        };
+      }
+      function syncComposerLivePublishButtons(panel) {
+        if (!panel) return;
+        const clipId = panel.querySelector("[data-clip-id]")?.dataset.clipId || activeEntry()?.clip_id || "";
+        const platform = panel.querySelector(".composer-platform")?.value || "tiktok";
+        const draft = draftsList().find((item) => item.clip_id === clipId && item.platform === platform)
+          || draftsList().find((item) => item.draft_id === panel.querySelector(".composer-platform")?.dataset.draftId)
+          || null;
+        const live = getSelectedLivePublishState({
+          draft,
+          platform,
+          draftId: draft?.draft_id || "",
+          approved: Boolean(panel.querySelector(".composer-approve")?.checked),
+          confirmationPhrase: panel.querySelector(".composer-confirmation")?.value || ""
+        });
+        const publish = panel.querySelector('[data-desktop-action="publish-now"]');
+        if (publish) {
+          publish.dataset.platform = platform;
+          publish.dataset.draftId = live.draftId || "";
+          publish.disabled = !live.canPublishNow;
+          publish.title = live.canPublishNow ? "All selected draft live publish gates passed." : live.disabledReason;
+          publish.dataset.disabledReason = live.disabledReason;
+        }
+        panel.querySelectorAll('[data-desktop-action="live-sandbox"],[data-desktop-action="approve-live-publish"]').forEach((button) => {
+          button.dataset.platform = platform;
+          button.dataset.draftId = live.draftId || "";
+        });
+        const reason = panel.querySelector("[data-live-disabled-reason]");
+        if (reason) reason.textContent = live.canPublishNow ? "Live ready" : live.disabledReason;
+      }
       function composerText(entry, draft) {
         return draft?.user_post_text || draft?.user_caption_override || draft?.generated_caption || entry?.package?.caption || entry?.caption?.caption || "";
       }
@@ -3753,6 +3926,11 @@
         const draft = draftFor(entry);
         const text = composerText(entry, draft);
         const draftId = draft?.draft_id || `tiktok_${entry.clip_id || entry.id}`;
+        const platform = draft?.platform || "tiktok";
+        const live = getSelectedLivePublishState({ draft, platform, draftId });
+        const receiptLabel = live.receipt ? "Approval recorded" : "Approval required";
+        const statusLabel = live.readiness?.ready ? "Live Ready" : (live.readiness?.status || live.disabledReason || "Manual Upload Recommended");
+        const publishDisabled = live.canPublishNow ? "" : " disabled";
         return `
           <section class="panel composer-panel" data-composer-context="${html(context)}">
             <div class="panel-head">
@@ -3789,10 +3967,24 @@
               <button class="btn red" data-desktop-action="save-post-draft" data-clip-id="${html(entry.clip_id)}">Save Draft</button>
               <button class="btn" data-desktop-action="schedule-post" data-clip-id="${html(entry.clip_id)}">Schedule Post</button>
               <button class="btn" data-desktop-action="dry-run-publish" data-draft-id="${html(draftId)}">Dry Run Publish</button>
-              <button class="btn" data-desktop-action="publish-now" data-draft-id="${html(draftId)}">Publish Now</button>
               <button class="btn" data-desktop-action="open-social-exports">Open Export Folder</button>
             </div>
-            <div class="muted">Connector: ${html(connectorState(draft?.platform || "tiktok").status || "manual_upload_required")}</div>
+            <div class="small-panel">
+              <div class="panel-head"><div><div class="panel-title">Live Publish</div><div>Official APIs only. One approved due draft at a time.</div></div><span class="badge">${html(connectorState(platform).live_api_enabled ? "Live opt-in" : "Live Disabled")}</span></div>
+              <div class="summary-row"><span>Status</span><strong>${html(statusLabel)}</strong></div>
+              <div class="summary-row"><span>Receipt</span><strong>${html(receiptLabel)}</strong></div>
+              <div class="summary-row"><span>Live gate</span><strong data-live-disabled-reason>${html(live.canPublishNow ? "Live ready" : live.disabledReason)}</strong></div>
+              <p class="muted">HigherKey will never publish without explicit approval. Manual upload remains available.</p>
+              <label>Confirmation phrase
+                <input class="search composer-confirmation" placeholder="${html(LIVE_CONFIRMATION_PHRASE)}">
+              </label>
+              <div class="toolbar">
+                <button class="btn" data-desktop-action="live-sandbox" data-draft-id="${html(draftId)}" data-platform="${html(platform)}">Run Live Sandbox</button>
+                <button class="btn" data-desktop-action="approve-live-publish" data-draft-id="${html(draftId)}" data-platform="${html(platform)}">Approve Live Publish</button>
+                <button class="btn red" data-desktop-action="publish-now" data-draft-id="${html(draftId)}" data-platform="${html(platform)}" title="${html(live.disabledReason || "All selected draft live publish gates passed.")}"${publishDisabled}>Publish Now</button>
+              </div>
+            </div>
+            <div class="muted">Connector: ${html(connectorState(platform).status || "manual_upload_required")}. Approval recorded does not mean live ready.</div>
           </section>
         `;
       }
@@ -4373,6 +4565,8 @@
         ["youtube_shorts", "YouTube Shorts"],
         ["facebook_reels", "Facebook Reels"]
       ];
+      const LIVE_CONFIRMATION_PHRASE = "I understand this will attempt a real platform publish.";
+      const LIVE_SUPPORTED_PLATFORMS = new Set(["instagram_reels", "tiktok"]);
 
       function approvedEntries() {
         return productionEntries().filter((entry) => statusOf(entry) === "approved");
@@ -4416,6 +4610,18 @@
           <div class="metric"><span>Manual packs</span><strong>${html(manifest.count || 0)}</strong></div>
           <div class="metric"><span>Folder</span><strong>${html(manifest.output_dir || "out/social_exports")}</strong></div>
           <div class="muted">Manual upload only. No direct posting integrations are configured.</div>
+        `;
+      }
+
+      function schedulerInspectorHtml() {
+        const drafts = draftsList();
+        const readinessSummary = state.publishReadiness?.summary || {};
+        const firstReady = publishReadinessItems()[0];
+        return `
+          <section class="inspector-section"><h3>Scheduler</h3><div class="copy">Create drafts, schedule posts, run dry checks, and upload manually when live gates are not ready.</div></section>
+          <section class="inspector-section"><h3>Next Step</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-post-drafts">Build Drafts</button><button class="btn" data-desktop-action="dry-run-publish">Run Dry Run</button></div></section>
+          <section class="inspector-section"><h3>Readiness</h3><div class="summary-row"><span>Drafts</span><strong>${html(drafts.length)}</strong></div><div class="summary-row"><span>Manual ready</span><strong>${html(readinessSummary.ready_for_manual_upload ?? 0)}</strong></div><div class="summary-row"><span>Auth required</span><strong>${html(readinessSummary.auth_required ?? 0)}</strong></div>${firstReady ? `<div class="copy">${html(firstReady.reason || firstReady.status || "Latest readiness checked.")}</div>` : ""}</section>
+          <details class="advanced-details"><summary>Connector checks</summary><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="check-social-connectors">Status</button><button class="btn" data-desktop-action="check-oauth-readiness">OAuth</button><button class="btn" data-desktop-action="check-token-status">Token</button><button class="btn" data-desktop-action="check-capabilities">Capabilities</button><button class="btn" data-desktop-action="check-live-readiness">Live Readiness</button></div></details>
         `;
       }
 
@@ -4531,23 +4737,28 @@
 
       function renderRightInspector(mode) {
         const entry = modeEntry();
-        if (mode === "dashboard") {
+        if (mode === "command" || mode === "dashboard") {
           $("inspector").innerHTML = dashboardProductionInspectorHtml();
         } else if (mode === "queue") {
-          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Selected Clip</h3>${metadataPanel(entry)}</section><section class="inspector-section"><h3>Approval Controls</h3><div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div></section><section class="inspector-section"><h3>Caption / Package</h3><div class="copy">${html(entry.package?.caption || entry.caption?.caption || "No caption package loaded.")}</div></section>` : `<section class="inspector-section"><h3>Queue Inspector</h3>${realFootageOnboardingHtml()}</section>`;
+          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Selected Clip</h3><div class="summary-row"><span>Clip</span><strong>${html(entry.clip_id || title(entry))}</strong></div><div class="summary-row"><span>Score</span><strong>${html(score(entry))}</strong></div><div class="summary-row"><span>Status</span><strong>${html(statusOf(entry))}</strong></div></section><section class="inspector-section"><h3>Approve</h3><div class="toolbar"><button class="btn green" id="approveClip">Approve</button><button class="btn danger" id="rejectClip">Reject</button><select class="select" id="prioritySelect"><option value="high">High Priority</option><option value="normal">Normal Priority</option><option value="low">Low Priority</option></select></div></section><details class="advanced-details"><summary>Caption details</summary><div class="copy">${html(entry.package?.caption || entry.caption?.caption || "No caption package loaded.")}</div></details>` : `<section class="inspector-section"><h3>Review</h3><div class="copy">Pick the best clips, then approve them for export.</div></section>`;
         } else if (mode === "media") {
-          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Properties</h3>${metadataPanel(entry)}</section><section class="inspector-section"><h3>Analysis</h3>${mediaCacheHtml(entry)}</section>${schoolCompactHtml(entry)}` : `<section class="inspector-section"><h3>Media Inspector</h3><div class="muted">No media selected.</div></section>`;
+          $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Media</h3><div class="summary-row"><span>Clip</span><strong>${html(entry.clip_id || title(entry))}</strong></div><div class="summary-row"><span>Cache</span><strong>${html(cacheFor(entry)?.status || "pending")}</strong></div></section><details class="advanced-details"><summary>Media details</summary>${metadataPanel(entry)}${mediaCacheHtml(entry)}</details>` : `<section class="inspector-section"><h3>Media</h3><div class="muted">No media selected.</div></section>`;
         } else if (mode === "search") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section>${schoolCompactHtml(entry)}<section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div>${schoolControlsHtml()}</section>`;
         } else if (mode === "marketing") {
           $("inspector").innerHTML = marketingInspectorHtml();
+        } else if (mode === "scheduler") {
+          $("inspector").innerHTML = schedulerInspectorHtml();
+        } else if (mode === "autopilot") {
+          const next = autopilotTopCards().next_safe_run || autopilotActions()[0];
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Autopilot</h3><div class="copy">HigherKey prepares local actions. You approve anything sensitive.</div></section><section class="inspector-section"><h3>Next Safe Action</h3>${next ? `<div class="summary-row"><span>Action</span><strong>${html(next.title || next.action_id || "Local action")}</strong></div><div class="copy">${html(next.reason || next.client_message || "Prepared local action.")}</div>` : `<div class="muted">Build Autopilot Plan to prepare actions.</div>`}</section><section class="inspector-section"><h3>Controls</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-autopilot-plan">Build Plan</button><button class="btn" data-desktop-action="run-autopilot-safe-dry">Dry Run</button></div></section>`;
         } else if (mode === "agents") {
           $("inspector").innerHTML = `<section class="inspector-section"><h3>AI Processing</h3><div class="copy">Local AI steps run sequentially on this project.</div>${agentHealthHtml()}</section><section class="inspector-section"><h3>Processing Flow</h3>${orchestrationGraphHtml()}</section>`;
         } else if (mode === "social") {
-          $("inspector").innerHTML = socialExportsHtml();
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Manual Upload</h3><div class="copy">Open prepared export folders and upload manually when credentials or permissions are missing.</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="open-social-exports">Open Exports</button><button class="btn" data-desktop-action="record-post-result">Record Results</button></div></section><section class="inspector-section"><h3>Pack Status</h3>${socialExportsSummaryHtml()}</section>`;
           wireSocialExportActions();
         } else if (mode === "diagnostics") {
-          $("inspector").innerHTML = `<section class="inspector-section"><h3>Support</h3><div class="copy">Create a support package or leave local feedback without sending private media.</div><div class="toolbar" style="margin-top:12px"><button class="btn red" data-desktop-action="create-issue-report">Create Support Package</button><button class="btn" data-desktop-action="open-issue-report">Open Folder</button></div></section><section class="inspector-section"><h3>Health</h3>${compactHealthHtml()}</section><section class="inspector-section"><h3>Advanced Checks</h3><div class="toolbar"><button class="btn" data-desktop-action="run-diagnostics">Run Diagnostics</button><button class="btn" data-desktop-action="run-full-qa">Full QA</button></div></section>`;
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Support</h3><div class="copy">Create a support package or leave local feedback without sending private media.</div><div class="toolbar" style="margin-top:12px"><button class="btn red" data-desktop-action="create-issue-report">Create Support Package</button><button class="btn" data-desktop-action="open-issue-report">Open Folder</button></div></section><section class="inspector-section"><h3>Health</h3>${compactHealthHtml()}</section><details class="advanced-details"><summary>Advanced checks</summary><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="run-diagnostics">Run Diagnostics</button><button class="btn" data-desktop-action="run-full-qa">Full QA</button></div></details>`;
         } else if (mode === "settings") {
           $("inspector").innerHTML = `<section class="inspector-section"><h3>Build Information</h3><div class="summary-row"><span>Package</span><strong>${html(state.appInfo?.packageVersion || "unknown")}</strong></div><div class="summary-row"><span>Runtime</span><strong>${html(state.appInfo?.runtimeVersion || "unknown")}</strong></div><div class="summary-row"><span>Release</span><strong>${html(state.appInfo?.releaseVersion || state.release?.version || "unknown")}</strong></div></section><section class="inspector-section"><h3>Project</h3><div class="metric"><span>Active project</span><strong>${html(state.appInfo?.activeProjectRoot || state.appInfo?.projectRoot || "static")}</strong></div><div class="metric"><span>Import Folder</span><strong>${html(state.appInfo?.contentInbox || "Import Folder")}</strong></div></section><section class="inspector-section"><h3>Production Mode</h3>${productionModeControlsHtml()}</section><section class="inspector-section"><h3>Advanced Runtime</h3><details class="advanced-details"><summary>Show technical details</summary>${projectRuntimeHtml()}</details></section>`;
         } else {
@@ -4564,20 +4775,11 @@
         const pipeline = pipelineUiState();
         const workflow = clientWorkflow();
         return `
-          <section class="inspector-section"><h3>AI Workflow</h3>
-            <div class="metric"><span>Mode</span><strong>Production</strong></div>
-            <div class="metric"><span>Footage clips</span><strong>${html(entries.length)}</strong></div>
-            <div class="metric"><span>Approved</span><strong>${html(approved)}</strong></div>
-          </section>
-          <section class="inspector-section"><h3>Best Clip Recommendation</h3>
-            ${best ? `<div class="metric"><span>Clip</span><strong>${html(best.clip_id || title(best))}</strong></div><div class="metric"><span>Score</span><strong>${html(score(best))}</strong></div><div class="copy">${html((state.recommendations?.recommendations?.[0]?.reason || best.package?.caption || "Highest local score among visible production clips.").slice(0, 220))}</div>` : `<div class="muted">No real clip selected.</div>`}
-          </section>
           ${pipeline.state === "needs_attention" ? `<section class="inspector-section"><h3>Needs Attention</h3><div class="copy">Some older references need cleanup, but usable clips can still be reviewed.</div><div class="toolbar" style="margin-top:10px"><button class="btn" data-desktop-action="repair-project">Repair Project</button><button class="btn" data-desktop-action="go-diagnostics">Open Support</button></div></section>` : ""}
-          <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(workflow.client_message)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="run-full-media-prep">Let AI Process</button></div></section>
-          <section class="inspector-section"><h3>Workflow Progress</h3><div class="copy">${html(workflow.processing?.active ? workflow.processing.message || "Processing media." : workflow.next_action)}</div><div class="metric"><span>Current step</span><strong>${html((workflow.steps || []).find((step) => step.id === workflow.current_step)?.label || workflow.next_action)}</strong></div><div class="metric"><span>Completed steps</span><strong>${html((workflow.completed_steps || []).length)}</strong></div></section>
-          <section class="inspector-section"><h3>Trial Status</h3>${trialReadinessHtml()}</section>
-          <section class="inspector-section"><h3>Social Readiness</h3>${socialExportsSummaryHtml()}</section>
-          <section class="inspector-section"><h3>Compact Health</h3>${compactHealthHtml()}</section>
+          <section class="inspector-section"><h3>Next Action</h3><div class="copy">${html(workflow.client_message)}</div><div class="toolbar" style="margin-top:10px"><button class="btn red" data-desktop-action="import-and-process">Import & Process</button><button class="btn" data-desktop-action="go-queue">Review Clips</button></div></section>
+          <section class="inspector-section"><h3>Today</h3><div class="summary-row"><span>Footage clips</span><strong>${html(entries.length)}</strong></div><div class="summary-row"><span>Approved</span><strong>${html(approved)}</strong></div><div class="summary-row"><span>Manual packs</span><strong>${html(state.socialManifest?.count || 0)}</strong></div></section>
+          <section class="inspector-section"><h3>Progress</h3><div class="copy">${html(workflow.processing?.active ? workflow.processing.message || "Processing media." : workflow.next_action)}</div><div class="metric"><span>Current step</span><strong>${html((workflow.steps || []).find((step) => step.id === workflow.current_step)?.label || workflow.next_action)}</strong></div></section>
+          <details class="advanced-details"><summary>Health and trial details</summary>${compactHealthHtml()}${trialReadinessHtml()}</details>
         `;
       }
 
@@ -4727,6 +4929,13 @@
         $("approveClip")?.addEventListener("click", () => setReview("approved"), { once: true });
         $("rejectClip")?.addEventListener("click", () => setReview("rejected"), { once: true });
         $("batchApprove")?.addEventListener("click", () => batchReview("approved"), { once: true });
+        document.querySelectorAll(".composer-panel").forEach((panel) => {
+          syncComposerLivePublishButtons(panel);
+          panel.querySelectorAll(".composer-platform,.composer-approve,.composer-confirmation").forEach((control) => {
+            control.oninput = () => syncComposerLivePublishButtons(panel);
+            control.onchange = () => syncComposerLivePublishButtons(panel);
+          });
+        });
         wireSocialExportActions();
       }
 
@@ -4761,6 +4970,7 @@
 
       function render() {
         document.querySelectorAll(".tab").forEach((node) => node.classList.toggle("active", node.dataset.mode === state.mode));
+        document.querySelectorAll(".rail-advanced").forEach((node) => { node.open = ["search", "agents", "analytics"].includes(state.mode); });
         renderStatus();
         renderMainWorkspace();
         renderRightInspector(state.mode);
@@ -5116,16 +5326,18 @@
         const panel = button?.closest(".composer-panel") || document.querySelector(".composer-panel");
         const entry = modeEntry() || activeEntry();
         const clipId = button?.dataset.clipId || entry?.clip_id || "";
-        const platform = panel?.querySelector(".composer-platform")?.value || "tiktok";
+        const platform = button?.dataset.platform || panel?.querySelector(".composer-platform")?.value || "tiktok";
+        const draftId = button?.dataset.draftId || panel?.querySelector(".composer-platform")?.dataset.draftId || `${platform}_${clipId}`;
         return {
           panel,
           clipId,
-          draftId: `${platform}_${clipId}` || button?.dataset.draftId || panel?.querySelector(".composer-platform")?.dataset.draftId || "",
+          draftId,
           platform,
           caption: panel?.querySelector(".composer-text")?.value || "",
           when: panel?.querySelector(".composer-when")?.value || "",
           mode: panel?.querySelector(".composer-mode")?.value || "manual",
-          approved: Boolean(panel?.querySelector(".composer-approve")?.checked)
+          approved: Boolean(panel?.querySelector(".composer-approve")?.checked),
+          confirmationPhrase: panel?.querySelector(".composer-confirmation")?.value || ""
         };
       }
 
@@ -5168,8 +5380,18 @@
 
       async function runSocialPublisher(button, live = false) {
         const payload = activeComposerPayload(button);
-        if (live && !payload.approved) return setNotice("Check approval before live publishing. Dry run and manual upload remain available.");
-        const method = live ? "runSocialPublisherLive" : "runSocialPublisherDryRun";
+        if (live) {
+          const draft = draftsList().find((item) => item.draft_id === payload.draftId && item.platform === payload.platform) || null;
+          const liveState = getSelectedLivePublishState({
+            draft,
+            platform: payload.platform,
+            draftId: payload.draftId,
+            approved: payload.approved,
+            confirmationPhrase: payload.confirmationPhrase
+          });
+          if (!liveState.canPublishNow) return setNotice(`${liveState.disabledReason}. Manual upload remains available.`);
+        }
+        const method = live ? "runLivePublishSingle" : "runSocialPublisherDryRun";
         if (!window.higherkey?.[method]) {
           return setNotice("Static mode: run python3 scripts/run_social_publisher.py --dry-run --due-now.");
         }
@@ -5178,7 +5400,8 @@
           dueNow: true,
           platform: payload.platform,
           draftId: payload.draftId,
-          approve: payload.approved
+          approve: payload.approved,
+          confirmationPhrase: payload.confirmationPhrase
         });
         await refreshLiveData();
         render();
@@ -5187,6 +5410,48 @@
           return setNotice(parsed.live_call_made ? "Live publisher returned a live-call receipt." : "Live publishing was blocked or requires auth. Manual upload remains available.");
         }
         return setNotice(parsed.live_call_made ? "Unexpected live call detected. Open Support." : `Dry run complete for ${parsed.publish_count || 0} draft(s). No live call made.`);
+      }
+
+      async function checkLivePublishReadiness() {
+        if (!window.higherkey?.getLivePublishStatus) {
+          return setNotice("Static mode: run python3 scripts/check_live_publish_readiness.py --dry-run --platform all.");
+        }
+        if (window.higherkey.checkPublishReadiness) await window.higherkey.checkPublishReadiness();
+        const result = await window.higherkey.getLivePublishStatus();
+        await refreshLiveData();
+        render();
+        const ready = result?.readiness?.ready_count ?? state.livePublishReadiness?.ready_count ?? 0;
+        return setNotice(`Live readiness checked. Ready: ${ready}. Manual upload remains available.`);
+      }
+
+      async function runLiveSandbox(button) {
+        const payload = activeComposerPayload(button);
+        if (!window.higherkey?.runLivePublishSandbox) {
+          return setNotice("Static mode: run python3 scripts/run_social_publisher.py --live-sandbox --dry-run --due-now --json.");
+        }
+        const result = await window.higherkey.runLivePublishSandbox({ dueNow: true, platform: payload.platform, draftId: payload.draftId });
+        await refreshLiveData();
+        render();
+        const parsed = result?.parsed || {};
+        return setNotice(parsed.live_call_made ? "Unexpected live call detected. Open Support." : "Live sandbox complete. No platform call made.");
+      }
+
+      async function approveLivePublish(button) {
+        const payload = activeComposerPayload(button);
+        if (!payload.approved) return setNotice("Check approval before creating a live publish receipt.");
+        if (payload.confirmationPhrase !== "I understand this will attempt a real platform publish.") return setNotice("Enter the exact live publish confirmation phrase.");
+        if (!window.higherkey?.createLivePublishReceipt) {
+          return setNotice("Static mode: run scripts/create_live_publish_receipt.py with the confirmation phrase.");
+        }
+        const result = await window.higherkey.createLivePublishReceipt({
+          draftId: payload.draftId,
+          platform: payload.platform,
+          confirmationPhrase: payload.confirmationPhrase,
+          dryRunBeforeLive: true
+        });
+        await refreshLiveData();
+        render();
+        return setNotice(result?.parsed?.valid ? "Live publish approval receipt recorded locally." : "Live publish receipt was not created. Check readiness and confirmation phrase.");
       }
 
       async function checkSocialAuth() {
@@ -5577,6 +5842,8 @@
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
             if (action === "dry-run-publish") return runSocialPublisher(button, false);
+            if (action === "live-sandbox") return runLiveSandbox(button);
+            if (action === "approve-live-publish") return approveLivePublish(button);
             if (action === "publish-now") return runSocialPublisher(button, true);
             if (action === "check-social-auth") return checkSocialAuth();
             if (action === "check-social-connectors") return checkSocialConnectors();
@@ -5584,6 +5851,7 @@
             if (action === "check-token-status") return checkOAuthReadiness();
             if (action === "check-capabilities") return checkOAuthReadiness();
             if (action === "check-publish-readiness") return checkPublishReadiness();
+            if (action === "check-live-readiness") return checkLivePublishReadiness();
             if (action === "run-oauth-dry-run") return runOAuthDryRun(button);
             if (action === "disconnect-social-connector") return setNotice("Connector disconnect is a local-safe placeholder. No token values are shown; remove local token storage from Keychain or encrypted storage when configured.");
             if (action === "start-instagram-oauth") {
@@ -5840,6 +6108,9 @@
           state.socialConnectionStatus = await optionalJson(PATHS.socialConnectionStatus, state.socialConnectionStatus);
           state.socialConnectorDiagnostics = await optionalJson(PATHS.socialConnectorDiagnostics, state.socialConnectorDiagnostics);
           state.socialPublisherStatus = await optionalJson(PATHS.socialPublisherStatus, state.socialPublisherStatus);
+          state.livePublishReadiness = await optionalJson(PATHS.livePublishReadiness, state.livePublishReadiness);
+          state.livePublishStatus = await optionalJson(PATHS.livePublishStatus, state.livePublishStatus);
+          state.livePublishReceipts = await optionalJson(PATHS.livePublishReceipts, state.livePublishReceipts);
           state.publishReadiness = await optionalJson(PATHS.publishReadiness, state.publishReadiness);
           state.socialOAuthStatus = await optionalJson(PATHS.socialOAuthStatus, state.socialOAuthStatus);
           state.socialOAuthReadiness = await optionalJson(PATHS.socialOAuthReadiness, state.socialOAuthReadiness);

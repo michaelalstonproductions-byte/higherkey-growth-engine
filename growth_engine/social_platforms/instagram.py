@@ -47,15 +47,22 @@ class InstagramAdapter:
         payload = self.prepare_payload(draft, config)
         if not live:
             return {"status": "dry_run", "platform": self.platform, "payload": payload, "live_call_made": False}
-        ok, error = self.validate_media(draft, root)
-        if not ok:
-            return {"status": "manual_upload_required", "platform": self.platform, "error": error, "payload": payload, "live_call_made": False}
-        if auth.get("status") != "connected":
-            return {"status": "auth_required", "platform": self.platform, "error": "Instagram account is not connected.", "live_call_made": False}
-        return {
-            "status": "blocked",
-            "platform": self.platform,
-            "error": "Live Instagram calls are gated until credentials, token storage, hosted media, and user approval are all present.",
-            "payload": payload,
-            "live_call_made": False,
-        }
+        return perform_instagram_live_publish(draft, config, auth, root, payload=payload)
+
+
+def perform_instagram_live_publish(draft: dict[str, Any], config: dict[str, Any], auth: dict[str, Any], root: Path, *, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+    adapter = InstagramAdapter()
+    payload = payload or adapter.prepare_payload(draft, config)
+    ok, error = adapter.validate_media(draft, root)
+    if not ok:
+        return {"status": "manual_upload_required", "platform": adapter.platform, "error": error, "payload": payload, "live_call_made": False}
+    if auth.get("status") not in {"connected", "ready_for_live_api"}:
+        return {"status": "auth_required", "platform": adapter.platform, "error": "Instagram account is not connected.", "live_call_made": False}
+    return {
+        "status": "live_publish_not_fully_supported",
+        "platform": adapter.platform,
+        "error": "Official Instagram readiness passed, but live publish execution is not enabled in this build.",
+        "payload": payload,
+        "manual_upload_fallback": True,
+        "live_call_made": False,
+    }

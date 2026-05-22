@@ -30,6 +30,7 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "check_publish_readiness": ["python3", "scripts/check_publish_readiness.py"],
     "check_social_oauth_readiness": ["python3", "scripts/check_social_oauth_readiness.py"],
     "check_social_token_vault": ["python3", "scripts/check_social_token_vault.py"],
+    "check_live_publish_readiness": ["python3", "scripts/check_live_publish_readiness.py"],
     "build_post_composer_drafts": ["python3", "scripts/build_post_composer_drafts.py"],
     "run_social_publisher": ["python3", "scripts/run_social_publisher.py"],
 }
@@ -55,6 +56,9 @@ BLOCKED_TERMS = {
     "remote platform call",
     "live platform integration",
     "live api",
+    "publish now",
+    "autopost",
+    "bulk publish",
     "overwrite source",
     "external account",
 }
@@ -183,6 +187,7 @@ def _title_to_safe_key(title: str, category: str) -> str | None:
         ("account", "check_social_connectors"),
         ("oauth", "check_social_oauth_readiness"),
         ("token vault", "check_social_token_vault"),
+        ("live publish readiness", "check_live_publish_readiness"),
         ("readiness", "check_publish_readiness"),
         ("draft", "build_post_composer_drafts"),
         ("dry-run publisher", "run_social_publisher"),
@@ -249,6 +254,7 @@ def _default_safe_cards() -> list[dict[str, Any]]:
         ("check_publish_readiness", "Check Publish Readiness", "check_publish_readiness"),
         ("check_social_oauth_readiness", "Check OAuth Readiness", "check_social_oauth_readiness"),
         ("check_social_token_vault", "Check Social Token Vault", "check_social_token_vault"),
+        ("check_live_publish_readiness", "Check Live Publish Readiness", "check_live_publish_readiness"),
         ("build_post_composer_drafts", "Build Post Composer Drafts", "build_post_composer_drafts"),
         ("run_social_publisher_dry_run", "Run Social Publisher Dry Run", "run_social_publisher"),
     ]

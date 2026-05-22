@@ -16,3 +16,4 @@ config/desktop_runtime.json
 config/project_manifest.json
 config/social_connectors.json
 config/.social_token_vault.local
+config/live_publish_policy.json

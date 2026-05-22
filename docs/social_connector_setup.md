@@ -9,7 +9,8 @@ HigherKey Social Connector Studio is local-first. It prepares drafts, schedules 
 - No scraping or browser automation is supported.
 - No tokens, app secrets, refresh tokens, or user-specific connector config should be committed.
 - `config/social_connectors.json` is local-only and ignored by git.
-- Live posting stays disabled unless credentials, account authorization, live mode, due scheduling, and explicit user approval are all present.
+- Live posting stays disabled unless credentials, account authorization, live mode, due scheduling, single-draft selection, approval receipt, exact confirmation phrase, and explicit user approval are all present.
+- Bulk live publishing and background autoposting are blocked.
 
 ## Instagram Overview
 
@@ -62,6 +63,19 @@ Unaudited TikTok clients may be private-post restricted. Use dry run first and c
 4. Run `python3 scripts/check_publish_readiness.py`.
 5. Run `python3 scripts/run_social_publisher.py --dry-run --due-now --json`.
 6. Upload manually when credentials, permissions, or live approval are missing.
+
+## Controlled Live Publish Workflow
+
+V6.5 supports only controlled single-post live publish readiness. Use this sequence:
+
+1. Build and edit a Post Composer draft.
+2. Schedule the draft for a due time and set `publish_mode` to `live_api`.
+3. Run `python3 scripts/check_live_publish_readiness.py --dry-run --platform all`.
+4. Run `python3 scripts/run_social_publisher.py --live-sandbox --dry-run --due-now --json`.
+5. Create an approval receipt only after entering: `I understand this will attempt a real platform publish.`
+6. Attempt one supported draft only. Unsupported platforms stay manual upload.
+
+Instagram Reels and TikTok are the only supported live-readiness platforms. YouTube Shorts and Facebook Reels are manual upload fallback only. QA must never run live platform calls.
 
 ## OAuth Callback Placeholder
 

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "local_only": true,
+  "enable_live_publish_default": false,
+  "require_single_draft_publish": true,
+  "require_explicit_publish_now": true,
+  "require_user_confirmation": true,
+  "allow_bulk_publish": false,
+  "max_live_posts_per_session": 1,
+  "supported_live_platforms": [
+    "instagram_reels",
+    "tiktok"
+  ],
+  "unsupported_live_platforms": [
+    "youtube_shorts",
+    "facebook_reels"
+  ],
+  "require_due_now": true,
+  "require_connected_account": true,
+  "require_valid_token": true,
+  "require_scope_validation": true,
+  "require_platform_capability_validation": true,
+  "require_publish_readiness_validation": true,
+  "require_manual_confirmation_receipt": true,
+  "confirmation_phrase": "I understand this will attempt a real platform publish.",
+  "manual_upload_fallback": true,
+  "qa_live_api_calls_allowed": false
+}

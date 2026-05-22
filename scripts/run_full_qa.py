@@ -63,6 +63,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "operator_autopilot.py",
         resources / "app-assets" / "growth_engine" / "autopilot_console.py",
         resources / "app-assets" / "growth_engine" / "oauth_state.py",
+        resources / "app-assets" / "growth_engine" / "live_publish_readiness.py",
         resources / "app-assets" / "growth_engine" / "social_token_vault.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
@@ -78,8 +79,11 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "build_post_composer_drafts.py",
         resources / "app-assets" / "scripts" / "schedule_social_posts.py",
         resources / "app-assets" / "scripts" / "run_social_publisher.py",
+        resources / "app-assets" / "scripts" / "create_live_publish_receipt.py",
+        resources / "app-assets" / "scripts" / "check_live_publish_readiness.py",
         resources / "app-assets" / "scripts" / "test_social_connector_safety.py",
         resources / "app-assets" / "scripts" / "test_oauth_token_safety.py",
+        resources / "app-assets" / "scripts" / "test_live_publish_safety.py",
         resources / "app-assets" / "scripts" / "check_social_connectors.py",
         resources / "app-assets" / "scripts" / "check_publish_readiness.py",
         resources / "app-assets" / "scripts" / "run_social_oauth_callback.py",
@@ -89,6 +93,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
+        resources / "app-assets" / "config" / "live_publish_policy.example.json",
         resources / "app-assets" / "config" / "release.json",
         resources / "app-assets" / "config" / "version_contract.json",
     ]
@@ -146,6 +151,7 @@ def external_api_scan(root: Path) -> dict[str, object]:
         social_connector_source = rel_path in {
             "growth_engine/social_auth.py",
             "growth_engine/oauth_state.py",
+            "growth_engine/live_publish_readiness.py",
             "growth_engine/social_token_vault.py",
             "growth_engine/social_publisher.py",
             "growth_engine/social_platforms/instagram.py",
@@ -155,9 +161,13 @@ def external_api_scan(root: Path) -> dict[str, object]:
             "scripts/run_social_oauth_callback.py",
             "scripts/check_social_oauth_readiness.py",
             "scripts/check_social_token_vault.py",
+            "scripts/check_live_publish_readiness.py",
+            "scripts/create_live_publish_receipt.py",
             "scripts/manage_social_token_vault.py",
             "scripts/test_oauth_token_safety.py",
+            "scripts/test_live_publish_safety.py",
             "config/social_connectors.example.json",
+            "config/live_publish_policy.example.json",
             "README.md",
             "docs/social_connector_setup.md",
         } and (
@@ -487,6 +497,11 @@ def social_connector_scheduler_check(root: Path) -> dict[str, object]:
         root / "analytics" / "oauth_state_status.json": {"local_only": bool, "token_values_exposed": bool, "states": list},
         root / "analytics" / "client_oauth_state_status.json": {"local_only": bool, "token_values_exposed": bool, "states": list},
         root / "analytics" / "client_social_oauth_status.json": {"local_only": bool, "token_values_exposed": bool, "state_validation": dict},
+        root / "analytics" / "live_publish_readiness.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "items": list},
+        root / "analytics" / "client_live_publish_readiness.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "items": list},
+        root / "analytics" / "social_live_publish_status.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "results": list},
+        root / "analytics" / "social_live_publish_log.json": {"local_only": bool, "manual_upload_fallback": bool, "live_call_made": bool, "runs": list},
+        root / "analytics" / "live_publish_receipts.json": {"local_only": bool, "manual_upload_fallback": bool, "token_values_exposed": bool, "receipts": list},
     }
     missing = [relative_path(path, root) for path in required if not path.exists()]
     json_errors = []
@@ -910,7 +925,7 @@ def upgrade_fixture_check(root: Path) -> dict[str, object]:
         "    root=Path(tmp)\n"
         "    config=load_config(root)\n"
         "    ensure_directories(config)\n"
-        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json','project_manifest.example.json','client_demo.json','autopilot_policy.json','marketing_profile.example.json','social_connectors.example.json'):\n"
+        "    for rel in ('version_contract.json','state_contract.json','security_policy.json','retention_policy.json','error_taxonomy.json','release.json','project_manifest.example.json','client_demo.json','autopilot_policy.json','marketing_profile.example.json','social_connectors.example.json','live_publish_policy.example.json'):\n"
         "        shutil.copy(Path('config')/rel, root/'config'/rel)\n"
         "    save_json_file(root/'config'/'project_manifest.json', {'version':'V3.8','project_root':str(root),'local_only':True})\n"
         "    plan=build_upgrade_plan(config)\n"
@@ -1169,11 +1184,14 @@ def main() -> int:
     append_stage(results, qa_stage("social_oauth_readiness", ["python3", "scripts/check_social_oauth_readiness.py"], root, timeout=60), config)
     append_stage(results, qa_stage("social_token_vault_status", ["python3", "scripts/check_social_token_vault.py"], root, timeout=60), config)
     append_stage(results, qa_stage("publish_readiness_check", ["python3", "scripts/check_publish_readiness.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("live_publish_readiness_check", ["python3", "scripts/check_live_publish_readiness.py", "--dry-run", "--platform", "all"], root, timeout=60), config)
     append_stage(results, qa_stage("social_oauth_callback_dry_run", ["python3", "scripts/run_social_oauth_callback.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("oauth_token_safety_fixture", ["python3", "scripts/test_oauth_token_safety.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("live_publish_safety_fixture", ["python3", "scripts/test_live_publish_safety.py"], root, timeout=60), config)
     append_stage(results, qa_stage("post_composer_drafts_build", ["python3", "scripts/build_post_composer_drafts.py"], root, timeout=60), config)
     append_stage(results, qa_stage("social_schedule_dry_run", ["python3", "scripts/schedule_social_posts.py", "--dry-run", "--from-drafts", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("social_publisher_dry_run", ["python3", "scripts/run_social_publisher.py", "--dry-run", "--due-now", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("social_live_sandbox_dry_run", ["python3", "scripts/run_social_publisher.py", "--live-sandbox", "--dry-run", "--due-now", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("social_connector_safety_fixture", ["python3", "scripts/test_social_connector_safety.py"], root, timeout=60), config)
     print("[qa] social_connector_scheduler_validation", flush=True)
     append_stage(results, social_connector_scheduler_check(root), config)

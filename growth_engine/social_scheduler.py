@@ -23,7 +23,10 @@ STATUSES = {
     "auth_required",
     "approval_required",
     "scheduled_not_due",
+    "unsupported_platform",
 }
+
+SUPPORTED_LIVE_PLATFORMS = {"instagram_reels", "tiktok"}
 
 
 def _list_payload(path: Path, key: str) -> list[dict[str, Any]]:
@@ -287,7 +290,16 @@ def schedule_posts(
     }
     save_json_file(config.analytics_dir / "social_schedule.json", payload)
     save_json_file(config.analytics_dir / "client_social_schedule.json", payload)
-    queue_items = [item | {"status": "ready_to_post" if not item.get("scheduled_for") else item.get("status")} for item in schedule_items]
+    queue_items = []
+    for item in schedule_items:
+        queued = item | {"status": "ready_to_post" if not item.get("scheduled_for") else item.get("status")}
+        if queued.get("publish_mode") == "live_api" and queued.get("platform") not in SUPPORTED_LIVE_PLATFORMS:
+            queued["status"] = "manual_upload_required"
+            queued["live_publish_eligible"] = False
+            queued["blocked_reason"] = "Unsupported live platform; manual upload fallback is required."
+        elif queued.get("publish_mode") == "live_api":
+            queued["live_publish_eligible"] = queued.get("status") in {"ready_to_post", "scheduled"}
+        queue_items.append(queued)
     save_json_file(config.analytics_dir / "social_post_queue.json", {
         "version": 1,
         "updated_at": utc_now(),

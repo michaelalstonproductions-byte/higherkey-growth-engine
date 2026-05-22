@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "6.4.0",
-  "release_version": "V6.4",
+  "app_version": "6.5.0",
+  "release_version": "V6.5",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -167,6 +167,12 @@
       "to": "V6.4",
       "safe": true,
       "notes": "Add official OAuth readiness checks, local token vault metadata, platform capability readiness, and dry-run-safe account diagnostics while keeping live posting disabled by default."
+    },
+    {
+      "from": "V6.4",
+      "to": "V6.5",
+      "safe": true,
+      "notes": "Add controlled single-post live publish readiness, approval receipts, confirmation phrase gates, live sandbox checks, and strict no-bulk/no-background publishing policy while preserving dry-run defaults and manual upload fallback."
     }
   ],
   "required_runtime_files": [
@@ -207,6 +213,7 @@
     "config/autopilot_policy.json",
     "config/marketing_profile.example.json",
     "config/social_connectors.example.json",
+    "config/live_publish_policy.example.json",
     "config/version_contract.json",
     "config/release.json"
   ],
@@ -249,8 +256,11 @@
     "scripts/build_post_composer_drafts.py",
     "scripts/schedule_social_posts.py",
     "scripts/run_social_publisher.py",
+    "scripts/create_live_publish_receipt.py",
+    "scripts/check_live_publish_readiness.py",
     "scripts/test_social_connector_safety.py",
     "scripts/test_oauth_token_safety.py",
+    "scripts/test_live_publish_safety.py",
     "scripts/check_social_connectors.py",
     "scripts/check_publish_readiness.py",
     "scripts/run_social_oauth_callback.py",

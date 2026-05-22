@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally by default. Official social connectors stay disabled unless configured and explicitly approved.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. Controlled live publish remains disabled unless configured, due, receipt-approved, and explicitly confirmed for one draft.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "Official OAuth + Token Vault Readiness",
-  "version": "V6.4"
+  "release_name": "Controlled Live Publish Enablement",
+  "version": "V6.5"
 }

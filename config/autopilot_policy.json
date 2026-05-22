@@ -23,6 +23,7 @@
     "scripts/check_publish_readiness.py",
     "scripts/check_social_oauth_readiness.py",
     "scripts/check_social_token_vault.py",
+    "scripts/check_live_publish_readiness.py",
     "scripts/build_post_composer_drafts.py",
     "scripts/run_social_publisher.py"
   ],
@@ -36,6 +37,10 @@
   "blocked_commands": [
     "delete_original_media",
     "post_to_social_platform",
+    "live_publish",
+    "bulk_live_publish",
+    "background_autopost",
+    "bypass_live_confirmation",
     "call_remote_platform",
     "outside_project_root",
     "arbitrary_shell_string"

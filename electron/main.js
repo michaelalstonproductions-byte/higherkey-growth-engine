@@ -1620,6 +1620,78 @@ async function runSocialPublisherLive(_event, options = {}) {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function createLivePublishReceipt(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = [
+    "scripts/create_live_publish_receipt.py",
+    "--draft-id", String(options.draftId || ""),
+    "--platform", String(options.platform || ""),
+    "--confirmation-phrase", String(options.confirmationPhrase || ""),
+    "--json"
+  ];
+  if (options.approvedBy) args.push("--approved-by", String(options.approvedBy));
+  if (options.dryRunBeforeLive !== false) args.push("--dry-run-before-live");
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function approveLivePublish(_event, options = {}) {
+  return createLivePublishReceipt(_event, options);
+}
+
+async function runLivePublishSandbox(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/run_social_publisher.py", "--live-sandbox", "--dry-run", "--json"];
+  if (options.dueNow !== false) args.push("--due-now");
+  if (options.platform) args.push("--platform", String(options.platform));
+  if (options.draftId) args.push("--draft-id", String(options.draftId));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function runLivePublishSingle(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = [
+    "scripts/run_social_publisher.py",
+    "--live-single",
+    "--approve",
+    "--confirm-live",
+    "--json",
+    "--draft-id", String(options.draftId || ""),
+    "--platform", String(options.platform || ""),
+    "--confirmation-phrase", String(options.confirmationPhrase || "")
+  ];
+  if (options.dueNow !== false) args.push("--due-now");
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function getLivePublishStatus() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    readiness: await readAnalyticsJson("live_publish_readiness.json", {}),
+    clientReadiness: await readAnalyticsJson("client_live_publish_readiness.json", {}),
+    status: await readAnalyticsJson("social_live_publish_status.json", {}),
+    receipts: await readAnalyticsJson("live_publish_receipts.json", { receipts: [] })
+  };
+}
+
 async function getPostComposerDrafts() {
   return { ok: true, activeProjectRoot, drafts: await readAnalyticsJson("post_composer_drafts.json", { drafts: [] }) };
 }
@@ -2083,6 +2155,11 @@ function registerIpc() {
   ipcMain.handle("socialScheduler:getSchedule", getSocialSchedule);
   ipcMain.handle("socialPublisher:dryRun", runSocialPublisherDryRun);
   ipcMain.handle("socialPublisher:live", runSocialPublisherLive);
+  ipcMain.handle("socialPublisher:approveLive", approveLivePublish);
+  ipcMain.handle("socialPublisher:createLiveReceipt", createLivePublishReceipt);
+  ipcMain.handle("socialPublisher:liveSandbox", runLivePublishSandbox);
+  ipcMain.handle("socialPublisher:liveSingle", runLivePublishSingle);
+  ipcMain.handle("socialPublisher:getLiveStatus", getLivePublishStatus);
   ipcMain.handle("socialAuth:checkStatus", checkSocialAuthStatus);
   ipcMain.handle("socialAuth:checkConnectors", checkSocialConnectors);
   ipcMain.handle("socialAuth:getConnectionStatus", getSocialConnectionStatus);
