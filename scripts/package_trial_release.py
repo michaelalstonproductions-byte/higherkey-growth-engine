@@ -65,6 +65,8 @@ def package_trial(root: Path, output: Path, dry_run: bool = False, include_dmg: 
         "TRIAL_LIMITATIONS.md": root / "TRIAL_LIMITATIONS.md",
         "TRIAL_DELIVERY_CHECKLIST.md": root / "TRIAL_DELIVERY_CHECKLIST.md",
         "CLIENT_TRIAL_QA_SUMMARY.md": root / "CLIENT_TRIAL_QA_SUMMARY.md",
+        "CLIENT_DELIVERY_README.md": root / "out" / "client_delivery" / "CLIENT_DELIVERY_README.md",
+        "CLIENT_DELIVERY_CHECKLIST.md": root / "out" / "client_delivery" / "CLIENT_DELIVERY_CHECKLIST.md",
     }
     missing_docs = [name for name, source in docs.items() if not source.exists()]
     app_info = {
@@ -96,10 +98,11 @@ def package_trial(root: Path, output: Path, dry_run: bool = False, include_dmg: 
             "4. Click Import & Process.",
             "5. Review and approve the best clips.",
             "6. Export Social Packs.",
-            "7. Use Command, Marketing, Creative Direction, and Autopilot dry-run when planning the next posts.",
-            "8. Upload the prepared files manually.",
+            "7. Use Editor, Editing Approval, and Edited Delivery Room for approved edited assets.",
+            "8. Use Scheduler and official connector checks only when configured.",
+            "9. Upload the prepared files manually unless official live posting gates are connected and approved.",
             "",
-            "No cloud APIs, social APIs, or direct posting APIs are configured.",
+            "No cloud editing APIs, scraping, password login, or unauthorized social posting APIs are configured.",
             "",
         ]
     )
@@ -109,6 +112,8 @@ def package_trial(root: Path, output: Path, dry_run: bool = False, include_dmg: 
             "",
             "Use Create Support Package inside the app if something fails.",
             "The support package excludes original footage, private generated media, full logs, runtime DB files, and local tokens by default.",
+            "Trial packages exclude content_inbox, clips, captions, logs, runtime DB files, local connector config, live publish policy, tokens, secrets, and credentials.",
+            "Unsigned local DMGs may require macOS approval before opening.",
             "",
             "Local command:",
             "python3 scripts/create_issue_report.py",

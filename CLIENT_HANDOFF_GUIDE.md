@@ -4,6 +4,23 @@ HigherKey Operator OS is a local-first desktop app for preparing short-form soci
 
 No cloud APIs, no social APIs, and no direct posting are configured. HigherKey prepares local upload folders; you upload manually.
 
+## V7.0 What To Send
+
+- The current HigherKey DMG or a pointer to the current DMG.
+- `CLIENT_QUICK_START.md`
+- `CLIENT_HANDOFF_GUIDE.md`
+- `TRIAL_LIMITATIONS.md`
+- `TRIAL_DELIVERY_CHECKLIST.md`
+- `CLIENT_TRIAL_QA_SUMMARY.md`
+- `out/client_delivery/CLIENT_DELIVERY_README.md`
+- `out/client_delivery/CLIENT_DELIVERY_CHECKLIST.md`
+- A generated handoff or trial package when intentionally built.
+- Approved edited delivery packages when available.
+
+## V7.0 What Not To Send
+
+Do not send original private source media, `content_inbox/`, raw `clips/`, runtime databases, logs, token files, local connector config, local live publish policy, secrets, or credentials. Edited delivery packages exclude originals by default.
+
 ## Install And Open
 
 1. Open the newest DMG in `dist/`.

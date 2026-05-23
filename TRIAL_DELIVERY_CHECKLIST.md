@@ -2,6 +2,19 @@
 
 Use this checklist before handing a trial build to a client.
 
+## V7.0 Client Delivery
+
+- [ ] Run Launch Room > Run Launch Audit.
+- [ ] Run Launch Room > Run Client Rehearsal.
+- [ ] Build the client delivery manifest.
+- [ ] Build or dry-run client handoff.
+- [ ] Build or dry-run trial package.
+- [ ] Verify edited delivery package when edited assets are included.
+- [ ] Confirm manual upload fallback is visible.
+- [ ] Confirm optional social connection language does not imply automatic posting.
+- [ ] Confirm original source media is not included by default.
+- [ ] Confirm token, secret, connector local config, live publish local policy, runtime DB, logs, and raw clips are not included.
+
 ## Build And QA
 
 - [ ] Rebuild the unsigned DMG with `npm run dist:unsigned`.

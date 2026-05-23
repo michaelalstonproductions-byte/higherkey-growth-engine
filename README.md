@@ -2,6 +2,22 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V7.0 Client Delivery Launch
+
+V7.0 adds Launch Room polish for client handoff. HigherKey now builds a client delivery manifest, launch readiness checklist, client rehearsal summary, and client-facing delivery docs so the app is easier to test, support, and hand to a client without changing the core engine.
+
+Launch Room answers what to send, what not to send, whether the current DMG exists, whether handoff/trial/support packages are safe, whether edited delivery packages are verified, and whether manual upload and social connector gates remain clear.
+
+Run the V7.0 launch manifest:
+
+```bash
+python3 scripts/build_client_delivery_manifest.py --json
+```
+
+Outputs include `analytics/client_delivery_manifest.json`, `analytics/client_launch_readiness.json`, `analytics/client_delivery_checklist.json`, `out/client_delivery/CLIENT_DELIVERY_README.md`, and `out/client_delivery/CLIENT_DELIVERY_CHECKLIST.md`.
+
+Client handoff remains local-first: original source media, runtime databases, logs, token vaults, connector local config, live publish local policy, secrets, and credentials are excluded by default. Manual upload remains available. Live posting requires official account connection, readiness, approval, and controlled live publish gates.
+
 ## V6.9 Edited Asset Delivery Room
 
 V6.9 adds an Edited Asset Delivery Room for client review and local delivery packages. HigherKey builds a client review gallery, delivery queue, client notes, delivery checklist, and delivery manifest for approved edited assets while keeping original source media excluded by default.

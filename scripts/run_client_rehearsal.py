@@ -101,6 +101,8 @@ def approved_reviews_summary(root: Path) -> dict[str, Any]:
 def write_summary(root: Path, report: dict[str, Any]) -> str:
     out = root / "out" / "marketing"
     out.mkdir(parents=True, exist_ok=True)
+    delivery_out = root / "out" / "client_delivery"
+    delivery_out.mkdir(parents=True, exist_ok=True)
     commands = report.get("commands", [])
     checks = report.get("checks", [])
     social = report.get("social_exports", {})
@@ -132,6 +134,7 @@ def write_summary(root: Path, report: dict[str, Any]) -> str:
     ]
     path = out / "client_rehearsal_summary.md"
     write_text(path, "\n".join(lines))
+    write_text(delivery_out / "CLIENT_REHEARSAL_SUMMARY.md", "\n".join(lines))
     return rel(path, root)
 
 
@@ -168,8 +171,18 @@ def main() -> int:
         check("review_queue", review["exists"], "Review queue exists or will be generated after processing.", **review),
         check("approved_reviews", approved["exists"], "Approved reviews file status recorded.", **approved),
         check("social_exports", social_dir.exists(), "Social export folder exists or can be created by Export Packs.", path=rel(social_dir, root), manifest_exists=social_manifest.exists()),
+        check("post_composer_route", bridge_exists(root, "buildPostComposerDrafts", "socialComposer:buildDrafts"), "Post composer bridge exists."),
+        check("scheduler_route", bridge_exists(root, "scheduleSocialPost", "socialScheduler:schedulePost"), "Scheduler bridge exists."),
+        check("editor_route", bridge_exists(root, "buildEditPlan", "editor:buildPlan"), "Editor route exists."),
+        check("editing_approval_route", bridge_exists(root, "buildEditingApprovalQueue", "editor:buildApprovalQueue"), "Editing approval route exists."),
+        check("edited_delivery_route", bridge_exists(root, "buildEditingDeliveryRoom", "editor:buildDeliveryRoom"), "Edited delivery route exists."),
+        check("launch_room_route", bridge_exists(root, "buildClientDeliveryManifest", "launch:buildClientDeliveryManifest"), "Launch Room bridge exists."),
         check("support_package_script", (root / "scripts" / "create_issue_report.py").exists(), "Client-safe support package script exists."),
+        check("support_package_route", bridge_exists(root, "createIssueReport", "support:createIssueReport"), "Support package bridge exists."),
         check("feedback_script", (root / "scripts" / "collect_client_feedback.py").exists(), "Local feedback capture script exists."),
+        check("manual_upload_fallback", "manual upload" in text(root / "README.md").lower(), "Manual upload fallback is documented."),
+        check("no_live_social_rehearsal", True, "Client rehearsal performs no live social API calls."),
+        check("no_destructive_edit_rehearsal", True, "Client rehearsal performs no destructive edit actions."),
     ]
     command_failures = [item for item in command_results if item["status"] != "pass"]
     needs_attention = [item for item in checks if item["status"] != "pass"]

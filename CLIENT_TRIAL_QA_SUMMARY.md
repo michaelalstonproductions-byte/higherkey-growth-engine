@@ -2,6 +2,17 @@
 
 Version: V6.0 / 6.0.0
 
+## V7.0 Launch Checks
+
+- Run `python3 scripts/build_client_delivery_manifest.py`.
+- Run `python3 scripts/run_release_candidate_audit.py`.
+- Run `python3 scripts/run_client_rehearsal.py`.
+- Run handoff and trial package dry-runs.
+- Confirm `analytics/client_delivery_manifest.json`, `analytics/client_launch_readiness.json`, and `analytics/client_delivery_checklist.json` exist.
+- Confirm no tokens, secrets, local connector config, runtime DB, logs, raw clips, or original media are included in handoff by default.
+
+Known local sandbox diagnostics warnings can remain warnings when QA exits 0 and external API scan reports `risky_hits: []`.
+
 DMG:
 
 - `dist/HigherKey Operator OS-6.0.0-arm64.dmg`

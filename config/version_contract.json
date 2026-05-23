@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "6.9.0",
-  "release_version": "V6.9",
+  "app_version": "7.0.0",
+  "release_version": "V7.0",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -197,6 +197,12 @@
       "to": "V6.9",
       "safe": true,
       "notes": "Add Edited Asset Delivery Room, client review gallery, approval-gated delivery packages, client notes, delivery checklist, and original media exclusion proof while preserving editing approval gates and source media protection."
+    },
+    {
+      "from": "V6.9",
+      "to": "V7.0",
+      "safe": true,
+      "notes": "Add Client Delivery Launch polish, Launch Room readiness, client delivery manifests, rehearsal summaries, handoff/trial package refresh, and support-safe delivery docs while preserving existing local workflows and safety gates."
     }
   ],
   "required_runtime_files": [
@@ -309,7 +315,8 @@
     "scripts/package_edited_assets.py",
     "scripts/verify_edited_delivery_package.py",
     "scripts/record_editing_delivery_note.py",
-    "scripts/test_editing_delivery_safety.py"
+    "scripts/test_editing_delivery_safety.py",
+    "scripts/build_client_delivery_manifest.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"

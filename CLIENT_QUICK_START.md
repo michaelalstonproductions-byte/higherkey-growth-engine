@@ -2,6 +2,21 @@
 
 HigherKey Operator OS is a local-first desktop app for turning your footage into reviewable clips and manual-upload social packs.
 
+## V7.0 Launch Flow
+
+1. Import footage.
+2. Process media locally.
+3. Review clips and approve the best posts.
+4. Export social packs for manual upload.
+5. Use Marketing, Campaign, and Creative views to plan the rollout.
+6. Use Editor to build non-destructive edit plans and previews.
+7. Use Editing Approval to approve final edited assets.
+8. Use Edited Delivery Room to package approved edited assets.
+9. Use Scheduler for local drafts and dry runs.
+10. Use Launch Room to run launch audit, rehearsal, handoff, trial, support, and delivery checks.
+
+Manual upload remains available. Optional official social connections are gated by readiness, approval, and live publish safety checks. HigherKey does not modify originals and does not use cloud editing APIs by default.
+
 ## V6.0 Release-Candidate Workflow
 
 1. Open HigherKey Operator OS from the newest DMG.

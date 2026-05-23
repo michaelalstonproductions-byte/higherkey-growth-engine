@@ -902,6 +902,76 @@ async function openTrialPackageFolder() {
   return { ok: true, path: trialDir, activeProjectRoot };
 }
 
+async function buildClientDeliveryManifest() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/build_client_delivery_manifest.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function getClientDeliveryManifest() {
+  const profile = await currentProfile();
+  return {
+    ok: true,
+    activeProjectRoot,
+    manifestPath: path.join(profile.projectRoot, "analytics", "client_delivery_manifest.json"),
+    manifest: await readAnalyticsJson("client_delivery_manifest.json", {}),
+    readiness: await readAnalyticsJson("client_launch_readiness.json", {}),
+    checklist: await readAnalyticsJson("client_delivery_checklist.json", {}),
+    handoffStatus: await readAnalyticsJson("client_handoff_status.json", {}),
+    supportStatus: await readAnalyticsJson("client_support_status.json", {})
+  };
+}
+
+async function runLaunchAudit() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/run_release_candidate_audit.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function runClientRehearsal() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/run_client_rehearsal.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function packageClientHandoff() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/package_client_handoff.py"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function packageTrialRelease() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/package_trial_release.py"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function openClientDeliveryFolder() {
+  const deliveryDir = path.join(activeProjectRoot, "out", "client_delivery");
+  await fsp.mkdir(deliveryDir, { recursive: true });
+  await shell.openPath(deliveryDir);
+  return { ok: true, path: deliveryDir, activeProjectRoot };
+}
+
+async function openClientHandoffFolder() {
+  const handoffDir = path.join(activeProjectRoot, "out", "client_handoff");
+  await fsp.mkdir(handoffDir, { recursive: true });
+  await shell.openPath(handoffDir);
+  return { ok: true, path: handoffDir, activeProjectRoot };
+}
+
+async function openDmgFolder() {
+  const distDir = path.join(activeProjectRoot, "dist");
+  await fsp.mkdir(distDir, { recursive: true });
+  await shell.openPath(distDir);
+  return { ok: true, path: distDir, activeProjectRoot };
+}
+
 async function getTrialReadiness() {
   const profile = await currentProfile();
   return {
@@ -2483,6 +2553,12 @@ function registerIpc() {
   ipcMain.handle("trial:buildPackage", buildTrialPackage);
   ipcMain.handle("trial:openPackageFolder", openTrialPackageFolder);
   ipcMain.handle("trial:getReadiness", getTrialReadiness);
+  ipcMain.handle("launch:buildClientDeliveryManifest", buildClientDeliveryManifest);
+  ipcMain.handle("launch:getClientDeliveryManifest", getClientDeliveryManifest);
+  ipcMain.handle("launch:runAudit", runLaunchAudit);
+  ipcMain.handle("launch:runClientRehearsal", runClientRehearsal);
+  ipcMain.handle("launch:packageClientHandoff", packageClientHandoff);
+  ipcMain.handle("launch:packageTrialRelease", packageTrialRelease);
   ipcMain.handle("storage:getReport", getStorageReport);
   ipcMain.handle("storage:getClient", getClientStorage);
   ipcMain.handle("storage:buildCleanupPlan", (_event, options = {}) => buildCleanupPlan(options));
@@ -2537,6 +2613,9 @@ function registerIpc() {
   ipcMain.handle("folder:openEditedAssets", openEditedAssetsFolder);
   ipcMain.handle("folder:openEditedSocialExports", openEditedSocialExportsFolder);
   ipcMain.handle("folder:openEditedDelivery", openEditedDeliveryFolder);
+  ipcMain.handle("folder:openClientDelivery", openClientDeliveryFolder);
+  ipcMain.handle("folder:openClientHandoff", openClientHandoffFolder);
+  ipcMain.handle("folder:openDmg", openDmgFolder);
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
   ipcMain.handle("notify:test", () => {
     notify("HigherKey notification test", "Local notifications are wired.");

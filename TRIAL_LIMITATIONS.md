@@ -2,6 +2,15 @@
 
 HigherKey Operator OS is local-first trial software for client evaluation.
 
+## V7.0 Launch Notes
+
+- HigherKey prepares local assets, manifests, and packages.
+- Manual upload remains the default fallback.
+- Live posting requires official account connection, readiness checks, explicit approval, and controlled live publish gates.
+- Editing is non-destructive. Original footage is not overwritten or deleted.
+- Edited delivery packages include approved edited outputs and exclude original source media by default.
+- No cloud editing APIs, scraping, browser automation, password login, or unauthorized social posting are enabled by default.
+
 ## What This Trial Does
 
 - Imports local MP4, MOV, and M4V footage.

@@ -1944,6 +1944,8 @@
           <button class="tab nav-item" data-icon="◷" data-mode="scheduler">Scheduler</button>
           <button class="tab nav-item" data-icon="◈" data-mode="autopilot">Autopilot</button>
           <button class="tab nav-item" data-icon="◎" data-mode="social">Exports</button>
+          <button class="tab nav-item" data-icon="▦" data-mode="delivery">Delivery</button>
+          <button class="tab nav-item" data-icon="◆" data-mode="launch">Launch</button>
           <button class="tab nav-item" data-icon="▤" data-mode="diagnostics">Support</button>
           <button class="tab nav-item" data-icon="⚙" data-mode="settings">Settings</button>
           <details class="advanced-details rail-advanced"><summary>Advanced</summary>
@@ -2090,6 +2092,13 @@
         editingDeliveryChecklist: "../analytics/editing_delivery_checklist.json",
         editingDeliveryNotes: "../analytics/editing_delivery_notes.json",
         editedDeliveryPackageVerification: "../analytics/edited_delivery_package_verification.json",
+        clientDeliveryManifest: "../analytics/client_delivery_manifest.json",
+        clientLaunchReadiness: "../analytics/client_launch_readiness.json",
+        clientDeliveryChecklist: "../analytics/client_delivery_checklist.json",
+        clientHandoffStatus: "../analytics/client_handoff_status.json",
+        clientSupportStatus: "../analytics/client_support_status.json",
+        releaseCandidateAudit: "../analytics/release_candidate_audit.json",
+        clientRehearsalReport: "../analytics/client_rehearsal_report.json",
         marketingBrief: "../analytics/marketing_brief.json",
         audienceProfile: "../analytics/audience_profile.json",
         marketAttackPlan: "../analytics/market_attack_plan.json",
@@ -3238,6 +3247,94 @@
           </div>
         `;
       }
+      function renderDeliveryView() {
+        return `
+          <div class="view media-view">
+            <section class="panel hero-panel">
+              <div class="hero-copy">
+                <span class="eyebrow">Edited Asset Delivery Room</span>
+                <h1>Package approved edits for client review.</h1>
+                <p>Only approved edited assets are packaged. Original media is protected and not included by default.</p>
+                <div class="toolbar">
+                  <button class="btn red" data-desktop-action="build-editing-delivery-room">Build Delivery Room</button>
+                  <button class="btn" data-desktop-action="package-edited-assets-dry">Package Dry Run</button>
+                  <button class="btn" data-desktop-action="verify-edited-delivery-package">Verify Package</button>
+                  <button class="btn" data-desktop-action="open-edited-delivery-folder">Open Delivery Folder</button>
+                </div>
+              </div>
+              <div class="hero-metrics">
+                ${metricPanel("Ready", approvedDeliveryItems().length, "approved assets")}
+                ${metricPanel("Package", state.editedDeliveryPackageVerification?.status || "pending", "verification")}
+                ${metricPanel("Originals", "excluded", "by default")}
+              </div>
+            </section>
+            <div class="analysis-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Review Gallery</div><button class="btn" data-desktop-action="build-editing-delivery-room">Build Gallery</button></div>${editingDeliveryGalleryHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Delivery Queue</div></div>${editingDeliveryQueueHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Client Notes</div><button class="btn" data-desktop-action="record-editing-delivery-note">Record Client Note</button></div>${deliveryNotesHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Delivery Package</div><div>Use this folder to review or deliver finished edited posts.</div></div></div><div class="toolbar"><button class="btn red" data-desktop-action="package-edited-assets">Package Approved Edited Assets</button><button class="btn" data-desktop-action="verify-edited-delivery-package">Verify Delivery Package</button><button class="btn" data-desktop-action="open-edited-delivery-folder">Open Delivery Folder</button></div>${deliveryPackageStatusHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Safety Proof</div></div>${deliverySafetyProofHtml()}</section>
+            </div>
+          </div>
+        `;
+      }
+      function launchChecklistItems() {
+        const items = state.clientDeliveryChecklist?.items || state.clientDeliveryManifest?.checklist || [];
+        return Array.isArray(items) ? items : [];
+      }
+      function launchCard(id, title, fallback = "needs_attention") {
+        const item = launchChecklistItems().find((check) => check.id === id) || {};
+        const status = item.status || fallback;
+        return `<section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">${html(title)}</div><div>${html(status)}</div></div></div><p class="copy">${html(item.client_message || "Run the launch audit to refresh this handoff check.")}</p><div class="summary-row"><span>Next</span><strong>${html(item.next_action || "Run Launch Audit")}</strong></div>${item.path ? `<p class="muted">${html(item.path)}</p>` : ""}</section>`;
+      }
+      function launchChecklistHtml() {
+        return launchChecklistItems().map((item) => `<div class="summary-row"><span>${html(item.title)}</span><strong>${html(item.status)}</strong></div><p class="muted">${html(item.client_message || item.next_action || "")}</p>`).join("") || `<div class="empty-state"><h2>Run Launch Audit</h2><p>Build the client delivery manifest to see handoff readiness.</p><button class="btn red" data-desktop-action="build-client-delivery-manifest">Run Launch Audit</button></div>`;
+      }
+      function renderLaunchView() {
+        const readiness = state.clientLaunchReadiness || {};
+        const manifest = state.clientDeliveryManifest || {};
+        return `
+          <div class="view media-view">
+            <section class="panel hero-panel">
+              <div class="hero-copy">
+                <span class="eyebrow">Launch Room</span>
+                <h1>Client handoff readiness.</h1>
+                <p>HigherKey prepares local assets and packages. Manual upload remains available. Live posting requires official account connection and approval.</p>
+                <div class="toolbar">
+                  <button class="btn red" data-desktop-action="run-launch-audit">Run Launch Audit</button>
+                  <button class="btn" data-desktop-action="run-client-rehearsal">Run Client Rehearsal</button>
+                  <button class="btn" data-desktop-action="build-client-handoff">Build Client Handoff</button>
+                  <button class="btn" data-desktop-action="open-dmg-folder">Open DMG Folder</button>
+                </div>
+              </div>
+              <div class="hero-metrics">
+                ${metricPanel("Status", readiness.status || manifest.status || "pending", "launch readiness")}
+                ${metricPanel("Ready", readiness.ready_count ?? 0, "checks")}
+                ${metricPanel("Needs", readiness.needs_attention_count ?? 0, "attention")}
+              </div>
+            </section>
+            <div class="card-grid">
+              ${metricPanel("Current Version", `${state.appInfo?.packageVersion || manifest.package_version || "static"} / ${state.release?.version || manifest.release_version || "V7.0"}`, "current build")}
+              ${metricPanel("Manual Upload", "available", "fallback remains")}
+              ${metricPanel("Local First", manifest.cloud_apis === true ? "check" : "on", "no cloud APIs by default")}
+            </div>
+            <div class="analysis-grid">
+              ${launchCard("app_build", "App Build")}
+              ${launchCard("current_dmg", "Current DMG", "missing")}
+              ${launchCard("client_handoff", "Client Handoff", "missing")}
+              ${launchCard("trial_package", "Trial Package", "missing")}
+              ${launchCard("support_package", "Support Package")}
+              ${launchCard("social_safety", "Social Safety")}
+              ${launchCard("editing_safety", "Editing Safety")}
+              ${launchCard("delivery_package", "Delivery Package", "missing")}
+              ${launchCard("manual_upload", "Manual Upload Reminder")}
+              ${launchCard("known_warnings", "Known Warnings")}
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Launch Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="build-client-handoff">Build Client Handoff</button><button class="btn" data-desktop-action="build-trial-package">Build Trial Package</button><button class="btn" data-desktop-action="create-issue-report">Build Support Package</button><button class="btn" data-desktop-action="verify-edited-delivery-package">Verify Edited Delivery</button><button class="btn" data-desktop-action="open-client-handoff-folder">Open Handoff Folder</button><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Delivery Folder</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Checklist</div></div>${launchChecklistHtml()}</section>
+            </div>
+          </div>
+        `;
+      }
       function renderIntelligenceView() {
         const entry = modeEntry();
         return `
@@ -3834,7 +3931,7 @@
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
-        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, editor: renderEditorView, search: renderIntelligenceView, marketing: renderMarketingView, scheduler: renderSchedulerView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
+        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, editor: renderEditorView, delivery: renderDeliveryView, launch: renderLaunchView, search: renderIntelligenceView, marketing: renderMarketingView, scheduler: renderSchedulerView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
         $("mainContent").innerHTML = (views[mode] || renderDashboardView)();
       }
 
@@ -4978,6 +5075,8 @@
           queue: "Review workspace",
           media: "Media library",
           editor: "AI post editing",
+          delivery: "Edited asset delivery",
+          launch: "Client launch room",
           search: "AI intelligence cockpit",
           marketing: "Marketing studio",
           agents: "Agent orchestration",
@@ -5011,6 +5110,12 @@
           const approval = selectedEditingApproval(entry);
           const delivery = selectedDeliveryItem(entry);
           $("inspector").innerHTML = `<section class="inspector-section"><h3>Selected Edit Asset</h3><div class="summary-row"><span>Status</span><strong>${html(delivery?.delivery_status || approval?.status || asset?.status || "planned")}</strong></div><div class="summary-row"><span>Original</span><strong>${html(asset?.source_exists === false ? "missing" : "protected")}</strong></div><div class="summary-row"><span>Output</span><strong>${html(asset?.paths_contained || delivery?.paths_contained ? "contained" : "pending")}</strong></div><div class="summary-row"><span>Overwrite</span><strong>false</strong></div><div class="summary-row"><span>Receipt</span><strong>${html(delivery?.receipt_id || approval?.approval_receipt_id ? "recorded" : "required")}</strong></div></section><section class="inspector-section"><h3>Delivery</h3><div class="summary-row"><span>Final</span><strong>${html(delivery?.final_render_path || asset?.final_render_path || "pending")}</strong></div><div class="summary-row"><span>Edited Pack</span><strong>${html(delivery?.edited_social_pack_path || "pending")}</strong></div><div class="summary-row"><span>Client Note</span><strong>${html((state.editingDeliveryNotes?.notes || []).find((note) => note.asset_id === delivery?.asset_id)?.status || "none")}</strong></div></section><section class="inspector-section"><h3>Next Action</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-editing-delivery-room">Build Delivery</button><button class="btn" data-desktop-action="package-edited-assets-dry">Package Dry Run</button><button class="btn" data-desktop-action="verify-edited-delivery-package">Verify</button><button class="btn" data-desktop-action="open-edited-delivery-folder">Open Delivery</button></div></section>`;
+        } else if (mode === "delivery") {
+          const delivery = selectedDeliveryItem(entry) || approvedDeliveryItems()[0] || {};
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Delivery Item</h3><div class="summary-row"><span>Status</span><strong>${html(delivery.delivery_status || "pending")}</strong></div><div class="summary-row"><span>Receipt</span><strong>${html(delivery.receipt_id ? "recorded" : "required")}</strong></div><div class="summary-row"><span>Originals</span><strong>excluded</strong></div><div class="summary-row"><span>Contained</span><strong>${html(delivery.paths_contained === true ? "yes" : "pending")}</strong></div></section><section class="inspector-section"><h3>Next Action</h3><div class="toolbar"><button class="btn red" data-desktop-action="package-edited-assets-dry">Package Dry Run</button><button class="btn" data-desktop-action="verify-edited-delivery-package">Verify</button><button class="btn" data-desktop-action="open-edited-delivery-folder">Open Delivery</button></div></section>`;
+        } else if (mode === "launch") {
+          const readiness = state.clientLaunchReadiness || {};
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Launch Readiness</h3><div class="summary-row"><span>Status</span><strong>${html(readiness.status || state.clientDeliveryManifest?.status || "pending")}</strong></div><div class="summary-row"><span>Ready</span><strong>${html(readiness.ready_count ?? 0)}</strong></div><div class="summary-row"><span>Needs Attention</span><strong>${html(readiness.needs_attention_count ?? 0)}</strong></div><div class="summary-row"><span>Missing</span><strong>${html(readiness.missing_count ?? 0)}</strong></div></section><section class="inspector-section"><h3>Client Copy</h3><div class="copy">HigherKey prepares local assets and packages. Manual upload remains available. Live posting requires official account connection and approval.</div></section><section class="inspector-section"><h3>Controls</h3><div class="toolbar"><button class="btn red" data-desktop-action="run-launch-audit">Run Launch Audit</button><button class="btn" data-desktop-action="run-client-rehearsal">Run Rehearsal</button><button class="btn" data-desktop-action="build-client-delivery-manifest">Build Handoff</button></div></section>`;
         } else if (mode === "search") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section>${schoolCompactHtml(entry)}<section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div>${schoolControlsHtml()}</section>`;
         } else if (mode === "marketing") {
@@ -5828,6 +5933,57 @@
         return setNotice(result?.code === 0 ? "Delivery note recorded locally. No media was changed." : "Delivery note was not recorded.");
       }
 
+      async function buildClientDeliveryManifest() {
+        if (!window.higherkey?.buildClientDeliveryManifest) {
+          return setNotice("Static mode: run python3 scripts/build_client_delivery_manifest.py --json.");
+        }
+        setNotice("Building client delivery manifest...");
+        const result = await window.higherkey.buildClientDeliveryManifest();
+        const stateResult = await window.higherkey.getClientDeliveryManifest?.().catch(() => null);
+        if (stateResult?.manifest) {
+          state.clientDeliveryManifest = stateResult.manifest;
+          state.clientLaunchReadiness = stateResult.readiness;
+          state.clientDeliveryChecklist = stateResult.checklist;
+          state.clientHandoffStatus = stateResult.handoffStatus;
+          state.clientSupportStatus = stateResult.supportStatus;
+        }
+        await refreshLiveData();
+        state.mode = "launch";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Client delivery manifest updated." : "Client delivery manifest needs attention.");
+      }
+
+      async function runLaunchAudit() {
+        if (!window.higherkey?.runLaunchAudit) {
+          return setNotice("Static mode: run python3 scripts/run_release_candidate_audit.py --json.");
+        }
+        setNotice("Running launch audit...");
+        const result = await window.higherkey.runLaunchAudit();
+        await buildClientDeliveryManifest();
+        return setNotice(result?.code === 0 ? "Launch audit complete. Client delivery manifest refreshed." : "Launch audit needs attention.");
+      }
+
+      async function runClientRehearsal() {
+        if (!window.higherkey?.runClientRehearsal) {
+          return setNotice("Static mode: run python3 scripts/run_client_rehearsal.py --json.");
+        }
+        setNotice("Running client rehearsal...");
+        const result = await window.higherkey.runClientRehearsal();
+        await buildClientDeliveryManifest();
+        return setNotice(result?.code === 0 ? "Client rehearsal complete. No live social calls are made." : "Client rehearsal needs attention.");
+      }
+
+      async function packageClientHandoff() {
+        if (!window.higherkey?.packageClientHandoff) {
+          return setNotice("Static mode: run python3 scripts/package_client_handoff.py --dry-run.");
+        }
+        setNotice("Building client handoff package...");
+        const result = await window.higherkey.packageClientHandoff();
+        await buildClientDeliveryManifest();
+        return setNotice(result?.code === 0 ? "Client handoff package built. Private media and tokens are excluded by default." : "Client handoff package needs attention.");
+      }
+
       async function saveOrSchedulePost(button, schedule = false) {
         const payload = activeComposerPayload(button);
         if (!window.higherkey?.scheduleSocialPost) {
@@ -6285,6 +6441,8 @@
             if (action === "go-social") { state.mode = "social"; persistWorkspace(); return render(); }
             if (action === "go-marketing") { state.mode = "marketing"; persistWorkspace(); return render(); }
             if (action === "go-scheduler") { state.mode = "scheduler"; persistWorkspace(); return render(); }
+            if (action === "go-delivery") { state.mode = "delivery"; persistWorkspace(); return render(); }
+            if (action === "go-launch") { state.mode = "launch"; persistWorkspace(); return render(); }
             if (action === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); return render(); }
             if (action === "go-agents") { state.mode = "agents"; persistWorkspace(); return render(); }
             if (action === "go-analytics") { state.mode = "analytics"; persistWorkspace(); return render(); }
@@ -6338,6 +6496,10 @@
             if (action === "package-edited-assets") return packageEditedAssets(true);
             if (action === "verify-edited-delivery-package") return verifyEditedDeliveryPackage();
             if (action === "record-editing-delivery-note") return recordEditingDeliveryNote();
+            if (action === "build-client-delivery-manifest") return buildClientDeliveryManifest();
+            if (action === "run-launch-audit") return runLaunchAudit();
+            if (action === "run-client-rehearsal") return runClientRehearsal();
+            if (action === "build-client-handoff") return packageClientHandoff();
             if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
@@ -6452,6 +6614,18 @@
               if (window.higherkey.openEditedDeliveryFolder) await window.higherkey.openEditedDeliveryFolder();
               return setNotice("Edited delivery folder opened. Original source media is excluded by default.");
             }
+            if (action === "open-client-delivery-folder") {
+              if (window.higherkey.openClientDeliveryFolder) await window.higherkey.openClientDeliveryFolder();
+              return setNotice("Client delivery folder opened.");
+            }
+            if (action === "open-client-handoff-folder") {
+              if (window.higherkey.openClientHandoffFolder) await window.higherkey.openClientHandoffFolder();
+              return setNotice("Client handoff folder opened.");
+            }
+            if (action === "open-dmg-folder") {
+              if (window.higherkey.openDmgFolder) await window.higherkey.openDmgFolder();
+              return setNotice("DMG folder opened.");
+            }
             if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
             if (action === "first-run-setup") await window.higherkey.runFirstRunSetup();
             if (action === "start-watcher") await window.higherkey.startWatcher();
@@ -6534,6 +6708,13 @@
           state.editingDeliveryChecklist = await optionalJson(PATHS.editingDeliveryChecklist, null);
           state.editingDeliveryNotes = await optionalJson(PATHS.editingDeliveryNotes, null);
           state.editedDeliveryPackageVerification = await optionalJson(PATHS.editedDeliveryPackageVerification, null);
+          state.clientDeliveryManifest = await optionalJson(PATHS.clientDeliveryManifest, null);
+          state.clientLaunchReadiness = await optionalJson(PATHS.clientLaunchReadiness, null);
+          state.clientDeliveryChecklist = await optionalJson(PATHS.clientDeliveryChecklist, null);
+          state.clientHandoffStatus = await optionalJson(PATHS.clientHandoffStatus, null);
+          state.clientSupportStatus = await optionalJson(PATHS.clientSupportStatus, null);
+          state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, null);
+          state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, null);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, null);
@@ -6671,6 +6852,13 @@
           state.editingDeliveryChecklist = await optionalJson(PATHS.editingDeliveryChecklist, state.editingDeliveryChecklist);
           state.editingDeliveryNotes = await optionalJson(PATHS.editingDeliveryNotes, state.editingDeliveryNotes);
           state.editedDeliveryPackageVerification = await optionalJson(PATHS.editedDeliveryPackageVerification, state.editedDeliveryPackageVerification);
+          state.clientDeliveryManifest = await optionalJson(PATHS.clientDeliveryManifest, state.clientDeliveryManifest);
+          state.clientLaunchReadiness = await optionalJson(PATHS.clientLaunchReadiness, state.clientLaunchReadiness);
+          state.clientDeliveryChecklist = await optionalJson(PATHS.clientDeliveryChecklist, state.clientDeliveryChecklist);
+          state.clientHandoffStatus = await optionalJson(PATHS.clientHandoffStatus, state.clientHandoffStatus);
+          state.clientSupportStatus = await optionalJson(PATHS.clientSupportStatus, state.clientSupportStatus);
+          state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, state.releaseCandidateAudit);
+          state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, state.clientRehearsalReport);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, state.audienceProfile);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, state.marketAttackPlan);

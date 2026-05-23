@@ -32,10 +32,16 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
     output = output.resolve()
 
     files = {
+        "CLIENT_QUICK_START.md": root / "CLIENT_QUICK_START.md",
         "CLIENT_HANDOFF_GUIDE.md": root / "CLIENT_HANDOFF_GUIDE.md",
+        "TRIAL_LIMITATIONS.md": root / "TRIAL_LIMITATIONS.md",
+        "TRIAL_DELIVERY_CHECKLIST.md": root / "TRIAL_DELIVERY_CHECKLIST.md",
+        "CLIENT_TRIAL_QA_SUMMARY.md": root / "CLIENT_TRIAL_QA_SUMMARY.md",
         "BETA_READINESS_CHECKLIST.md": root / "BETA_READINESS_CHECKLIST.md",
         "DEMO_CHECKLIST.md": root / "DEMO_CHECKLIST.md",
         "RELEASE_NOTES.md": root / "RELEASE_NOTES.md",
+        "CLIENT_DELIVERY_README.md": root / "out" / "client_delivery" / "CLIENT_DELIVERY_README.md",
+        "CLIENT_DELIVERY_CHECKLIST.md": root / "out" / "client_delivery" / "CLIENT_DELIVERY_CHECKLIST.md",
     }
     app_info = {
         "product": "HigherKey Operator OS",
@@ -60,9 +66,10 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "3. Click Import Footage.",
         "4. Click Import & Process or Process Media.",
         "5. Review clips and export social packs.",
-        "6. Use Command, Marketing, Creative Direction, and Autopilot dry-run for planning.",
-        "7. Upload prepared files manually.",
-        "No cloud APIs, social posting APIs, or live Instagram APIs are configured.",
+        "6. Use Editor, Editing Approval, and Edited Delivery Room when edited assets are needed.",
+        "7. Use Scheduler and official connector checks only when configured.",
+        "8. Upload prepared files manually unless official live posting gates are explicitly connected and approved.",
+        "No cloud editing APIs, scraping, password login, or unauthorized social posting APIs are configured.",
         "",
     ])
     support_note = "\n".join([
@@ -72,6 +79,8 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "python3 scripts/create_issue_report.py",
         "",
         "The support package excludes original footage, generated media, runtime DB files, and local tokens by default.",
+        "Client handoff excludes content_inbox, clips, captions, logs, runtime DB files, local connector config, live publish policy, tokens, secrets, and credentials.",
+        "Unsigned local DMGs may require macOS approval before opening.",
         "Feedback can be captured locally with:",
         "python3 scripts/collect_client_feedback.py",
         "",

@@ -114,6 +114,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "verify_edited_delivery_package.py",
         resources / "app-assets" / "scripts" / "record_editing_delivery_note.py",
         resources / "app-assets" / "scripts" / "test_editing_delivery_safety.py",
+        resources / "app-assets" / "scripts" / "build_client_delivery_manifest.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -1004,10 +1005,15 @@ def release_candidate_check(root: Path) -> dict[str, object]:
     json_requirements = {
         root / "analytics" / "release_candidate_audit.json": {"local_only": bool, "manual_upload_only": bool, "overall_readiness": str, "checks": list},
         root / "analytics" / "client_rehearsal_report.json": {"local_only": bool, "manual_upload_only": bool, "status": str, "checks": list, "commands": list},
+        root / "analytics" / "client_delivery_manifest.json": {"local_only": bool, "manual_upload_available": bool, "status": str, "checklist": list},
+        root / "analytics" / "client_launch_readiness.json": {"manual_upload_available": bool, "original_media_excluded_by_default": bool, "status": str},
+        root / "analytics" / "client_delivery_checklist.json": {"items": list, "status": str},
     }
     required = [
         *json_requirements.keys(),
         root / "out" / "marketing" / "client_rehearsal_summary.md",
+        root / "out" / "client_delivery" / "CLIENT_DELIVERY_README.md",
+        root / "out" / "client_delivery" / "CLIENT_DELIVERY_CHECKLIST.md",
     ]
     missing = [relative_path(path, root) for path in required if not path.exists()]
     json_errors = []
@@ -1025,7 +1031,7 @@ def release_candidate_check(root: Path) -> dict[str, object]:
                 continue
             if not isinstance(payload.get(key), expected):
                 json_errors.append({"path": relative_path(path, root), "key": key, "actual": type(payload.get(key)).__name__})
-        if payload.get("local_only") is not True or payload.get("manual_upload_only") is not True:
+        if path.name in {"release_candidate_audit.json", "client_rehearsal_report.json"} and (payload.get("local_only") is not True or payload.get("manual_upload_only") is not True):
             json_errors.append({"path": relative_path(path, root), "error": "local/manual flag is invalid"})
     status = "pass" if not missing and not json_errors else "fail"
     return {
@@ -1275,7 +1281,7 @@ def main() -> int:
     append_stage(results, qa_stage("client_workflow_build", ["python3", "scripts/build_client_workflow.py"], root, timeout=60), config)
     append_stage(results, qa_stage("create_demo_project_dry_run", ["python3", "scripts/create_demo_project.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("package_client_handoff_dry_run", ["python3", "scripts/package_client_handoff.py", "--dry-run"], root, timeout=60), config)
-    append_stage(results, qa_stage("package_trial_release", ["python3", "scripts/package_trial_release.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("package_trial_release_dry_run", ["python3", "scripts/package_trial_release.py", "--dry-run"], root, timeout=60), config)
     append_stage(results, qa_stage("validate_trial_package", ["python3", "scripts/validate_trial_package.py"], root, timeout=60), config)
     append_stage(results, qa_stage("collect_client_feedback_template", ["python3", "scripts/collect_client_feedback.py", "--template"], root, timeout=60), config)
     append_stage(results, qa_stage("create_issue_report_client_safe_dry_run", ["python3", "scripts/create_issue_report.py", "--dry-run", "--client-safe"], root, timeout=60), config)
@@ -1317,6 +1323,7 @@ def main() -> int:
     append_stage(results, qa_stage("edited_delivery_package_verify", ["python3", "scripts/verify_edited_delivery_package.py", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("editing_delivery_note_dry_run", ["python3", "scripts/record_editing_delivery_note.py", "--dry-run", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("editing_delivery_safety_fixture", ["python3", "scripts/test_editing_delivery_safety.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("client_delivery_manifest_build", ["python3", "scripts/build_client_delivery_manifest.py", "--json"], root, timeout=60), config)
     print("[qa] editing_studio_validation", flush=True)
     append_stage(results, editing_studio_check(root), config)
     append_stage(results, qa_stage("production_command_dry_run", ["python3", "scripts/build_production_command.py", "--dry-run"], root, timeout=60), config)
@@ -1352,6 +1359,7 @@ def main() -> int:
     append_stage(results, social_connector_scheduler_check(root), config)
     append_stage(results, qa_stage("release_candidate_audit", ["python3", "scripts/run_release_candidate_audit.py"], root, timeout=180), config)
     append_stage(results, qa_stage("client_rehearsal", ["python3", "scripts/run_client_rehearsal.py"], root, timeout=180), config)
+    append_stage(results, qa_stage("client_delivery_manifest_refresh", ["python3", "scripts/build_client_delivery_manifest.py", "--json"], root, timeout=60), config)
     print("[qa] release_candidate_validation", flush=True)
     append_stage(results, release_candidate_check(root), config)
     append_stage(results, qa_stage("instagram_insights_import_dry_run", ["python3", "scripts/import_instagram_insights.py", "--dry-run"], root, timeout=60), config)

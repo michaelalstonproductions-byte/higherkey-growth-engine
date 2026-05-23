@@ -50,6 +50,7 @@ REQUIRED_MODULES = [
     "growth_engine/editing_manifest.py",
     "growth_engine/editing_approval.py",
     "growth_engine/editing_delivery.py",
+    "growth_engine/client_delivery.py",
     "growth_engine/social_platforms/instagram.py",
     "growth_engine/social_platforms/tiktok.py",
 ]
@@ -96,6 +97,7 @@ REQUIRED_SCRIPTS = [
     "scripts/verify_edited_delivery_package.py",
     "scripts/record_editing_delivery_note.py",
     "scripts/test_editing_delivery_safety.py",
+    "scripts/build_client_delivery_manifest.py",
 ]
 REQUIRED_CONFIGS = [
     "config/autopilot_policy.json",
@@ -358,6 +360,11 @@ def main() -> int:
     version = version_alignment(root)
     local_builds = build_local_outputs(root)
     tracked_runtime = tracked_runtime_outputs(root)
+    client_delivery_manifest = load_json(root / "analytics" / "client_delivery_manifest.json", {})
+    client_launch_readiness = load_json(root / "analytics" / "client_launch_readiness.json", {})
+    client_delivery_checklist = load_json(root / "analytics" / "client_delivery_checklist.json", {})
+    social_local_config_tracked = run(["git", "ls-files", "config/social_connectors.json", "config/.social_token_vault.local", "config/live_publish_policy.json"], root, timeout=30)
+    tracked_local_configs = [line for line in str(social_local_config_tracked.get("stdout_tail", "")).splitlines() if line.strip()]
     docs_text = "\n".join(
         (root / name).read_text(encoding="utf-8") if (root / name).exists() else ""
         for name in ["README.md", "CLIENT_QUICK_START.md", "CLIENT_HANDOFF_GUIDE.md", "TRIAL_DELIVERY_CHECKLIST.md", "CLIENT_TRIAL_QA_SUMMARY.md"]
@@ -379,7 +386,12 @@ def main() -> int:
         check("client_quick_start", "pass" if (root / "CLIENT_QUICK_START.md").exists() else "fail", "Client quick start exists."),
         check("readme_release_notes", "pass" if "release candidate" in docs_text else "fail", "README includes release candidate notes."),
         check("support_workflow", "pass" if (root / "scripts" / "create_issue_report.py").exists() else "fail", "Support package script exists."),
+        check("client_handoff_workflow", "pass" if (root / "scripts" / "package_client_handoff.py").exists() else "fail", "Client handoff package script exists."),
         check("trial_workflow", "pass" if (root / "scripts" / "package_trial_release.py").exists() else "fail", "Trial package script exists."),
+        check("edited_delivery_verifier", "pass" if (root / "scripts" / "verify_edited_delivery_package.py").exists() else "fail", "Edited delivery verifier exists."),
+        check("client_delivery_manifest", "pass" if client_delivery_manifest and client_launch_readiness and client_delivery_checklist else "needs_attention", "Client delivery manifest, launch readiness, and checklist exist.", manifest_status=client_delivery_manifest.get("status"), readiness_status=client_launch_readiness.get("status")),
+        check("social_connector_config_example_only", "pass" if (root / "config" / "social_connectors.example.json").exists() and not (root / "config" / "social_connectors.json").exists() and not tracked_local_configs else "fail", "Only example social connector config is tracked.", tracked_local_configs=tracked_local_configs),
+        check("edited_delivery_original_exclusion", "pass" if client_launch_readiness.get("original_media_excluded_by_default", True) is True else "fail", "Edited delivery excludes source media by default."),
         check("local_command_outputs", "pass" if local_builds["ok"] else "fail", "Production command and Autopilot console build locally.", results=local_builds["results"]),
     ]
     failures = [item for item in checks if item["status"] == "fail"]
