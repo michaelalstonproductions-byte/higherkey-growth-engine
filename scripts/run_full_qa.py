@@ -69,6 +69,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "post_editing_intelligence.py",
         resources / "app-assets" / "growth_engine" / "editing_manifest.py",
         resources / "app-assets" / "growth_engine" / "editing_approval.py",
+        resources / "app-assets" / "growth_engine" / "editing_delivery.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_marketing_plan.py",
@@ -108,6 +109,11 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "export_edited_social_assets.py",
         resources / "app-assets" / "scripts" / "test_edited_social_export_safety.py",
         resources / "app-assets" / "scripts" / "test_editing_approval_safety.py",
+        resources / "app-assets" / "scripts" / "build_editing_delivery_room.py",
+        resources / "app-assets" / "scripts" / "package_edited_assets.py",
+        resources / "app-assets" / "scripts" / "verify_edited_delivery_package.py",
+        resources / "app-assets" / "scripts" / "record_editing_delivery_note.py",
+        resources / "app-assets" / "scripts" / "test_editing_delivery_safety.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -211,6 +217,7 @@ def external_api_scan(root: Path) -> dict[str, object]:
             "growth_engine/media_editor.py",
             "growth_engine/post_editing_intelligence.py",
             "growth_engine/editing_manifest.py",
+            "growth_engine/editing_delivery.py",
             "scripts/scan_post_editing_intelligence.py",
             "scripts/build_edit_plan.py",
             "scripts/render_edit_preview.py",
@@ -224,6 +231,11 @@ def external_api_scan(root: Path) -> dict[str, object]:
             "scripts/export_edited_social_assets.py",
             "scripts/test_edited_social_export_safety.py",
             "scripts/test_editing_approval_safety.py",
+            "scripts/build_editing_delivery_room.py",
+            "scripts/package_edited_assets.py",
+            "scripts/verify_edited_delivery_package.py",
+            "scripts/record_editing_delivery_note.py",
+            "scripts/test_editing_delivery_safety.py",
             "README.md",
         } and (
             "local" in lower
@@ -597,6 +609,12 @@ def editing_studio_check(root: Path) -> dict[str, object]:
         root / "analytics" / "client_editing_approval_state.json": {"summary": dict, "items": list},
         root / "analytics" / "editing_approval_safety_report.json": {"failures": list, "original_media_protected": bool},
         root / "analytics" / "edited_social_export_safety_report.json": {"failures": list, "original_media_protected": bool},
+        root / "analytics" / "editing_delivery_room.json": {"items": list, "original_media_protected": bool},
+        root / "analytics" / "editing_delivery_manifest.json": {"items": list, "original_media_protected": bool},
+        root / "analytics" / "client_editing_delivery_state.json": {"summary": dict, "items": list},
+        root / "analytics" / "editing_delivery_checklist.json": {"checks": list},
+        root / "analytics" / "edited_delivery_package_verification.json": {"failures": list, "original_media_included": bool},
+        root / "analytics" / "editing_delivery_safety_report.json": {"failures": list, "original_media_protected": bool},
     }
     missing = [relative_path(path, root) for path in required if not path.exists()]
     json_errors = []
@@ -622,6 +640,12 @@ def editing_studio_check(root: Path) -> dict[str, object]:
         if path.name == "edited_social_export_safety_report.json" and payload.get("status") != "pass":
             protection_failures.append(relative_path(path, root))
         if path.name == "editing_approval_safety_report.json" and payload.get("status") != "pass":
+            protection_failures.append(relative_path(path, root))
+        if path.name == "editing_delivery_safety_report.json" and payload.get("status") != "pass":
+            protection_failures.append(relative_path(path, root))
+        if path.name == "edited_delivery_package_verification.json" and payload.get("status") != "pass":
+            protection_failures.append(relative_path(path, root))
+        if path.name in {"editing_delivery_room.json", "editing_delivery_manifest.json", "client_editing_delivery_state.json", "edited_delivery_package_verification.json"} and payload.get("original_media_included") is True:
             protection_failures.append(relative_path(path, root))
         if path.name == "editing_preview_manifest.json":
             for asset in payload.get("assets", []):
@@ -1288,6 +1312,11 @@ def main() -> int:
     append_stage(results, qa_stage("edited_social_export_dry_run", ["python3", "scripts/export_edited_social_assets.py", "--dry-run", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("edited_social_export_safety_fixture", ["python3", "scripts/test_edited_social_export_safety.py"], root, timeout=60), config)
     append_stage(results, qa_stage("editing_approval_safety_fixture", ["python3", "scripts/test_editing_approval_safety.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("editing_delivery_room_build", ["python3", "scripts/build_editing_delivery_room.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("edited_asset_package_dry_run", ["python3", "scripts/package_edited_assets.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("edited_delivery_package_verify", ["python3", "scripts/verify_edited_delivery_package.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("editing_delivery_note_dry_run", ["python3", "scripts/record_editing_delivery_note.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("editing_delivery_safety_fixture", ["python3", "scripts/test_editing_delivery_safety.py"], root, timeout=60), config)
     print("[qa] editing_studio_validation", flush=True)
     append_stage(results, editing_studio_check(root), config)
     append_stage(results, qa_stage("production_command_dry_run", ["python3", "scripts/build_production_command.py", "--dry-run"], root, timeout=60), config)

@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "6.8.0",
-  "release_version": "V6.8",
+  "app_version": "6.9.0",
+  "release_version": "V6.9",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -191,6 +191,12 @@
       "to": "V6.8",
       "safe": true,
       "notes": "Add AI Editing Approval Console, before/after review queue, approval and rejection receipts, edited social export approval gates, and original protection proof while preserving non-destructive editing and source media protection."
+    },
+    {
+      "from": "V6.8",
+      "to": "V6.9",
+      "safe": true,
+      "notes": "Add Edited Asset Delivery Room, client review gallery, approval-gated delivery packages, client notes, delivery checklist, and original media exclusion proof while preserving editing approval gates and source media protection."
     }
   ],
   "required_runtime_files": [
@@ -298,7 +304,12 @@
     "scripts/reject_edited_asset.py",
     "scripts/export_edited_social_assets.py",
     "scripts/test_edited_social_export_safety.py",
-    "scripts/test_editing_approval_safety.py"
+    "scripts/test_editing_approval_safety.py",
+    "scripts/build_editing_delivery_room.py",
+    "scripts/package_edited_assets.py",
+    "scripts/verify_edited_delivery_package.py",
+    "scripts/record_editing_delivery_note.py",
+    "scripts/test_editing_delivery_safety.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"

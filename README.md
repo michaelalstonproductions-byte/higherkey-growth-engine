@@ -2,6 +2,22 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V6.9 Edited Asset Delivery Room
+
+V6.9 adds an Edited Asset Delivery Room for client review and local delivery packages. HigherKey builds a client review gallery, delivery queue, client notes, delivery checklist, and delivery manifest for approved edited assets while keeping original source media excluded by default.
+
+Useful local checks:
+
+```bash
+python3 scripts/build_editing_delivery_room.py
+python3 scripts/package_edited_assets.py --dry-run
+python3 scripts/verify_edited_delivery_package.py
+python3 scripts/record_editing_delivery_note.py --dry-run
+python3 scripts/test_editing_delivery_safety.py
+```
+
+Delivery packages only include approved edited outputs and required manifest/proof files. Rejected, needs-revision, and unapproved assets are not packaged, previous delivery packages are not overwritten silently, source overwrite remains blocked, and no destructive cleanup is performed.
+
 ## V6.8 AI Editing Approval Console
 
 V6.8 adds an approval console for edited assets. HigherKey now builds a local edited asset approval queue, records approval receipts, tracks rejections/needs-revision states, shows before/after review state, and requires an explicit `edited_social_export` receipt before approved edited assets can be exported into local social packs.

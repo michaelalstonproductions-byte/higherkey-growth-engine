@@ -41,6 +41,9 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "build_before_after_compare": ["python3", "scripts/build_before_after_compare.py"],
     "build_editing_approval_queue": ["python3", "scripts/build_editing_approval_queue.py"],
     "export_edited_social_assets": ["python3", "scripts/export_edited_social_assets.py"],
+    "build_editing_delivery_room": ["python3", "scripts/build_editing_delivery_room.py"],
+    "verify_edited_delivery_package": ["python3", "scripts/verify_edited_delivery_package.py"],
+    "package_edited_assets": ["python3", "scripts/package_edited_assets.py"],
 }
 
 POLICY_PATH = "config/autopilot_policy.json"
@@ -206,6 +209,9 @@ def _title_to_safe_key(title: str, category: str) -> str | None:
         ("before after", "build_before_after_compare"),
         ("editing approval queue", "build_editing_approval_queue"),
         ("edited social export", "export_edited_social_assets"),
+        ("delivery room", "build_editing_delivery_room"),
+        ("delivery package verification", "verify_edited_delivery_package"),
+        ("package edited assets", "package_edited_assets"),
         ("draft", "build_post_composer_drafts"),
         ("dry-run publisher", "run_social_publisher"),
         ("dry run publisher", "run_social_publisher"),
@@ -280,6 +286,9 @@ def _default_safe_cards() -> list[dict[str, Any]]:
         ("build_before_after_compare", "Build Before/After Compare", "build_before_after_compare"),
         ("build_editing_approval_queue", "Build Editing Approval Queue", "build_editing_approval_queue"),
         ("export_edited_social_assets", "Dry Run Edited Social Export", "export_edited_social_assets"),
+        ("build_editing_delivery_room", "Build Edited Asset Delivery Room", "build_editing_delivery_room"),
+        ("verify_edited_delivery_package", "Verify Edited Delivery Package", "verify_edited_delivery_package"),
+        ("package_edited_assets_dry_run", "Dry Run Edited Asset Package", "package_edited_assets"),
         ("build_post_composer_drafts", "Build Post Composer Drafts", "build_post_composer_drafts"),
         ("run_social_publisher_dry_run", "Run Social Publisher Dry Run", "run_social_publisher"),
     ]

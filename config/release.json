@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally by default. AI Editing Approval Console records local approval receipts before final edited assets are exported.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. Edited Asset Delivery Room packages approved edited outputs while excluding original source media by default.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "AI Editing Approval Console",
-  "version": "V6.8"
+  "release_name": "Edited Asset Delivery Room",
+  "version": "V6.9"
 }

@@ -2084,6 +2084,12 @@
         editingApprovalReceipts: "../analytics/editing_approval_receipts.json",
         editingRejectionLog: "../analytics/editing_rejection_log.json",
         clientEditingApprovalState: "../analytics/client_editing_approval_state.json",
+        editingDeliveryRoom: "../analytics/editing_delivery_room.json",
+        editingDeliveryManifest: "../analytics/editing_delivery_manifest.json",
+        clientEditingDeliveryState: "../analytics/client_editing_delivery_state.json",
+        editingDeliveryChecklist: "../analytics/editing_delivery_checklist.json",
+        editingDeliveryNotes: "../analytics/editing_delivery_notes.json",
+        editedDeliveryPackageVerification: "../analytics/edited_delivery_package_verification.json",
         marketingBrief: "../analytics/marketing_brief.json",
         audienceProfile: "../analytics/audience_profile.json",
         marketAttackPlan: "../analytics/market_attack_plan.json",
@@ -2211,6 +2217,12 @@
         editingApprovalReceipts: null,
         editingRejectionLog: null,
         clientEditingApprovalState: null,
+        editingDeliveryRoom: null,
+        editingDeliveryManifest: null,
+        clientEditingDeliveryState: null,
+        editingDeliveryChecklist: null,
+        editingDeliveryNotes: null,
+        editedDeliveryPackageVerification: null,
         marketingBrief: null,
         audienceProfile: null,
         marketAttackPlan: null,
@@ -3213,6 +3225,11 @@
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Edited Asset Manifest</div></div>${editingManifestList(["final_rendered", "export_ready"])}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Final Render Approval</div></div><div class="summary-row"><span>Selected</span><strong>${html(selectedAsset?.approval_status || "required")}</strong></div><div class="summary-row"><span>Status</span><strong>${html(selectedAsset?.status || "planned")}</strong></div><div class="toolbar"><button class="btn" data-desktop-action="approve-edited-asset" data-scope="final_render">Approve Final Render</button><button class="btn" data-desktop-action="reject-edited-asset">Reject Edited Asset</button><button class="btn" data-desktop-action="mark-edited-needs-revision">Mark Needs Revision</button></div><p class="muted">Final render approval is separate from edited social export approval.</p></section>
               <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Edited Social Packs</div><div>Requires edited social export receipt.</div></div></div><div class="toolbar"><button class="btn" data-desktop-action="approve-edited-export">Approve Edited Export</button><button class="btn" data-desktop-action="export-edited-pack-dry">Export Edited Packs Dry Run</button><button class="btn red" data-desktop-action="export-edited-pack">Export Approved Edited Packs</button><button class="btn" data-desktop-action="open-edited-social-packs">Open Edited Social Packs</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Delivery Room</div><div>Only approved edited assets are packaged.</div></div><button class="btn" data-desktop-action="build-editing-delivery-room">Build Delivery Room</button></div>${editingDeliveryQueueHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Review Gallery</div><button class="btn" data-desktop-action="build-editing-delivery-room">Build Gallery</button></div>${editingDeliveryGalleryHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Delivery Package</div><div>Original media is protected and not included by default.</div></div></div><div class="toolbar"><button class="btn" data-desktop-action="package-edited-assets-dry">Package Dry Run</button><button class="btn red" data-desktop-action="package-edited-assets">Package Approved Edited Assets</button><button class="btn" data-desktop-action="verify-edited-delivery-package">Verify Delivery Package</button><button class="btn" data-desktop-action="open-edited-delivery-folder">Open Delivery Folder</button></div>${deliveryPackageStatusHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Client Notes</div><button class="btn" data-desktop-action="record-editing-delivery-note">Record Client Note</button></div>${deliveryNotesHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Safety Proof</div><button class="btn" data-desktop-action="verify-edited-delivery-package">Verify Package</button></div>${deliverySafetyProofHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Original Protection Proof</div><button class="btn" data-desktop-action="verify-editing-safety">Verify Editing Safety</button></div>${protectionProofHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Thumbnail Concepts</div></div>${thumbnailConceptsHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Platform Versions</div></div>${platformVersionHtml(plan)}</section>
@@ -4171,6 +4188,51 @@
         if (!items.length) return `<div class="empty-state"><h2>No approval queue yet</h2><p>Build the queue after creating previews or final renders.</p><button class="btn red" data-desktop-action="build-editing-approval-queue">Build Approval Queue</button></div>`;
         return items.slice(0, 8).map((item) => `<div class="summary-row"><span>${html(item.clip_id || item.asset_id)}</span><strong>${html(item.status || "needs_review")}</strong></div><p class="muted">${html(item.final_render_path || item.preview_path || "Preview or final render pending.")}</p>`).join("");
       }
+      function editingDeliveryItems() {
+        const items = state.editingDeliveryRoom?.items || state.clientEditingDeliveryState?.items || [];
+        return Array.isArray(items) ? items : [];
+      }
+      function selectedDeliveryItem(entry) {
+        const asset = selectedEditingAsset(entry);
+        const clipId = entry?.clip_id || entry?.id || "";
+        return editingDeliveryItems().find((item) => asset?.asset_id && item.asset_id === asset.asset_id)
+          || editingDeliveryItems().find((item) => String(item.clip_id || "") === String(clipId))
+          || editingDeliveryItems()[0]
+          || null;
+      }
+      function editingDeliveryQueueHtml() {
+        const summary = state.clientEditingDeliveryState?.summary || {};
+        const items = editingDeliveryItems();
+        const cards = [
+          ["Ready for Review", summary.ready_for_review ?? items.filter((item) => item.delivery_status === "ready_for_review").length, "Compare before/after"],
+          ["Approved for Delivery", summary.approved_for_delivery ?? items.filter((item) => item.delivery_status === "approved_for_delivery").length, "Receipt gated"],
+          ["Needs Revision", summary.needs_revision ?? items.filter((item) => item.delivery_status === "needs_revision").length, "Not packaged"],
+          ["Packaged", summary.packaged ?? 0, "Local delivery"],
+          ["Delivered", summary.delivered ?? 0, "Recorded locally"],
+          ["Originals Protected", summary.originals_protected === false ? "check" : "yes", "Sources excluded"]
+        ];
+        const metrics = `<div class="card-grid">${cards.map(([label, value, detail]) => metricPanel(label, value, detail)).join("")}</div>`;
+        const list = items.slice(0, 8).map((item) => `<div class="summary-row"><span>${html(item.title || item.clip_id || item.asset_id)}</span><strong>${html(item.delivery_status || "not_ready")}</strong></div><p class="muted">${html(item.final_render_path || item.preview_path || "Build delivery room after previews or final renders.")}</p>`).join("");
+        return metrics + (list || `<div class="empty-state"><h2>No delivery queue yet</h2><p>Build the delivery room after edited assets are approved.</p><button class="btn red" data-desktop-action="build-editing-delivery-room">Build Delivery Room</button></div>`);
+      }
+      function editingDeliveryGalleryHtml() {
+        const items = editingDeliveryItems().filter((item) => ["ready_for_review", "approved_for_delivery", "packaged", "delivered"].includes(item.delivery_status));
+        return items.slice(0, 6).map((item) => `<div class="summary-row"><span>${html(item.title || item.clip_id || "Edited asset")}</span><strong>${html(item.before_after_status || "pending")}</strong></div><p class="muted">Preview: ${html(item.preview_path || "pending")} · Final: ${html(item.final_render_path || "pending")}</p>`).join("") || `<div class="muted">Build the delivery room to create client review gallery metadata.</div>`;
+      }
+      function deliveryPackageStatusHtml() {
+        const verify = state.editedDeliveryPackageVerification || {};
+        const failures = Array.isArray(verify.failures) ? verify.failures.length : 0;
+        return `<div class="summary-row"><span>Verification</span><strong>${html(verify.status || "pending")}</strong></div><div class="summary-row"><span>Package</span><strong>${html(verify.package_path || "dry-run pending")}</strong></div><div class="summary-row"><span>Failures</span><strong>${html(failures)}</strong></div><p class="muted">Use this folder to review or deliver finished edited posts. Original media is not included by default.</p>`;
+      }
+      function deliveryNotesHtml() {
+        const notes = state.editingDeliveryNotes?.notes || [];
+        return (Array.isArray(notes) ? notes : []).slice(-6).reverse().map((item) => `<div class="summary-row"><span>${html(item.asset_id || "delivery note")}</span><strong>${html(item.status || "noted")}</strong></div><p class="muted">${html(item.note || "Local client note recorded.")}</p>`).join("") || `<div class="muted">Record local approval, rejection, revision, or delivered notes without deleting media.</div>`;
+      }
+      function deliverySafetyProofHtml() {
+        const checklist = state.editingDeliveryChecklist?.checks || [];
+        const checks = (Array.isArray(checklist) ? checklist : []).map((item) => `<span>${html(item.pass ? "✓ " : "Check ")}${html(item.label || "Delivery safety")}</span>`).join("");
+        return `<div class="summary-row"><span>Source media included</span><strong>no</strong></div><div class="summary-row"><span>Overwrite allowed</span><strong>false</strong></div><div class="summary-row"><span>Delivery root</span><strong>out/client_delivery/edited_assets</strong></div><div class="checklist">${checks || "<span>Build delivery room to create delivery proof.</span>"}</div>`;
+      }
       function protectionProofHtml() {
         const report = state.editingSafetyReport || {};
         return `<div class="summary-row"><span>Status</span><strong>${html(report.status || "pending")}</strong></div><div class="summary-row"><span>Checked</span><strong>${html(report.checked_assets ?? 0)}</strong></div><div class="summary-row"><span>Failures</span><strong>${html((report.failures || []).length)}</strong></div><div class="checklist"><span>No source overwrite</span><span>Outputs stay under out/post_editor</span><span>Final/export approval required</span></div>`;
@@ -4935,7 +4997,8 @@
           const plan = latestEditPlan(entry);
           const asset = selectedEditingAsset(entry);
           const approval = selectedEditingApproval(entry);
-          $("inspector").innerHTML = `<section class="inspector-section"><h3>Selected Edit Asset</h3><div class="summary-row"><span>Status</span><strong>${html(approval?.status || asset?.status || "planned")}</strong></div><div class="summary-row"><span>Original</span><strong>${html(asset?.source_exists === false ? "missing" : "protected")}</strong></div><div class="summary-row"><span>Output</span><strong>${html(asset?.paths_contained ? "contained" : "pending")}</strong></div><div class="summary-row"><span>Overwrite</span><strong>false</strong></div><div class="summary-row"><span>Receipt</span><strong>${html(approval?.approval_receipt_id ? "recorded" : "required")}</strong></div></section><section class="inspector-section"><h3>Paths</h3><div class="summary-row"><span>Preview</span><strong>${html(asset?.preview_exists ? "ready" : "pending")}</strong></div><div class="summary-row"><span>Final</span><strong>${html(asset?.final_render_exists ? "rendered" : "pending")}</strong></div><div class="summary-row"><span>Export</span><strong>${html(asset?.status === "export_ready" ? "ready" : "approval required")}</strong></div></section><section class="inspector-section"><h3>Next Action</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-editing-approval-queue">Build Queue</button><button class="btn" data-desktop-action="approve-edited-export">Approve Export</button><button class="btn" data-desktop-action="export-edited-pack-dry">Dry Run</button><button class="btn" data-desktop-action="open-edited-assets">Open Assets</button></div></section>`;
+          const delivery = selectedDeliveryItem(entry);
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Selected Edit Asset</h3><div class="summary-row"><span>Status</span><strong>${html(delivery?.delivery_status || approval?.status || asset?.status || "planned")}</strong></div><div class="summary-row"><span>Original</span><strong>${html(asset?.source_exists === false ? "missing" : "protected")}</strong></div><div class="summary-row"><span>Output</span><strong>${html(asset?.paths_contained || delivery?.paths_contained ? "contained" : "pending")}</strong></div><div class="summary-row"><span>Overwrite</span><strong>false</strong></div><div class="summary-row"><span>Receipt</span><strong>${html(delivery?.receipt_id || approval?.approval_receipt_id ? "recorded" : "required")}</strong></div></section><section class="inspector-section"><h3>Delivery</h3><div class="summary-row"><span>Final</span><strong>${html(delivery?.final_render_path || asset?.final_render_path || "pending")}</strong></div><div class="summary-row"><span>Edited Pack</span><strong>${html(delivery?.edited_social_pack_path || "pending")}</strong></div><div class="summary-row"><span>Client Note</span><strong>${html((state.editingDeliveryNotes?.notes || []).find((note) => note.asset_id === delivery?.asset_id)?.status || "none")}</strong></div></section><section class="inspector-section"><h3>Next Action</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-editing-delivery-room">Build Delivery</button><button class="btn" data-desktop-action="package-edited-assets-dry">Package Dry Run</button><button class="btn" data-desktop-action="verify-edited-delivery-package">Verify</button><button class="btn" data-desktop-action="open-edited-delivery-folder">Open Delivery</button></div></section>`;
         } else if (mode === "search") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section>${schoolCompactHtml(entry)}<section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div>${schoolControlsHtml()}</section>`;
         } else if (mode === "marketing") {
@@ -5693,6 +5756,66 @@
         return setNotice(shouldApprove && result?.code === 0 ? "Edited social packs exported to out/social_exports_edited." : "Edited export stayed in dry-run/approval-required mode.");
       }
 
+      async function buildEditingDeliveryRoom() {
+        if (!window.higherkey?.buildEditingDeliveryRoom) {
+          return setNotice("Static mode: run python3 scripts/build_editing_delivery_room.py --json.");
+        }
+        setNotice("Building edited asset delivery room...");
+        const result = await window.higherkey.buildEditingDeliveryRoom();
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Delivery room updated. Approved assets, review gallery, and protection proof are ready." : "Delivery room needs attention.");
+      }
+
+      async function packageEditedAssets(approve = false) {
+        if (!window.higherkey?.packageEditedAssets) {
+          return setNotice("Static mode: run python3 scripts/package_edited_assets.py --dry-run --json.");
+        }
+        const shouldApprove = approve ? confirm("Package approved edited assets for delivery? Original source media will not be included.") : false;
+        const result = await window.higherkey.packageEditedAssets({
+          approve: shouldApprove,
+          includeFinalRenders: true,
+          includeEditedSocialPacks: true
+        });
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        if (!approve) return setNotice(result?.code === 0 ? "Delivery package dry run complete. Only approved edited assets are eligible." : "Delivery package dry run needs attention.");
+        return setNotice(shouldApprove && result?.code === 0 ? "Approved edited assets packaged locally. Originals were excluded." : "Delivery package stayed in dry-run or approval-required mode.");
+      }
+
+      async function verifyEditedDeliveryPackage() {
+        if (!window.higherkey?.verifyEditedDeliveryPackage) {
+          return setNotice("Static mode: run python3 scripts/verify_edited_delivery_package.py --json.");
+        }
+        const result = await window.higherkey.verifyEditedDeliveryPackage();
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Delivery package verification passed. Original media remains excluded." : "Delivery package verification found an issue.");
+      }
+
+      async function recordEditingDeliveryNote() {
+        const item = selectedDeliveryItem(modeEntry() || activeEntry()) || {};
+        if (!window.higherkey?.recordEditingDeliveryNote) {
+          return setNotice("Static mode: run python3 scripts/record_editing_delivery_note.py --dry-run.");
+        }
+        const status = prompt("Delivery note status", item.delivery_status === "needs_revision" ? "needs_revision" : "approved");
+        if (!status) return setNotice("Delivery note cancelled.");
+        const note = prompt("Client note", "Recorded from HigherKey Delivery Room.");
+        if (note === null) return setNotice("Delivery note cancelled.");
+        const result = await window.higherkey.recordEditingDeliveryNote({ assetId: item.asset_id || "", status, note, write: true });
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Delivery note recorded locally. No media was changed." : "Delivery note was not recorded.");
+      }
+
       async function saveOrSchedulePost(button, schedule = false) {
         const payload = activeComposerPayload(button);
         if (!window.higherkey?.scheduleSocialPost) {
@@ -6198,6 +6321,11 @@
             if (action === "apply-caption-overlay") return setNotice("Caption overlay is included in the non-destructive edit plan. Build or refresh the plan before preview rendering.");
             if (action === "export-edited-pack-dry") return exportEditedPacks(button, false);
             if (action === "export-edited-pack") return exportEditedPacks(button, true);
+            if (action === "build-editing-delivery-room") return buildEditingDeliveryRoom();
+            if (action === "package-edited-assets-dry") return packageEditedAssets(false);
+            if (action === "package-edited-assets") return packageEditedAssets(true);
+            if (action === "verify-edited-delivery-package") return verifyEditedDeliveryPackage();
+            if (action === "record-editing-delivery-note") return recordEditingDeliveryNote();
             if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
@@ -6308,6 +6436,10 @@
               if (window.higherkey.openEditedSocialExportsFolder) await window.higherkey.openEditedSocialExportsFolder();
               return setNotice("Edited social packs folder opened.");
             }
+            if (action === "open-edited-delivery-folder") {
+              if (window.higherkey.openEditedDeliveryFolder) await window.higherkey.openEditedDeliveryFolder();
+              return setNotice("Edited delivery folder opened. Original source media is excluded by default.");
+            }
             if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
             if (action === "first-run-setup") await window.higherkey.runFirstRunSetup();
             if (action === "start-watcher") await window.higherkey.startWatcher();
@@ -6384,6 +6516,12 @@
           state.editingApprovalReceipts = await optionalJson(PATHS.editingApprovalReceipts, null);
           state.editingRejectionLog = await optionalJson(PATHS.editingRejectionLog, null);
           state.clientEditingApprovalState = await optionalJson(PATHS.clientEditingApprovalState, null);
+          state.editingDeliveryRoom = await optionalJson(PATHS.editingDeliveryRoom, null);
+          state.editingDeliveryManifest = await optionalJson(PATHS.editingDeliveryManifest, null);
+          state.clientEditingDeliveryState = await optionalJson(PATHS.clientEditingDeliveryState, null);
+          state.editingDeliveryChecklist = await optionalJson(PATHS.editingDeliveryChecklist, null);
+          state.editingDeliveryNotes = await optionalJson(PATHS.editingDeliveryNotes, null);
+          state.editedDeliveryPackageVerification = await optionalJson(PATHS.editedDeliveryPackageVerification, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, null);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, null);
@@ -6515,6 +6653,12 @@
           state.editingApprovalReceipts = await optionalJson(PATHS.editingApprovalReceipts, state.editingApprovalReceipts);
           state.editingRejectionLog = await optionalJson(PATHS.editingRejectionLog, state.editingRejectionLog);
           state.clientEditingApprovalState = await optionalJson(PATHS.clientEditingApprovalState, state.clientEditingApprovalState);
+          state.editingDeliveryRoom = await optionalJson(PATHS.editingDeliveryRoom, state.editingDeliveryRoom);
+          state.editingDeliveryManifest = await optionalJson(PATHS.editingDeliveryManifest, state.editingDeliveryManifest);
+          state.clientEditingDeliveryState = await optionalJson(PATHS.clientEditingDeliveryState, state.clientEditingDeliveryState);
+          state.editingDeliveryChecklist = await optionalJson(PATHS.editingDeliveryChecklist, state.editingDeliveryChecklist);
+          state.editingDeliveryNotes = await optionalJson(PATHS.editingDeliveryNotes, state.editingDeliveryNotes);
+          state.editedDeliveryPackageVerification = await optionalJson(PATHS.editedDeliveryPackageVerification, state.editedDeliveryPackageVerification);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, state.audienceProfile);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, state.marketAttackPlan);
