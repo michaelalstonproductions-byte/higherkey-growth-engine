@@ -39,6 +39,7 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "build_editing_manifest": ["python3", "scripts/build_editing_manifest.py"],
     "verify_editing_safety": ["python3", "scripts/verify_editing_safety.py"],
     "build_before_after_compare": ["python3", "scripts/build_before_after_compare.py"],
+    "build_editing_approval_queue": ["python3", "scripts/build_editing_approval_queue.py"],
     "export_edited_social_assets": ["python3", "scripts/export_edited_social_assets.py"],
 }
 
@@ -203,6 +204,7 @@ def _title_to_safe_key(title: str, category: str) -> str | None:
         ("editing manifest", "build_editing_manifest"),
         ("editing safety", "verify_editing_safety"),
         ("before after", "build_before_after_compare"),
+        ("editing approval queue", "build_editing_approval_queue"),
         ("edited social export", "export_edited_social_assets"),
         ("draft", "build_post_composer_drafts"),
         ("dry-run publisher", "run_social_publisher"),
@@ -276,6 +278,7 @@ def _default_safe_cards() -> list[dict[str, Any]]:
         ("build_editing_manifest", "Build Editing Manifest", "build_editing_manifest"),
         ("verify_editing_safety", "Verify Editing Safety", "verify_editing_safety"),
         ("build_before_after_compare", "Build Before/After Compare", "build_before_after_compare"),
+        ("build_editing_approval_queue", "Build Editing Approval Queue", "build_editing_approval_queue"),
         ("export_edited_social_assets", "Dry Run Edited Social Export", "export_edited_social_assets"),
         ("build_post_composer_drafts", "Build Post Composer Drafts", "build_post_composer_drafts"),
         ("run_social_publisher_dry_run", "Run Social Publisher Dry Run", "run_social_publisher"),

@@ -102,6 +102,30 @@ def main() -> int:
     save_json_file(analytics / "edit_jobs.json", {"jobs": jobs})
     save_json_file(analytics / "post_composer_drafts.json", {"drafts": []})
 
+    initial_manifest = build_editing_manifest(config)
+    initial_by_id = {asset["plan_id"]: asset for asset in initial_manifest["preview_manifest"]["assets"]}
+    receipts = []
+    for plan_id in ("safe_plan", "platform_traversal", "clip_traversal", "absolute_segments"):
+        asset = initial_by_id[plan_id]
+        receipts.append(
+            {
+                "receipt_id": f"fixture_receipt_{plan_id}",
+                "approval_id": f"fixture_approval_{plan_id}",
+                "asset_id": asset["asset_id"],
+                "plan_id": asset["plan_id"],
+                "clip_id": asset["clip_id"],
+                "platform": asset["platform"],
+                "approved_by": "local_operator",
+                "approved_at": utc_now(),
+                "approval_scope": "edited_social_export",
+                "original_media_protected": True,
+                "source_overwrite_allowed": False,
+                "output_path": asset["final_render_path"],
+                "status": "approved",
+            }
+        )
+    save_json_file(analytics / "editing_approval_receipts.json", {"status": "pass", "receipts": receipts})
+
     manifest = build_editing_manifest(config)
     by_id = {asset["plan_id"]: asset for asset in manifest["preview_manifest"]["assets"]}
     if by_id["safe_plan"]["status"] != "export_ready":

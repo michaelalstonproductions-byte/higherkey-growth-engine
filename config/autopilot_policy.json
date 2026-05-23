@@ -32,6 +32,7 @@
     "scripts/build_editing_manifest.py",
     "scripts/verify_editing_safety.py",
     "scripts/build_before_after_compare.py",
+    "scripts/build_editing_approval_queue.py",
     "scripts/export_edited_social_assets.py"
   ],
   "approval_required_commands": [
@@ -41,7 +42,9 @@
     "scripts/archive_project_artifacts.py",
     "scripts/reset_demo_workspace.py",
     "scripts/render_final_post_asset.py",
-    "scripts/export_edited_social_assets.py"
+    "scripts/export_edited_social_assets.py",
+    "scripts/approve_edited_asset.py",
+    "scripts/reject_edited_asset.py"
   ],
   "blocked_commands": [
     "delete_original_media",

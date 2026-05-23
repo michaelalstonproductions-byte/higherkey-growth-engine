@@ -1934,6 +1934,51 @@ async function exportEditedSocialAssets(_event, options = {}) {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function buildEditingApprovalQueue() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_editing_approval_queue.py", "--json"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function approveEditedAsset(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/approve_edited_asset.py", "--json", "--write"];
+  if (options.assetId) args.push("--asset-id", String(options.assetId));
+  if (options.planId) args.push("--plan-id", String(options.planId));
+  if (options.clipId) args.push("--clip-id", String(options.clipId));
+  if (options.platform) args.push("--platform", String(options.platform));
+  if (options.scope) args.push("--scope", String(options.scope));
+  if (options.notes) args.push("--notes", String(options.notes));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function rejectEditedAsset(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/reject_edited_asset.py", "--json", "--write"];
+  if (options.assetId) args.push("--asset-id", String(options.assetId));
+  if (options.reason) args.push("--reason", String(options.reason));
+  if (options.notes) args.push("--notes", String(options.notes));
+  if (options.needsRevision === true) args.push("--needs-revision");
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function getEditingState() {
   return {
     ok: true,
@@ -1944,7 +1989,8 @@ async function getEditingState() {
     clientState: await readAnalyticsJson("client_editing_state.json", {}),
     recommendations: await readAnalyticsJson("post_editing_recommendations.json", {}),
     clientPlan: await readAnalyticsJson("client_post_editing_plan.json", {}),
-    manifest: await readAnalyticsJson("client_editing_manifest.json", {})
+    manifest: await readAnalyticsJson("client_editing_manifest.json", {}),
+    approvalState: await readAnalyticsJson("client_editing_approval_state.json", {})
   };
 }
 
@@ -1956,7 +2002,11 @@ async function getEditingManifest() {
     editedAssetManifest: await readAnalyticsJson("edited_asset_manifest.json", { assets: [] }),
     clientManifest: await readAnalyticsJson("client_editing_manifest.json", {}),
     safetyReport: await readAnalyticsJson("editing_safety_report.json", {}),
-    beforeAfter: await readAnalyticsJson("before_after_compare.json", {})
+    beforeAfter: await readAnalyticsJson("before_after_compare.json", {}),
+    approvalQueue: await readAnalyticsJson("editing_approval_queue.json", { items: [] }),
+    approvalReceipts: await readAnalyticsJson("editing_approval_receipts.json", { receipts: [] }),
+    rejectionLog: await readAnalyticsJson("editing_rejection_log.json", { rejections: [] }),
+    clientApprovalState: await readAnalyticsJson("client_editing_approval_state.json", {})
   };
 }
 
@@ -2330,6 +2380,9 @@ function registerIpc() {
   ipcMain.handle("editor:verifySafety", verifyEditingSafety);
   ipcMain.handle("editor:buildBeforeAfter", buildBeforeAfterCompare);
   ipcMain.handle("editor:exportEditedSocialAssets", exportEditedSocialAssets);
+  ipcMain.handle("editor:buildApprovalQueue", buildEditingApprovalQueue);
+  ipcMain.handle("editor:approveEditedAsset", approveEditedAsset);
+  ipcMain.handle("editor:rejectEditedAsset", rejectEditedAsset);
   ipcMain.handle("editor:getManifest", getEditingManifest);
   ipcMain.handle("editor:getState", getEditingState);
   ipcMain.handle("socialAuth:startInstagramOAuth", () => startOAuth("instagram"));

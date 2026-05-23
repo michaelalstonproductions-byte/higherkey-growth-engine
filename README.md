@@ -2,6 +2,22 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V6.8 AI Editing Approval Console
+
+V6.8 adds an approval console for edited assets. HigherKey now builds a local edited asset approval queue, records approval receipts, tracks rejections/needs-revision states, shows before/after review state, and requires an explicit `edited_social_export` receipt before approved edited assets can be exported into local social packs.
+
+Useful local checks:
+
+```bash
+python3 scripts/build_editing_approval_queue.py
+python3 scripts/approve_edited_asset.py --dry-run
+python3 scripts/reject_edited_asset.py --dry-run
+python3 scripts/test_editing_approval_safety.py
+python3 scripts/export_edited_social_assets.py --dry-run
+```
+
+Approval and rejection actions never delete media. Final render and edited social export remain separately approval-gated, original media remains protected, source overwrite is blocked, and edited social packs continue to write only under `out/social_exports_edited/`.
+
 ## V6.7 AI Editing Preview QA
 
 V6.7 adds preview QA and edited asset export polish for the AI Post Editing Studio. HigherKey now builds local edit manifests, before/after comparison metadata, original protection proof, and approval-gated edited social export packs under `out/social_exports_edited/`.

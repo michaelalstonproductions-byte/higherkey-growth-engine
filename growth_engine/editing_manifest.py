@@ -71,6 +71,43 @@ def _job_for(jobs: list[dict[str, Any]], plan_id: str, job_type: str) -> dict[st
     return matches[-1] if matches else None
 
 
+def _approval_receipts(config: AppConfig) -> list[dict[str, Any]]:
+    receipts = _load(_analytics(config, "editing_approval_receipts.json"), {"receipts": []}).get("receipts", [])
+    return receipts if isinstance(receipts, list) else []
+
+
+def _rejections(config: AppConfig) -> list[dict[str, Any]]:
+    rejections = _load(_analytics(config, "editing_rejection_log.json"), {"rejections": []}).get("rejections", [])
+    return rejections if isinstance(rejections, list) else []
+
+
+def _matching_export_receipt(asset: dict[str, Any], receipts: list[dict[str, Any]]) -> dict[str, Any] | None:
+    for receipt in reversed(receipts):
+        if receipt.get("asset_id") != asset.get("asset_id"):
+            continue
+        if receipt.get("plan_id") != asset.get("plan_id"):
+            continue
+        if str(receipt.get("platform")) != str(asset.get("platform")):
+            continue
+        if receipt.get("approval_scope") != "edited_social_export":
+            continue
+        if receipt.get("original_media_protected") is not True:
+            continue
+        if receipt.get("source_overwrite_allowed") is True:
+            continue
+        if receipt.get("status") not in {None, "approved", "pass"}:
+            continue
+        return receipt
+    return None
+
+
+def _asset_rejected(asset: dict[str, Any], rejections: list[dict[str, Any]]) -> bool:
+    for rejection in reversed(rejections):
+        if rejection.get("asset_id") == asset.get("asset_id") and rejection.get("status") in {"rejected", "needs_revision"}:
+            return True
+    return False
+
+
 def _asset_id(plan: dict[str, Any]) -> str:
     basis = "|".join([str(plan.get("plan_id") or ""), str(plan.get("clip_id") or ""), str(plan.get("platform") or "")])
     return "edited_" + hashlib.sha1(basis.encode("utf-8")).hexdigest()[:12]
@@ -102,6 +139,8 @@ def build_editing_manifest(config: AppConfig) -> dict[str, Any]:
     recs = _load(_analytics(config, "post_editing_recommendations.json"), {"recommendations": []})
     plans = plans if isinstance(plans, list) else []
     jobs = jobs if isinstance(jobs, list) else []
+    receipts = _approval_receipts(config)
+    rejections = _rejections(config)
     editor_root = config.root / EDITOR_BASE
     previews_root = editor_root / "previews"
     renders_root = editor_root / "renders"
@@ -122,6 +161,13 @@ def build_editing_manifest(config: AppConfig) -> dict[str, Any]:
         thumbnail_contained = _inside(thumb, thumbnails_root) if thumb else True
         source_equals_final = bool(source and final and source.resolve() == final.resolve())
         paths_contained = preview_contained and final_contained and thumbnail_contained
+        receipt_probe = {
+            "asset_id": _asset_id(plan),
+            "plan_id": plan_id,
+            "platform": plan.get("platform") or "tiktok",
+        }
+        export_receipt = _matching_export_receipt(receipt_probe, receipts)
+        rejected_or_revision = _asset_rejected(receipt_probe, rejections)
         export_eligible = bool(
             final_job
             and final_job.get("status") == "rendered"
@@ -133,6 +179,8 @@ def build_editing_manifest(config: AppConfig) -> dict[str, Any]:
             and plan.get("original_media_protected", True) is True
             and plan.get("source_overwrite_allowed", False) is not True
             and not source_equals_final
+            and export_receipt
+            and not rejected_or_revision
         )
         status = _asset_status(preview_job, final_job, final, export_eligible=export_eligible)
         asset = {
@@ -153,6 +201,9 @@ def build_editing_manifest(config: AppConfig) -> dict[str, Any]:
             "source_overwrite_allowed": False,
             "approval_required": True,
             "approval_status": "approved" if final_job and final_job.get("approved") is True else "required",
+            "edited_export_receipt_id": export_receipt.get("receipt_id") if export_receipt else None,
+            "edited_export_approval_required": export_receipt is None,
+            "rejected_or_needs_revision": rejected_or_revision,
             "preview_job_status": preview_job.get("status") if preview_job else "not_run",
             "final_job_status": final_job.get("status") if final_job else "not_run",
             "paths_contained": paths_contained,
@@ -232,6 +283,10 @@ def verify_editing_safety(config: AppConfig) -> dict[str, Any]:
             failures.append({"asset_id": asset.get("asset_id"), "reason": "source_equals_final_render"})
         if asset.get("final_job_status") == "rendered" and asset.get("approval_status") != "approved":
             failures.append({"asset_id": asset.get("asset_id"), "reason": "final_render_without_approval"})
+        if asset.get("status") == "export_ready" and not asset.get("edited_export_receipt_id"):
+            failures.append({"asset_id": asset.get("asset_id"), "reason": "edited_export_receipt_required"})
+        if asset.get("status") == "export_ready" and asset.get("rejected_or_needs_revision") is True:
+            failures.append({"asset_id": asset.get("asset_id"), "reason": "rejected_asset_export_ready"})
     report = {
         "status": "pass" if not failures else "fail",
         "updated_at": utc_now(),
@@ -302,6 +357,9 @@ def export_edited_social_assets(
         export_root_resolved = export_root.resolve()
         if not asset.get("paths_contained") or not asset.get("final_render_path_contained"):
             skipped.append({"asset_id": asset.get("asset_id"), "reason": "final_render_not_contained"})
+            continue
+        if not asset.get("edited_export_receipt_id"):
+            skipped.append({"asset_id": asset.get("asset_id"), "reason": "edited_export_receipt_required"})
             continue
         try:
             source = _require_inside(source, render_root, "Final render must stay inside out/post_editor/renders.")

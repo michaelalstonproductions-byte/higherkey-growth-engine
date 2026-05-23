@@ -68,6 +68,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "media_editor.py",
         resources / "app-assets" / "growth_engine" / "post_editing_intelligence.py",
         resources / "app-assets" / "growth_engine" / "editing_manifest.py",
+        resources / "app-assets" / "growth_engine" / "editing_approval.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_marketing_plan.py",
@@ -101,8 +102,12 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "build_editing_manifest.py",
         resources / "app-assets" / "scripts" / "verify_editing_safety.py",
         resources / "app-assets" / "scripts" / "build_before_after_compare.py",
+        resources / "app-assets" / "scripts" / "build_editing_approval_queue.py",
+        resources / "app-assets" / "scripts" / "approve_edited_asset.py",
+        resources / "app-assets" / "scripts" / "reject_edited_asset.py",
         resources / "app-assets" / "scripts" / "export_edited_social_assets.py",
         resources / "app-assets" / "scripts" / "test_edited_social_export_safety.py",
+        resources / "app-assets" / "scripts" / "test_editing_approval_safety.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -213,8 +218,12 @@ def external_api_scan(root: Path) -> dict[str, object]:
             "scripts/build_editing_manifest.py",
             "scripts/verify_editing_safety.py",
             "scripts/build_before_after_compare.py",
+            "scripts/build_editing_approval_queue.py",
+            "scripts/approve_edited_asset.py",
+            "scripts/reject_edited_asset.py",
             "scripts/export_edited_social_assets.py",
             "scripts/test_edited_social_export_safety.py",
+            "scripts/test_editing_approval_safety.py",
             "README.md",
         } and (
             "local" in lower
@@ -583,6 +592,10 @@ def editing_studio_check(root: Path) -> dict[str, object]:
         root / "analytics" / "client_editing_manifest.json": {"summary": dict, "assets": list},
         root / "analytics" / "editing_safety_report.json": {"failures": list, "original_media_protected": bool},
         root / "analytics" / "before_after_compare.json": {"records": list, "media_modified": bool},
+        root / "analytics" / "editing_approval_queue.json": {"items": list, "original_media_protected": bool},
+        root / "analytics" / "editing_approval_receipts.json": {"receipts": list},
+        root / "analytics" / "client_editing_approval_state.json": {"summary": dict, "items": list},
+        root / "analytics" / "editing_approval_safety_report.json": {"failures": list, "original_media_protected": bool},
         root / "analytics" / "edited_social_export_safety_report.json": {"failures": list, "original_media_protected": bool},
     }
     missing = [relative_path(path, root) for path in required if not path.exists()]
@@ -608,12 +621,16 @@ def editing_studio_check(root: Path) -> dict[str, object]:
             protection_failures.append(relative_path(path, root))
         if path.name == "edited_social_export_safety_report.json" and payload.get("status") != "pass":
             protection_failures.append(relative_path(path, root))
+        if path.name == "editing_approval_safety_report.json" and payload.get("status") != "pass":
+            protection_failures.append(relative_path(path, root))
         if path.name == "editing_preview_manifest.json":
             for asset in payload.get("assets", []):
                 if asset.get("status") == "export_ready" and (
                     asset.get("paths_contained") is not True
                     or asset.get("final_render_path_contained") is not True
                     or asset.get("source_equals_final_render") is True
+                    or not asset.get("edited_export_receipt_id")
+                    or asset.get("rejected_or_needs_revision") is True
                 ):
                     protection_failures.append(relative_path(path, root))
                     break
@@ -1265,8 +1282,12 @@ def main() -> int:
     append_stage(results, qa_stage("editing_manifest_build", ["python3", "scripts/build_editing_manifest.py", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("editing_safety_verify", ["python3", "scripts/verify_editing_safety.py", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("before_after_compare_build", ["python3", "scripts/build_before_after_compare.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("editing_approval_queue_build", ["python3", "scripts/build_editing_approval_queue.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("approve_edited_asset_dry_run", ["python3", "scripts/approve_edited_asset.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("reject_edited_asset_dry_run", ["python3", "scripts/reject_edited_asset.py", "--dry-run", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("edited_social_export_dry_run", ["python3", "scripts/export_edited_social_assets.py", "--dry-run", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("edited_social_export_safety_fixture", ["python3", "scripts/test_edited_social_export_safety.py"], root, timeout=60), config)
+    append_stage(results, qa_stage("editing_approval_safety_fixture", ["python3", "scripts/test_editing_approval_safety.py"], root, timeout=60), config)
     print("[qa] editing_studio_validation", flush=True)
     append_stage(results, editing_studio_check(root), config)
     append_stage(results, qa_stage("production_command_dry_run", ["python3", "scripts/build_production_command.py", "--dry-run"], root, timeout=60), config)

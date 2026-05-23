@@ -2080,6 +2080,10 @@
         clientEditingManifest: "../analytics/client_editing_manifest.json",
         editingSafetyReport: "../analytics/editing_safety_report.json",
         beforeAfterCompare: "../analytics/before_after_compare.json",
+        editingApprovalQueue: "../analytics/editing_approval_queue.json",
+        editingApprovalReceipts: "../analytics/editing_approval_receipts.json",
+        editingRejectionLog: "../analytics/editing_rejection_log.json",
+        clientEditingApprovalState: "../analytics/client_editing_approval_state.json",
         marketingBrief: "../analytics/marketing_brief.json",
         audienceProfile: "../analytics/audience_profile.json",
         marketAttackPlan: "../analytics/market_attack_plan.json",
@@ -2203,6 +2207,10 @@
         clientEditingManifest: null,
         editingSafetyReport: null,
         beforeAfterCompare: null,
+        editingApprovalQueue: null,
+        editingApprovalReceipts: null,
+        editingRejectionLog: null,
+        clientEditingApprovalState: null,
         marketingBrief: null,
         audienceProfile: null,
         marketAttackPlan: null,
@@ -3201,9 +3209,10 @@
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Final Render</div></div>${editJobHtml(lastJob, "final_render")}<div class="toolbar"><button class="btn" data-desktop-action="export-edited-pack">Export Edited Pack</button></div></section>
               <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Preview Queue</div><div>Plans and previews ready for visual QA.</div></div><button class="btn" data-desktop-action="build-editing-manifest">Build Manifest</button></div>${editingManifestList(["planned", "preview_ready"])}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Before / After</div><button class="btn" data-desktop-action="build-before-after">Build Before/After</button></div>${beforeAfterHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Approval Queue</div><div>Review edited assets before final export.</div></div><button class="btn" data-desktop-action="build-editing-approval-queue">Build Approval Queue</button></div>${editingApprovalQueueHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Edited Asset Manifest</div></div>${editingManifestList(["final_rendered", "export_ready"])}</section>
-              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Final Render Approval</div></div><div class="summary-row"><span>Selected</span><strong>${html(selectedAsset?.approval_status || "required")}</strong></div><div class="summary-row"><span>Status</span><strong>${html(selectedAsset?.status || "planned")}</strong></div><p class="muted">Approval recorded is separate from export readiness.</p></section>
-              <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Export Edited Packs</div><div>Approved final renders only.</div></div></div><div class="toolbar"><button class="btn" data-desktop-action="export-edited-pack-dry">Export Edited Packs Dry Run</button><button class="btn red" data-desktop-action="export-edited-pack">Export Edited Packs</button><button class="btn" data-desktop-action="open-edited-social-packs">Open Edited Social Packs</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Final Render Approval</div></div><div class="summary-row"><span>Selected</span><strong>${html(selectedAsset?.approval_status || "required")}</strong></div><div class="summary-row"><span>Status</span><strong>${html(selectedAsset?.status || "planned")}</strong></div><div class="toolbar"><button class="btn" data-desktop-action="approve-edited-asset" data-scope="final_render">Approve Final Render</button><button class="btn" data-desktop-action="reject-edited-asset">Reject Edited Asset</button><button class="btn" data-desktop-action="mark-edited-needs-revision">Mark Needs Revision</button></div><p class="muted">Final render approval is separate from edited social export approval.</p></section>
+              <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Edited Social Packs</div><div>Requires edited social export receipt.</div></div></div><div class="toolbar"><button class="btn" data-desktop-action="approve-edited-export">Approve Edited Export</button><button class="btn" data-desktop-action="export-edited-pack-dry">Export Edited Packs Dry Run</button><button class="btn red" data-desktop-action="export-edited-pack">Export Approved Edited Packs</button><button class="btn" data-desktop-action="open-edited-social-packs">Open Edited Social Packs</button></div></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Original Protection Proof</div><button class="btn" data-desktop-action="verify-editing-safety">Verify Editing Safety</button></div>${protectionProofHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Thumbnail Concepts</div></div>${thumbnailConceptsHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Platform Versions</div></div>${platformVersionHtml(plan)}</section>
@@ -4127,11 +4136,12 @@
       }
       function editingMetricCards() {
         const summary = state.clientEditingManifest?.summary || {};
+        const approvalSummary = state.clientEditingApprovalState?.summary || {};
         return `
           ${metricPanel("Plans Ready", summary.plans_ready ?? editPlansList().length, "Non-destructive")}
           ${metricPanel("Previews Ready", summary.previews_ready ?? 0, "Before/after review")}
-          ${metricPanel("Final Approval", summary.final_renders_waiting_approval ?? 0, "Waiting")}
-          ${metricPanel("Edited Packs", summary.edited_packs_ready ?? 0, "Export ready")}
+          ${metricPanel("Needs Review", approvalSummary.needs_review ?? summary.final_renders_waiting_approval ?? 0, "Approval queue")}
+          ${metricPanel("Edited Packs", approvalSummary.export_ready ?? summary.edited_packs_ready ?? 0, "Export approved")}
           ${metricPanel("Originals", summary.originals_protected === false ? "check" : "protected", "Proof tracked")}
           ${metricPanel("Failed Jobs", summary.failed_jobs ?? 0, "Needs attention")}
         `;
@@ -4143,6 +4153,23 @@
       function beforeAfterHtml() {
         const records = state.beforeAfterCompare?.records || [];
         return (Array.isArray(records) ? records : []).slice(0, 6).map((item) => `<div class="summary-row"><span>${html(item.clip_id || "asset")}</span><strong>${html(item.compare_status || "pending")}</strong></div><p class="muted">${html(item.preview_path || item.final_path || "Preview render needed.")}</p>`).join("") || `<div class="muted">Build before/after metadata after previews are available.</div>`;
+      }
+      function editingApprovalItems() {
+        const items = state.editingApprovalQueue?.items || state.clientEditingApprovalState?.items || [];
+        return Array.isArray(items) ? items : [];
+      }
+      function selectedEditingApproval(entry) {
+        const asset = selectedEditingAsset(entry);
+        const clipId = entry?.clip_id || entry?.id || "";
+        return editingApprovalItems().find((item) => asset?.asset_id && item.asset_id === asset.asset_id)
+          || editingApprovalItems().find((item) => String(item.clip_id || "") === String(clipId))
+          || editingApprovalItems()[0]
+          || null;
+      }
+      function editingApprovalQueueHtml() {
+        const items = editingApprovalItems();
+        if (!items.length) return `<div class="empty-state"><h2>No approval queue yet</h2><p>Build the queue after creating previews or final renders.</p><button class="btn red" data-desktop-action="build-editing-approval-queue">Build Approval Queue</button></div>`;
+        return items.slice(0, 8).map((item) => `<div class="summary-row"><span>${html(item.clip_id || item.asset_id)}</span><strong>${html(item.status || "needs_review")}</strong></div><p class="muted">${html(item.final_render_path || item.preview_path || "Preview or final render pending.")}</p>`).join("");
       }
       function protectionProofHtml() {
         const report = state.editingSafetyReport || {};
@@ -4907,7 +4934,8 @@
         } else if (mode === "editor") {
           const plan = latestEditPlan(entry);
           const asset = selectedEditingAsset(entry);
-          $("inspector").innerHTML = `<section class="inspector-section"><h3>Edit Plan</h3>${editPlanHtml(plan)}</section><section class="inspector-section"><h3>Selected Asset</h3><div class="summary-row"><span>Status</span><strong>${html(asset?.status || "planned")}</strong></div><div class="summary-row"><span>Source</span><strong>${html(asset?.source_exists === false ? "missing" : "protected")}</strong></div><div class="summary-row"><span>Preview</span><strong>${html(asset?.preview_exists ? "ready" : "pending")}</strong></div><div class="summary-row"><span>Final</span><strong>${html(asset?.final_render_exists ? "rendered" : "pending")}</strong></div><div class="summary-row"><span>Approval</span><strong>${html(asset?.approval_status || "required")}</strong></div></section><section class="inspector-section"><h3>Protection</h3><div class="summary-row"><span>Originals</span><strong>protected</strong></div><div class="summary-row"><span>Final render</span><strong>approval required</strong></div><div class="summary-row"><span>Cloud editing APIs</span><strong>off</strong></div></section><section class="inspector-section"><h3>Controls</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-edit-plan">Build Plan</button><button class="btn" data-desktop-action="render-edit-preview">Preview</button><button class="btn" data-desktop-action="build-editing-manifest">Manifest</button><button class="btn" data-desktop-action="open-edited-assets">Open Assets</button></div></section>`;
+          const approval = selectedEditingApproval(entry);
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Selected Edit Asset</h3><div class="summary-row"><span>Status</span><strong>${html(approval?.status || asset?.status || "planned")}</strong></div><div class="summary-row"><span>Original</span><strong>${html(asset?.source_exists === false ? "missing" : "protected")}</strong></div><div class="summary-row"><span>Output</span><strong>${html(asset?.paths_contained ? "contained" : "pending")}</strong></div><div class="summary-row"><span>Overwrite</span><strong>false</strong></div><div class="summary-row"><span>Receipt</span><strong>${html(approval?.approval_receipt_id ? "recorded" : "required")}</strong></div></section><section class="inspector-section"><h3>Paths</h3><div class="summary-row"><span>Preview</span><strong>${html(asset?.preview_exists ? "ready" : "pending")}</strong></div><div class="summary-row"><span>Final</span><strong>${html(asset?.final_render_exists ? "rendered" : "pending")}</strong></div><div class="summary-row"><span>Export</span><strong>${html(asset?.status === "export_ready" ? "ready" : "approval required")}</strong></div></section><section class="inspector-section"><h3>Next Action</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-editing-approval-queue">Build Queue</button><button class="btn" data-desktop-action="approve-edited-export">Approve Export</button><button class="btn" data-desktop-action="export-edited-pack-dry">Dry Run</button><button class="btn" data-desktop-action="open-edited-assets">Open Assets</button></div></section>`;
         } else if (mode === "search") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section>${schoolCompactHtml(entry)}<section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div>${schoolControlsHtml()}</section>`;
         } else if (mode === "marketing") {
@@ -5604,6 +5632,52 @@
         return setNotice(result?.code === 0 ? "Before/after comparison metadata updated." : "Before/after build needs attention.");
       }
 
+      async function buildEditingApprovalQueue() {
+        if (!window.higherkey?.buildEditingApprovalQueue) {
+          return setNotice("Static mode: run python3 scripts/build_editing_approval_queue.py.");
+        }
+        setNotice("Building edited asset approval queue...");
+        const result = await window.higherkey.buildEditingApprovalQueue();
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Editing approval queue updated." : "Editing approval queue needs attention.");
+      }
+
+      async function approveEditedAsset(button, scope = "final_render") {
+        const asset = selectedEditingAsset(modeEntry() || activeEntry());
+        if (!asset) return setNotice("Build the editing manifest and select an edited asset before approving.");
+        if (!window.higherkey?.approveEditedAsset) {
+          return setNotice("Static mode: run python3 scripts/approve_edited_asset.py with the selected asset.");
+        }
+        const label = scope === "edited_social_export" ? "Approve edited social export?" : "Approve final render?";
+        const ok = confirm(`${label} HigherKey will record a local approval receipt and will not modify original media.`);
+        if (!ok) return setNotice("Approval cancelled. No receipt was recorded.");
+        const result = await window.higherkey.approveEditedAsset({ assetId: asset.asset_id, planId: asset.plan_id, platform: asset.platform, scope, notes: "Approved from Editor console." });
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Editing approval receipt recorded locally." : "Editing approval was blocked by safety gates.");
+      }
+
+      async function rejectEditedAsset(button, needsRevision = false) {
+        const asset = selectedEditingAsset(modeEntry() || activeEntry());
+        if (!asset) return setNotice("Build the editing manifest and select an edited asset before rejecting.");
+        if (!window.higherkey?.rejectEditedAsset) {
+          return setNotice("Static mode: run python3 scripts/reject_edited_asset.py with the selected asset.");
+        }
+        const ok = confirm(needsRevision ? "Mark this edited asset as needing revision? Media files will not be deleted." : "Reject this edited asset? Media files will not be deleted.");
+        if (!ok) return setNotice("Rejection cancelled. No media was changed.");
+        const result = await window.higherkey.rejectEditedAsset({ assetId: asset.asset_id, reason: needsRevision ? "needs_revision" : "rejected", needsRevision, notes: "Updated from Editor console." });
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Editing approval queue updated. Original media remains protected." : "Rejection update needs attention.");
+      }
+
       async function exportEditedPacks(button, approve = false) {
         const entry = modeEntry() || activeEntry();
         if (!window.higherkey?.exportEditedSocialAssets) {
@@ -6110,6 +6184,11 @@
             if (action === "build-editing-manifest") return buildEditingManifest();
             if (action === "verify-editing-safety") return verifyEditingSafety();
             if (action === "build-before-after") return buildBeforeAfterCompare();
+            if (action === "build-editing-approval-queue") return buildEditingApprovalQueue();
+            if (action === "approve-edited-asset") return approveEditedAsset(button, button.dataset.scope || "final_render");
+            if (action === "approve-edited-export") return approveEditedAsset(button, "edited_social_export");
+            if (action === "reject-edited-asset") return rejectEditedAsset(button, false);
+            if (action === "mark-edited-needs-revision") return rejectEditedAsset(button, true);
             if (action === "use-creative-notes") {
               const notes = state.creativeDirectorBrief?.creative_thesis || state.clientCreativePlan?.headline || "Use the strongest local hook, readable captions, and a clean CTA.";
               const target = document.querySelector(".editor-notes") || button.closest(".composer-panel")?.querySelector(".composer-edit-notes");
@@ -6301,6 +6380,10 @@
           state.clientEditingManifest = await optionalJson(PATHS.clientEditingManifest, null);
           state.editingSafetyReport = await optionalJson(PATHS.editingSafetyReport, null);
           state.beforeAfterCompare = await optionalJson(PATHS.beforeAfterCompare, null);
+          state.editingApprovalQueue = await optionalJson(PATHS.editingApprovalQueue, null);
+          state.editingApprovalReceipts = await optionalJson(PATHS.editingApprovalReceipts, null);
+          state.editingRejectionLog = await optionalJson(PATHS.editingRejectionLog, null);
+          state.clientEditingApprovalState = await optionalJson(PATHS.clientEditingApprovalState, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, null);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, null);
@@ -6423,6 +6506,15 @@
           state.postEditingRecommendations = await optionalJson(PATHS.postEditingRecommendations, state.postEditingRecommendations);
           state.clientPostEditingPlan = await optionalJson(PATHS.clientPostEditingPlan, state.clientPostEditingPlan);
           state.postEditingScan = await optionalJson(PATHS.postEditingScan, state.postEditingScan);
+          state.editingPreviewManifest = await optionalJson(PATHS.editingPreviewManifest, state.editingPreviewManifest);
+          state.editedAssetManifest = await optionalJson(PATHS.editedAssetManifest, state.editedAssetManifest);
+          state.clientEditingManifest = await optionalJson(PATHS.clientEditingManifest, state.clientEditingManifest);
+          state.editingSafetyReport = await optionalJson(PATHS.editingSafetyReport, state.editingSafetyReport);
+          state.beforeAfterCompare = await optionalJson(PATHS.beforeAfterCompare, state.beforeAfterCompare);
+          state.editingApprovalQueue = await optionalJson(PATHS.editingApprovalQueue, state.editingApprovalQueue);
+          state.editingApprovalReceipts = await optionalJson(PATHS.editingApprovalReceipts, state.editingApprovalReceipts);
+          state.editingRejectionLog = await optionalJson(PATHS.editingRejectionLog, state.editingRejectionLog);
+          state.clientEditingApprovalState = await optionalJson(PATHS.clientEditingApprovalState, state.clientEditingApprovalState);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, state.audienceProfile);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, state.marketAttackPlan);

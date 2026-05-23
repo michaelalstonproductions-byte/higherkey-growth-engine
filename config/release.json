@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally by default. AI Editing Preview QA proves original media protection and exports approved edited assets into local social pack folders.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. AI Editing Approval Console records local approval receipts before final edited assets are exported.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "AI Editing Preview QA",
-  "version": "V6.7"
+  "release_name": "AI Editing Approval Console",
+  "version": "V6.8"
 }
