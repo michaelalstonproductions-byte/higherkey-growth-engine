@@ -2075,6 +2075,11 @@
         postEditingRecommendations: "../analytics/post_editing_recommendations.json",
         clientPostEditingPlan: "../analytics/client_post_editing_plan.json",
         postEditingScan: "../analytics/post_editing_intelligence_scan.json",
+        editingPreviewManifest: "../analytics/editing_preview_manifest.json",
+        editedAssetManifest: "../analytics/edited_asset_manifest.json",
+        clientEditingManifest: "../analytics/client_editing_manifest.json",
+        editingSafetyReport: "../analytics/editing_safety_report.json",
+        beforeAfterCompare: "../analytics/before_after_compare.json",
         marketingBrief: "../analytics/marketing_brief.json",
         audienceProfile: "../analytics/audience_profile.json",
         marketAttackPlan: "../analytics/market_attack_plan.json",
@@ -2193,6 +2198,11 @@
         postEditingRecommendations: null,
         clientPostEditingPlan: null,
         postEditingScan: null,
+        editingPreviewManifest: null,
+        editedAssetManifest: null,
+        clientEditingManifest: null,
+        editingSafetyReport: null,
+        beforeAfterCompare: null,
         marketingBrief: null,
         audienceProfile: null,
         marketAttackPlan: null,
@@ -3144,6 +3154,7 @@
         const jobs = state.editJobs?.jobs || [];
         const lastJob = Array.isArray(jobs) ? jobs.slice(-1)[0] : null;
         const capabilities = state.editingCapabilities || {};
+        const selectedAsset = selectedEditingAsset(active);
         const media = active?.clip_path
           ? `<video src="../${html(active.clip_path)}" controls preload="metadata" playsinline></video>`
           : clipThumb(active, "hero-placeholder");
@@ -3157,6 +3168,7 @@
                 <div class="toolbar">
                   <button class="btn red" data-desktop-action="build-edit-plan">Build Edit Plan</button>
                   <button class="btn" data-desktop-action="render-edit-preview">Render Preview</button>
+                  <button class="btn" data-desktop-action="build-editing-manifest">Build Editing Manifest</button>
                   <button class="btn" data-desktop-action="open-edited-assets">Open Edited Assets</button>
                 </div>
               </div>
@@ -3182,10 +3194,17 @@
                 <details class="advanced-details" open><summary>Current edit plan</summary>${editPlanHtml(plan)}</details>
               </section>
             </div>
+            <div class="card-grid">${editingMetricCards()}</div>
             <div class="analysis-grid">
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">AI Edit Suggestions</div></div>${editSuggestionsHtml(recommendations)}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Preview Render</div></div>${editJobHtml(lastJob, "preview")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Final Render</div></div>${editJobHtml(lastJob, "final_render")}<div class="toolbar"><button class="btn" data-desktop-action="export-edited-pack">Export Edited Pack</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Preview Queue</div><div>Plans and previews ready for visual QA.</div></div><button class="btn" data-desktop-action="build-editing-manifest">Build Manifest</button></div>${editingManifestList(["planned", "preview_ready"])}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Before / After</div><button class="btn" data-desktop-action="build-before-after">Build Before/After</button></div>${beforeAfterHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Edited Asset Manifest</div></div>${editingManifestList(["final_rendered", "export_ready"])}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Final Render Approval</div></div><div class="summary-row"><span>Selected</span><strong>${html(selectedAsset?.approval_status || "required")}</strong></div><div class="summary-row"><span>Status</span><strong>${html(selectedAsset?.status || "planned")}</strong></div><p class="muted">Approval recorded is separate from export readiness.</p></section>
+              <section class="panel view-scroll"><div class="panel-head"><div><div class="panel-title">Export Edited Packs</div><div>Approved final renders only.</div></div></div><div class="toolbar"><button class="btn" data-desktop-action="export-edited-pack-dry">Export Edited Packs Dry Run</button><button class="btn red" data-desktop-action="export-edited-pack">Export Edited Packs</button><button class="btn" data-desktop-action="open-edited-social-packs">Open Edited Social Packs</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Original Protection Proof</div><button class="btn" data-desktop-action="verify-editing-safety">Verify Editing Safety</button></div>${protectionProofHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Thumbnail Concepts</div></div>${thumbnailConceptsHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Platform Versions</div></div>${platformVersionHtml(plan)}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Protection</div></div><div class="checklist"><span>Original media preserved</span><span>Preview renders write to out/post_editor/previews</span><span>Final renders require approval</span><span>No cloud editing APIs by default</span></div></section>
@@ -4098,6 +4117,37 @@
         const platforms = ["tiktok", "instagram_reels", "youtube_shorts", "facebook_reels"];
         return platforms.map((platform) => `<div class="summary-row"><span>${html(platform.replace("_", " "))}</span><strong>${html(plan?.platform === platform ? "planned" : "available")}</strong></div>`).join("");
       }
+      function editingManifestAssets() {
+        const assets = state.editingPreviewManifest?.assets || state.clientEditingManifest?.assets || [];
+        return Array.isArray(assets) ? assets : [];
+      }
+      function selectedEditingAsset(entry) {
+        const clipId = entry?.clip_id || entry?.id || "";
+        return editingManifestAssets().find((asset) => String(asset.clip_id || "") === String(clipId)) || editingManifestAssets()[0] || null;
+      }
+      function editingMetricCards() {
+        const summary = state.clientEditingManifest?.summary || {};
+        return `
+          ${metricPanel("Plans Ready", summary.plans_ready ?? editPlansList().length, "Non-destructive")}
+          ${metricPanel("Previews Ready", summary.previews_ready ?? 0, "Before/after review")}
+          ${metricPanel("Final Approval", summary.final_renders_waiting_approval ?? 0, "Waiting")}
+          ${metricPanel("Edited Packs", summary.edited_packs_ready ?? 0, "Export ready")}
+          ${metricPanel("Originals", summary.originals_protected === false ? "check" : "protected", "Proof tracked")}
+          ${metricPanel("Failed Jobs", summary.failed_jobs ?? 0, "Needs attention")}
+        `;
+      }
+      function editingManifestList(statuses) {
+        const assets = editingManifestAssets().filter((asset) => !statuses || statuses.includes(asset.status));
+        return assets.slice(0, 8).map((asset) => `<div class="summary-row"><span>${html(asset.clip_id || asset.asset_id)}</span><strong>${html(asset.status || "planned")}</strong></div><p class="muted">${html(asset.preview_path || asset.final_render_path || "Build manifest to inspect paths.")}</p>`).join("") || `<div class="muted">No matching edited assets yet.</div>`;
+      }
+      function beforeAfterHtml() {
+        const records = state.beforeAfterCompare?.records || [];
+        return (Array.isArray(records) ? records : []).slice(0, 6).map((item) => `<div class="summary-row"><span>${html(item.clip_id || "asset")}</span><strong>${html(item.compare_status || "pending")}</strong></div><p class="muted">${html(item.preview_path || item.final_path || "Preview render needed.")}</p>`).join("") || `<div class="muted">Build before/after metadata after previews are available.</div>`;
+      }
+      function protectionProofHtml() {
+        const report = state.editingSafetyReport || {};
+        return `<div class="summary-row"><span>Status</span><strong>${html(report.status || "pending")}</strong></div><div class="summary-row"><span>Checked</span><strong>${html(report.checked_assets ?? 0)}</strong></div><div class="summary-row"><span>Failures</span><strong>${html((report.failures || []).length)}</strong></div><div class="checklist"><span>No source overwrite</span><span>Outputs stay under out/post_editor</span><span>Final/export approval required</span></div>`;
+      }
       function schedulerItems() {
         const queue = state.socialPostQueue?.items || [];
         const schedule = state.socialSchedule?.items || [];
@@ -4826,6 +4876,7 @@
           dashboard: "Dashboard command center",
           queue: "Review workspace",
           media: "Media library",
+          editor: "AI post editing",
           search: "AI intelligence cockpit",
           marketing: "Marketing studio",
           agents: "Agent orchestration",
@@ -4855,7 +4906,8 @@
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Media</h3><div class="summary-row"><span>Clip</span><strong>${html(entry.clip_id || title(entry))}</strong></div><div class="summary-row"><span>Cache</span><strong>${html(cacheFor(entry)?.status || "pending")}</strong></div></section><details class="advanced-details"><summary>Media details</summary>${metadataPanel(entry)}${mediaCacheHtml(entry)}</details>` : `<section class="inspector-section"><h3>Media</h3><div class="muted">No media selected.</div></section>`;
         } else if (mode === "editor") {
           const plan = latestEditPlan(entry);
-          $("inspector").innerHTML = `<section class="inspector-section"><h3>Edit Plan</h3>${editPlanHtml(plan)}</section><section class="inspector-section"><h3>Protection</h3><div class="summary-row"><span>Originals</span><strong>protected</strong></div><div class="summary-row"><span>Final render</span><strong>approval required</strong></div><div class="summary-row"><span>Cloud editing APIs</span><strong>off</strong></div></section><section class="inspector-section"><h3>Controls</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-edit-plan">Build Plan</button><button class="btn" data-desktop-action="render-edit-preview">Preview</button><button class="btn" data-desktop-action="open-edited-assets">Open Assets</button></div></section>`;
+          const asset = selectedEditingAsset(entry);
+          $("inspector").innerHTML = `<section class="inspector-section"><h3>Edit Plan</h3>${editPlanHtml(plan)}</section><section class="inspector-section"><h3>Selected Asset</h3><div class="summary-row"><span>Status</span><strong>${html(asset?.status || "planned")}</strong></div><div class="summary-row"><span>Source</span><strong>${html(asset?.source_exists === false ? "missing" : "protected")}</strong></div><div class="summary-row"><span>Preview</span><strong>${html(asset?.preview_exists ? "ready" : "pending")}</strong></div><div class="summary-row"><span>Final</span><strong>${html(asset?.final_render_exists ? "rendered" : "pending")}</strong></div><div class="summary-row"><span>Approval</span><strong>${html(asset?.approval_status || "required")}</strong></div></section><section class="inspector-section"><h3>Protection</h3><div class="summary-row"><span>Originals</span><strong>protected</strong></div><div class="summary-row"><span>Final render</span><strong>approval required</strong></div><div class="summary-row"><span>Cloud editing APIs</span><strong>off</strong></div></section><section class="inspector-section"><h3>Controls</h3><div class="toolbar"><button class="btn red" data-desktop-action="build-edit-plan">Build Plan</button><button class="btn" data-desktop-action="render-edit-preview">Preview</button><button class="btn" data-desktop-action="build-editing-manifest">Manifest</button><button class="btn" data-desktop-action="open-edited-assets">Open Assets</button></div></section>`;
         } else if (mode === "search") {
           $("inspector").innerHTML = entry ? `<section class="inspector-section"><h3>Overall Score</h3><div class="copy">manual upload intelligence</div><div class="stat-card"><span>Score</span><strong>${html(score(entry))}</strong><em>confidence local</em></div></section><section class="inspector-section"><h3>Rationale</h3><div class="copy">${html((entry.score_details?.reasons || entry.package?.score_details?.reasons || tags(entry)).join(" · ") || "No rationale loaded.")}</div></section><section class="inspector-section"><h3>Score Breakdown</h3>${scoreBreakdownHtml(entry)}</section>${schoolCompactHtml(entry)}<section class="inspector-section"><h3>Platform Potential</h3>${socialExportsSummaryHtml()}</section>` : `<section class="inspector-section"><h3>Intelligence</h3><div class="muted">No active clip.</div>${schoolControlsHtml()}</section>`;
         } else if (mode === "marketing") {
@@ -5513,6 +5565,60 @@
         return setNotice(approved && result?.code === 0 ? "Final render job approved locally. Original media remains untouched." : "Final render stayed in dry-run/approval-required mode.");
       }
 
+      async function buildEditingManifest() {
+        if (!window.higherkey?.buildEditingManifest) {
+          return setNotice("Static mode: run python3 scripts/build_editing_manifest.py.");
+        }
+        setNotice("Building editing preview manifest...");
+        const result = await window.higherkey.buildEditingManifest();
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Editing manifest updated. Preview and final render states are ready to inspect." : "Editing manifest needs attention.");
+      }
+
+      async function verifyEditingSafety() {
+        if (!window.higherkey?.verifyEditingSafety) {
+          return setNotice("Static mode: run python3 scripts/verify_editing_safety.py.");
+        }
+        setNotice("Verifying original media protection...");
+        const result = await window.higherkey.verifyEditingSafety();
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Editing safety verified. Originals remain protected." : "Editing safety needs attention before export.");
+      }
+
+      async function buildBeforeAfterCompare() {
+        if (!window.higherkey?.buildBeforeAfterCompare) {
+          return setNotice("Static mode: run python3 scripts/build_before_after_compare.py.");
+        }
+        setNotice("Building before/after comparison metadata...");
+        const result = await window.higherkey.buildBeforeAfterCompare();
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Before/after comparison metadata updated." : "Before/after build needs attention.");
+      }
+
+      async function exportEditedPacks(button, approve = false) {
+        const entry = modeEntry() || activeEntry();
+        if (!window.higherkey?.exportEditedSocialAssets) {
+          return setNotice("Static mode: run python3 scripts/export_edited_social_assets.py --dry-run.");
+        }
+        const shouldApprove = approve ? confirm("Export approved edited assets into new local social pack folders? Original media and existing packs will not be overwritten.") : false;
+        const result = await window.higherkey.exportEditedSocialAssets({ approve: shouldApprove, clipId: entry?.clip_id || "" });
+        await refreshLiveData();
+        state.mode = "editor";
+        persistWorkspace();
+        render();
+        if (!approve) return setNotice(result?.code === 0 ? "Edited social export dry run complete. Only approved final renders are eligible." : "Edited export dry run needs attention.");
+        return setNotice(shouldApprove && result?.code === 0 ? "Edited social packs exported to out/social_exports_edited." : "Edited export stayed in dry-run/approval-required mode.");
+      }
+
       async function saveOrSchedulePost(button, schedule = false) {
         const payload = activeComposerPayload(button);
         if (!window.higherkey?.scheduleSocialPost) {
@@ -6001,6 +6107,9 @@
             if (action === "build-edit-plan") return buildEditPlan(button);
             if (action === "render-edit-preview") return renderEditPreview(button);
             if (action === "approve-final-render") return renderFinalPostAsset(button);
+            if (action === "build-editing-manifest") return buildEditingManifest();
+            if (action === "verify-editing-safety") return verifyEditingSafety();
+            if (action === "build-before-after") return buildBeforeAfterCompare();
             if (action === "use-creative-notes") {
               const notes = state.creativeDirectorBrief?.creative_thesis || state.clientCreativePlan?.headline || "Use the strongest local hook, readable captions, and a clean CTA.";
               const target = document.querySelector(".editor-notes") || button.closest(".composer-panel")?.querySelector(".composer-edit-notes");
@@ -6008,7 +6117,8 @@
               return setNotice("Creative Director notes loaded into edit notes.");
             }
             if (action === "apply-caption-overlay") return setNotice("Caption overlay is included in the non-destructive edit plan. Build or refresh the plan before preview rendering.");
-            if (action === "export-edited-pack") return setNotice("Edited pack export uses local render outputs under out/post_editor/renders. Run final render with approval first.");
+            if (action === "export-edited-pack-dry") return exportEditedPacks(button, false);
+            if (action === "export-edited-pack") return exportEditedPacks(button, true);
             if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
@@ -6115,6 +6225,10 @@
               if (window.higherkey.openEditedAssetsFolder) await window.higherkey.openEditedAssetsFolder();
               return setNotice("Edited assets folder opened. Original media is not modified.");
             }
+            if (action === "open-edited-social-packs") {
+              if (window.higherkey.openEditedSocialExportsFolder) await window.higherkey.openEditedSocialExportsFolder();
+              return setNotice("Edited social packs folder opened.");
+            }
             if (action === "pick-export") await window.higherkey.pickDirectory("exportDirectory");
             if (action === "first-run-setup") await window.higherkey.runFirstRunSetup();
             if (action === "start-watcher") await window.higherkey.startWatcher();
@@ -6182,6 +6296,11 @@
           state.postEditingRecommendations = await optionalJson(PATHS.postEditingRecommendations, null);
           state.clientPostEditingPlan = await optionalJson(PATHS.clientPostEditingPlan, null);
           state.postEditingScan = await optionalJson(PATHS.postEditingScan, null);
+          state.editingPreviewManifest = await optionalJson(PATHS.editingPreviewManifest, null);
+          state.editedAssetManifest = await optionalJson(PATHS.editedAssetManifest, null);
+          state.clientEditingManifest = await optionalJson(PATHS.clientEditingManifest, null);
+          state.editingSafetyReport = await optionalJson(PATHS.editingSafetyReport, null);
+          state.beforeAfterCompare = await optionalJson(PATHS.beforeAfterCompare, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
           state.audienceProfile = await optionalJson(PATHS.audienceProfile, null);
           state.marketAttackPlan = await optionalJson(PATHS.marketAttackPlan, null);

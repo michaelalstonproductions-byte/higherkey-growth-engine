@@ -2,6 +2,21 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V6.7 AI Editing Preview QA
+
+V6.7 adds preview QA and edited asset export polish for the AI Post Editing Studio. HigherKey now builds local edit manifests, before/after comparison metadata, original protection proof, and approval-gated edited social export packs under `out/social_exports_edited/`.
+
+Useful local checks:
+
+```bash
+python3 scripts/build_editing_manifest.py
+python3 scripts/verify_editing_safety.py
+python3 scripts/build_before_after_compare.py
+python3 scripts/export_edited_social_assets.py --dry-run
+```
+
+Edited social exports only use approved final render assets. Dry-run is the default export posture, original media is never overwritten or deleted, existing social packs are not overwritten, and final/export flows remain approval-gated.
+
 ## V6.6 AI Post Editing Studio
 
 V6.6 adds a local, non-destructive AI Post Editing Studio. HigherKey can inspect a selected clip or image, suggest an edit plan, prepare preview render jobs, generate thumbnail/platform output paths, add caption/text-overlay steps, and create approval-gated final render jobs without overwriting original footage.

@@ -1885,6 +1885,55 @@ async function renderFinalPostAsset(_event, options = {}) {
   return { ...result, parsed, activeProjectRoot };
 }
 
+async function buildEditingManifest() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_editing_manifest.py", "--json"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function verifyEditingSafety() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/verify_editing_safety.py", "--json"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function buildBeforeAfterCompare() {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const result = await runPython(["scripts/build_before_after_compare.py", "--json"]);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
+async function exportEditedSocialAssets(_event, options = {}) {
+  const projectCheck = validateProjectRootSelection(activeProjectRoot);
+  if (!projectCheck.ok) return projectCheck;
+  const args = ["scripts/export_edited_social_assets.py", "--json"];
+  if (options.approve === true) args.push("--approve");
+  else args.push("--dry-run");
+  if (options.platform) args.push("--platform", String(options.platform));
+  if (options.clipId) args.push("--clip-id", String(options.clipId));
+  const result = await runPython(args);
+  let parsed = null;
+  try {
+    parsed = JSON.parse(result.stdout);
+  } catch {}
+  return { ...result, parsed, activeProjectRoot };
+}
+
 async function getEditingState() {
   return {
     ok: true,
@@ -1894,7 +1943,20 @@ async function getEditingState() {
     capabilities: await readAnalyticsJson("editing_capabilities.json", {}),
     clientState: await readAnalyticsJson("client_editing_state.json", {}),
     recommendations: await readAnalyticsJson("post_editing_recommendations.json", {}),
-    clientPlan: await readAnalyticsJson("client_post_editing_plan.json", {})
+    clientPlan: await readAnalyticsJson("client_post_editing_plan.json", {}),
+    manifest: await readAnalyticsJson("client_editing_manifest.json", {})
+  };
+}
+
+async function getEditingManifest() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    previewManifest: await readAnalyticsJson("editing_preview_manifest.json", { assets: [] }),
+    editedAssetManifest: await readAnalyticsJson("edited_asset_manifest.json", { assets: [] }),
+    clientManifest: await readAnalyticsJson("client_editing_manifest.json", {}),
+    safetyReport: await readAnalyticsJson("editing_safety_report.json", {}),
+    beforeAfter: await readAnalyticsJson("before_after_compare.json", {})
   };
 }
 
@@ -2047,6 +2109,13 @@ async function openEditedAssetsFolder() {
   await fsp.mkdir(path.join(editorDir, "thumbnails"), { recursive: true });
   await shell.openPath(editorDir);
   return { path: editorDir, activeProjectRoot };
+}
+
+async function openEditedSocialExportsFolder() {
+  const exportDir = path.join(activeProjectRoot, "out", "social_exports_edited");
+  await fsp.mkdir(exportDir, { recursive: true });
+  await shell.openPath(exportDir);
+  return { path: exportDir, activeProjectRoot };
 }
 
 async function runFirstRunSetup(force = false) {
@@ -2257,6 +2326,11 @@ function registerIpc() {
   ipcMain.handle("editor:buildPlan", buildEditPlan);
   ipcMain.handle("editor:renderPreview", renderEditPreview);
   ipcMain.handle("editor:renderFinal", renderFinalPostAsset);
+  ipcMain.handle("editor:buildManifest", buildEditingManifest);
+  ipcMain.handle("editor:verifySafety", verifyEditingSafety);
+  ipcMain.handle("editor:buildBeforeAfter", buildBeforeAfterCompare);
+  ipcMain.handle("editor:exportEditedSocialAssets", exportEditedSocialAssets);
+  ipcMain.handle("editor:getManifest", getEditingManifest);
   ipcMain.handle("editor:getState", getEditingState);
   ipcMain.handle("socialAuth:startInstagramOAuth", () => startOAuth("instagram"));
   ipcMain.handle("socialAuth:startTikTokOAuth", () => startOAuth("tiktok"));
@@ -2327,6 +2401,7 @@ function registerIpc() {
   ipcMain.handle("folder:openContentInbox", openContentInbox);
   ipcMain.handle("folder:openSocialExports", openSocialExportsFolder);
   ipcMain.handle("folder:openEditedAssets", openEditedAssetsFolder);
+  ipcMain.handle("folder:openEditedSocialExports", openEditedSocialExportsFolder);
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
   ipcMain.handle("notify:test", () => {
     notify("HigherKey notification test", "Local notifications are wired.");

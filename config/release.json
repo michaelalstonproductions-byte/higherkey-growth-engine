@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally by default. AI Post Editing Studio creates non-destructive edit plans and local render jobs without overwriting original media.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. AI Editing Preview QA proves original media protection and exports approved edited assets into local social pack folders.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "AI Post Editing Studio",
-  "version": "V6.6"
+  "release_name": "AI Editing Preview QA",
+  "version": "V6.7"
 }

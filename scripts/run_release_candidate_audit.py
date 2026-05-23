@@ -47,6 +47,7 @@ REQUIRED_MODULES = [
     "growth_engine/social_publisher.py",
     "growth_engine/media_editor.py",
     "growth_engine/post_editing_intelligence.py",
+    "growth_engine/editing_manifest.py",
     "growth_engine/social_platforms/instagram.py",
     "growth_engine/social_platforms/tiktok.py",
 ]
@@ -79,6 +80,11 @@ REQUIRED_SCRIPTS = [
     "scripts/render_edit_preview.py",
     "scripts/render_final_post_asset.py",
     "scripts/test_media_editor_safety.py",
+    "scripts/build_editing_manifest.py",
+    "scripts/verify_editing_safety.py",
+    "scripts/build_before_after_compare.py",
+    "scripts/export_edited_social_assets.py",
+    "scripts/test_edited_social_export_safety.py",
 ]
 REQUIRED_CONFIGS = [
     "config/autopilot_policy.json",

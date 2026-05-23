@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "6.6.0",
-  "release_version": "V6.6",
+  "app_version": "6.7.0",
+  "release_version": "V6.7",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -179,6 +179,12 @@
       "to": "V6.6",
       "safe": true,
       "notes": "Add local AI Post Editing Studio, non-destructive edit plans, preview render jobs, thumbnail/platform output paths, and approval-gated final renders while preserving original media and existing social publishing safety gates."
+    },
+    {
+      "from": "V6.6",
+      "to": "V6.7",
+      "safe": true,
+      "notes": "Add editing preview manifests, before/after comparison metadata, original protection proof, and approval-gated edited social asset exports while preserving non-destructive editing and source media protection."
     }
   ],
   "required_runtime_files": [
@@ -277,7 +283,12 @@
     "scripts/build_edit_plan.py",
     "scripts/render_edit_preview.py",
     "scripts/render_final_post_asset.py",
-    "scripts/test_media_editor_safety.py"
+    "scripts/test_media_editor_safety.py",
+    "scripts/build_editing_manifest.py",
+    "scripts/verify_editing_safety.py",
+    "scripts/build_before_after_compare.py",
+    "scripts/export_edited_social_assets.py",
+    "scripts/test_edited_social_export_safety.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"

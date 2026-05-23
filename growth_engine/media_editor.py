@@ -245,7 +245,23 @@ def create_preview_job(config: AppConfig, *, plan_id: str | None = None, clip_id
     outputs = _outputs(config)
     plan = _find_plan(config, plan_id, clip_id)
     if not plan:
-        plan = build_edit_plan(config, clip_id=clip_id, dry_run=True)["plan"]
+        job = {
+            "job_id": "preview_" + hashlib.sha1(f"missing|{utc_now()}".encode()).hexdigest()[:10],
+            "type": "preview",
+            "plan_id": plan_id,
+            "clip_id": clip_id,
+            "dry_run": dry_run,
+            "status": "edit_plan_required",
+            "client_message": "Build a non-destructive edit plan before rendering a preview.",
+            "original_media_protected": True,
+            "source_overwrite_allowed": False,
+            "created_at": utc_now(),
+        }
+        jobs = _read_jobs(config)
+        jobs.append(job)
+        _write_jobs(config, jobs)
+        save_json_file(_analytics(config, "client_editing_state.json"), {"status": "edit_plan_required", "updated_at": utc_now(), "last_job": job})
+        return {"status": "warn", "job": job}
     source = _resolve_source(config, plan.get("source_path"))
     out_path = _safe_output(config, plan.get("preview_path"), outputs["previews"], f"{plan['plan_id']}_preview.mp4", source)
     ffmpeg_ok = shutil.which("ffmpeg") is not None
@@ -279,7 +295,25 @@ def create_final_render_job(config: AppConfig, *, plan_id: str | None = None, ap
     outputs = _outputs(config)
     plan = _find_plan(config, plan_id, None)
     if not plan:
-        plan = build_edit_plan(config, dry_run=True)["plan"]
+        job = {
+            "job_id": "final_" + hashlib.sha1(f"missing|{utc_now()}".encode()).hexdigest()[:10],
+            "type": "final_render",
+            "plan_id": plan_id,
+            "dry_run": dry_run,
+            "approved": approve,
+            "status": "edit_plan_required",
+            "client_message": "Build and review an edit plan before approving a final render.",
+            "final_render_requires_approval": True,
+            "original_media_protected": True,
+            "source_overwrite_allowed": False,
+            "delete_source_allowed": False,
+            "created_at": utc_now(),
+        }
+        jobs = _read_jobs(config)
+        jobs.append(job)
+        _write_jobs(config, jobs)
+        save_json_file(_analytics(config, "client_editing_state.json"), {"status": "edit_plan_required", "updated_at": utc_now(), "last_job": job})
+        return {"status": "warn", "job": job}
     source = _resolve_source(config, plan.get("source_path"))
     out_path = _safe_output(config, plan.get("render_path"), outputs["renders"], f"{plan['plan_id']}_final.mp4", source)
     ffmpeg_ok = shutil.which("ffmpeg") is not None

@@ -36,6 +36,10 @@ SAFE_AUTO_COMMANDS: dict[str, list[str]] = {
     "scan_post_editing_intelligence": ["python3", "scripts/scan_post_editing_intelligence.py"],
     "build_edit_plan": ["python3", "scripts/build_edit_plan.py"],
     "render_edit_preview": ["python3", "scripts/render_edit_preview.py"],
+    "build_editing_manifest": ["python3", "scripts/build_editing_manifest.py"],
+    "verify_editing_safety": ["python3", "scripts/verify_editing_safety.py"],
+    "build_before_after_compare": ["python3", "scripts/build_before_after_compare.py"],
+    "export_edited_social_assets": ["python3", "scripts/export_edited_social_assets.py"],
 }
 
 POLICY_PATH = "config/autopilot_policy.json"
@@ -196,6 +200,10 @@ def _title_to_safe_key(title: str, category: str) -> str | None:
         ("post editing", "build_edit_plan"),
         ("edit plan", "build_edit_plan"),
         ("preview render", "render_edit_preview"),
+        ("editing manifest", "build_editing_manifest"),
+        ("editing safety", "verify_editing_safety"),
+        ("before after", "build_before_after_compare"),
+        ("edited social export", "export_edited_social_assets"),
         ("draft", "build_post_composer_drafts"),
         ("dry-run publisher", "run_social_publisher"),
         ("dry run publisher", "run_social_publisher"),
@@ -265,6 +273,10 @@ def _default_safe_cards() -> list[dict[str, Any]]:
         ("scan_post_editing_intelligence", "Scan Post Editing Intelligence", "scan_post_editing_intelligence"),
         ("build_edit_plan", "Build Safe Edit Plan", "build_edit_plan"),
         ("render_edit_preview", "Render Safe Edit Preview", "render_edit_preview"),
+        ("build_editing_manifest", "Build Editing Manifest", "build_editing_manifest"),
+        ("verify_editing_safety", "Verify Editing Safety", "verify_editing_safety"),
+        ("build_before_after_compare", "Build Before/After Compare", "build_before_after_compare"),
+        ("export_edited_social_assets", "Dry Run Edited Social Export", "export_edited_social_assets"),
         ("build_post_composer_drafts", "Build Post Composer Drafts", "build_post_composer_drafts"),
         ("run_social_publisher_dry_run", "Run Social Publisher Dry Run", "run_social_publisher"),
     ]
