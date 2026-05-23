@@ -18,6 +18,8 @@ python3 scripts/export_edited_social_assets.py --dry-run
 
 Approval and rejection actions never delete media. Final render and edited social export remain separately approval-gated, original media remains protected, source overwrite is blocked, and edited social packs continue to write only under `out/social_exports_edited/`.
 
+Approval receipts are local audit records. They do not expire by default when `expires_at` is absent, but any receipt with an `expires_at` value in the past is rejected and cannot enable final render or edited social export.
+
 ## V6.7 AI Editing Preview QA
 
 V6.7 adds preview QA and edited asset export polish for the AI Post Editing Studio. HigherKey now builds local edit manifests, before/after comparison metadata, original protection proof, and approval-gated edited social export packs under `out/social_exports_edited/`.

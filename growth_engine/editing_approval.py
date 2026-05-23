@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +32,25 @@ def _approval_id(asset: dict[str, Any]) -> str:
     return "edit_approval_" + hashlib.sha1(basis.encode("utf-8")).hexdigest()[:12]
 
 
+def _parse_time(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _receipt_expired(receipt: dict[str, Any]) -> bool:
+    expires_at = _parse_time(receipt.get("expires_at"))
+    if expires_at is None:
+        return False
+    now = datetime.now(timezone.utc)
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at <= now
+
+
 def _receipts(config: AppConfig) -> list[dict[str, Any]]:
     payload = _load(_analytics(config, "editing_approval_receipts.json"), {"receipts": []})
     receipts = payload.get("receipts", [])
@@ -59,6 +79,8 @@ def matching_receipt(asset: dict[str, Any], scope: str, receipts: list[dict[str,
         if receipt.get("source_overwrite_allowed") is True:
             continue
         if receipt.get("status") not in {None, "approved", "pass"}:
+            continue
+        if _receipt_expired(receipt):
             continue
         return receipt
     return None
@@ -181,6 +203,7 @@ def approve_edited_asset(
     platform: str | None = None,
     scope: str = "preview_only",
     notes: str = "",
+    expires_at: str | None = None,
     dry_run: bool = True,
 ) -> dict[str, Any]:
     if scope not in APPROVAL_SCOPES:
@@ -239,6 +262,9 @@ def approve_edited_asset(
         "output_path": asset.get("final_render_path") if scope != "preview_only" else asset.get("preview_path"),
         "safety_report_reference": relative_path(_analytics(config, "editing_safety_report.json"), config.root),
         "reversible": scope in {"preview_only", "edited_social_export"},
+        "expires_at": expires_at,
+        "expired": False,
+        "valid_for_scope": True,
         "notes": notes,
         "status": "approved",
     }

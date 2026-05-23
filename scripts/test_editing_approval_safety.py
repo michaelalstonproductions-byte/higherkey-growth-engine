@@ -4,6 +4,7 @@ from __future__ import annotations
 import json
 import shutil
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,6 +86,50 @@ def main() -> int:
     if dry_export.get("candidate_count") != 0:
         failures.append("unapproved asset became export candidate")
 
+    receipts_path = config.analytics_dir / "editing_approval_receipts.json"
+    malicious_receipts = [
+        {
+            "receipt_id": "fixture_mismatched_asset",
+            "approval_id": "fixture_mismatched_asset",
+            "asset_id": "wrong_asset_id",
+            "plan_id": "safe_plan",
+            "clip_id": "safe_clip",
+            "platform": "tiktok",
+            "approved_by": "local_operator",
+            "approved_at": utc_now(),
+            "approval_scope": "edited_social_export",
+            "original_media_protected": True,
+            "source_overwrite_allowed": False,
+            "output_path": "out/post_editor/renders/safe.mp4",
+            "status": "approved",
+        },
+        {
+            "receipt_id": "fixture_expired_receipt",
+            "approval_id": "fixture_expired_receipt",
+            "asset_id": by_plan["safe_plan"]["asset_id"],
+            "plan_id": "safe_plan",
+            "clip_id": "safe_clip",
+            "platform": "tiktok",
+            "approved_by": "local_operator",
+            "approved_at": utc_now(),
+            "approval_scope": "edited_social_export",
+            "original_media_protected": True,
+            "source_overwrite_allowed": False,
+            "output_path": "out/post_editor/renders/safe.mp4",
+            "expires_at": (datetime.now(timezone.utc) - timedelta(days=1)).isoformat(timespec="seconds"),
+            "status": "approved",
+        },
+    ]
+    save_json_file(receipts_path, {"status": "pass", "receipts": malicious_receipts})
+    manifest = build_editing_manifest(config)
+    by_plan = {asset["plan_id"]: asset for asset in manifest["preview_manifest"]["assets"]}
+    if by_plan["safe_plan"].get("status") == "export_ready":
+        failures.append("mismatched or expired receipt incorrectly approved safe asset")
+    expired_export = export_edited_social_assets(config, dry_run=False, approve=True)
+    if expired_export.get("exported_count"):
+        failures.append("mismatched or expired receipt exported media")
+    save_json_file(receipts_path, {"status": "pass", "receipts": []})
+
     blocked = approve_edited_asset(config, plan_id="outside_plan", platform="tiktok", scope="edited_social_export", dry_run=False)
     if blocked.get("status") != "blocked":
         failures.append("outside render approval was not blocked")
@@ -129,6 +174,29 @@ def main() -> int:
         failures.append("rejected asset exported")
     if any(path.is_file() for path in export_root.rglob("*")) if export_root.exists() else False:
         failures.append("approved export copied rejected media")
+
+    shutil.rmtree(scratch)
+    _write_fixture(scratch)
+    config = load_config(scratch)
+    manifest = build_editing_manifest(config)
+    by_plan = {asset["plan_id"]: asset for asset in manifest["preview_manifest"]["assets"]}
+    revision_receipt = approve_edited_asset(config, plan_id="safe_plan", platform="tiktok", scope="edited_social_export", dry_run=False)
+    if revision_receipt.get("receipt_created") is not True:
+        failures.append("needs_revision setup receipt was not created")
+    reject_edited_asset(config, asset_id=by_plan["safe_plan"]["asset_id"], reason="fixture revision", needs_revision=True, dry_run=False)
+    manifest = build_editing_manifest(config)
+    by_plan = {asset["plan_id"]: asset for asset in manifest["preview_manifest"]["assets"]}
+    if by_plan["safe_plan"].get("status") == "export_ready":
+        failures.append("needs_revision asset remained export_ready")
+    revision_export = export_edited_social_assets(config, dry_run=False, approve=True)
+    if revision_export.get("exported_count"):
+        failures.append("needs_revision asset exported")
+    queue = build_editing_approval_queue(config)
+    if queue["client_state"]["summary"].get("needs_revision", 0) < 1:
+        failures.append("needs_revision asset was not reflected in approval queue")
+    evil_sibling = scratch / "out" / "social_exports_edited_evil"
+    if evil_sibling.exists():
+        failures.append("sibling-prefix edited export folder was created")
 
     report = {
         "status": "pass" if not failures else "fail",

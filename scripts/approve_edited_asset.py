@@ -22,6 +22,7 @@ def main() -> int:
     parser.add_argument("--platform")
     parser.add_argument("--scope", choices=["preview_only", "final_render", "edited_social_export"], default="preview_only")
     parser.add_argument("--notes", default="")
+    parser.add_argument("--expires-at", help="Optional ISO timestamp. If omitted, the local audit receipt does not expire.")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--write", action="store_true", help="Write the approval receipt. Without this, the command is a dry-run.")
     parser.add_argument("--json", action="store_true")
@@ -36,6 +37,7 @@ def main() -> int:
         platform=args.platform,
         scope=args.scope,
         notes=args.notes,
+        expires_at=args.expires_at,
         dry_run=not args.write or args.dry_run,
     )
     print(json.dumps(result, indent=2, sort_keys=True))

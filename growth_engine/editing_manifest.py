@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import re
 import shutil
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -61,6 +62,24 @@ def _safe_segment(value: Any, fallback: str) -> str:
     return segment[:96]
 
 
+def _parse_time(value: str | None) -> datetime | None:
+    if not value:
+        return None
+    try:
+        return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _receipt_expired(receipt: dict[str, Any]) -> bool:
+    expires_at = _parse_time(receipt.get("expires_at"))
+    if expires_at is None:
+        return False
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    return expires_at <= datetime.now(timezone.utc)
+
+
 def _safe_rel(config: AppConfig, value: str | None) -> str | None:
     path = _resolve(config, value)
     return relative_path(path, config.root) if path else None
@@ -96,6 +115,8 @@ def _matching_export_receipt(asset: dict[str, Any], receipts: list[dict[str, Any
         if receipt.get("source_overwrite_allowed") is True:
             continue
         if receipt.get("status") not in {None, "approved", "pass"}:
+            continue
+        if _receipt_expired(receipt):
             continue
         return receipt
     return None
