@@ -1,6 +1,6 @@
 # HigherKey Operator OS Client Trial QA Summary
 
-Version: V6.0 / 6.0.0
+Version: V7.0 / 7.0.0
 
 ## V7.0 Launch Checks
 
@@ -15,7 +15,7 @@ Known local sandbox diagnostics warnings can remain warnings when QA exits 0 and
 
 DMG:
 
-- `dist/HigherKey Operator OS-6.0.0-arm64.dmg`
+- `dist/HigherKey Operator OS-7.0.0-arm64.dmg`
 
 Trial package:
 
@@ -56,7 +56,7 @@ Manual upload reminder:
 
 - HigherKey prepares local platform folders.
 - The client uploads those prepared files manually.
-- No cloud APIs, social APIs, or direct posting APIs are configured.
+- No social posting happens unless official connectors are configured, readiness checks pass, and approval gates are met. Manual upload remains available.
 
 What to test during the trial:
 

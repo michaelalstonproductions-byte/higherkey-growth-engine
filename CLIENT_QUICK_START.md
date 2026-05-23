@@ -17,7 +17,7 @@ HigherKey Operator OS is a local-first desktop app for turning your footage into
 
 Manual upload remains available. Optional official social connections are gated by readiness, approval, and live publish safety checks. HigherKey does not modify originals and does not use cloud editing APIs by default.
 
-## V6.0 Release-Candidate Workflow
+## V7.0 Client Trial Workflow
 
 1. Open HigherKey Operator OS from the newest DMG.
 2. Click **Import Footage** and choose MP4, MOV, or M4V files.
@@ -42,7 +42,7 @@ After clips are ready, use:
 
 ## Manual Upload
 
-HigherKey prepares local upload folders for TikTok, Instagram Reels, YouTube Shorts, and Facebook Reels. It does not post directly, does not call cloud APIs, and no social posting APIs are configured.
+HigherKey prepares local upload folders for TikTok, Instagram Reels, YouTube Shorts, and Facebook Reels. No social posting happens unless official connectors are configured, readiness checks pass, and approval gates are met. Manual upload remains available.
 
 ## Getting Help
 

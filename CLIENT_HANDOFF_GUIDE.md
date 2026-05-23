@@ -2,7 +2,7 @@
 
 HigherKey Operator OS is a local-first desktop app for preparing short-form social clips from your own footage.
 
-No cloud APIs, no social APIs, and no direct posting are configured. HigherKey prepares local upload folders; you upload manually.
+No social posting happens unless official connectors are configured, readiness checks pass, and approval gates are met. Manual upload remains available.
 
 ## V7.0 What To Send
 
