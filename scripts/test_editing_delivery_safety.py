@@ -15,7 +15,7 @@ from growth_engine.editing_approval import approve_edited_asset, reject_edited_a
 from growth_engine.editing_delivery import build_editing_delivery_room, package_edited_assets, verify_edited_delivery_package
 from growth_engine.editing_manifest import build_editing_manifest
 from growth_engine.index import utc_now
-from growth_engine.json_store import save_json_file
+from growth_engine.json_store import load_json_file, save_json_file
 
 
 def _plan(plan_id: str, clip_id: str, render_path: str, source_path: str = "content_inbox/original.mp4") -> dict[str, object]:
@@ -125,6 +125,12 @@ def main() -> int:
     for required in ("delivery_manifest.json", "original_protection_proof.json", "README_CLIENT_REVIEW.md", "delivery_checklist.md"):
         if not (package_path / required).exists():
             failures.append(f"missing {required}")
+    manifest_path = package_path / "delivery_manifest.json"
+    receipts_path = config.analytics_dir / "editing_approval_receipts.json"
+    original_manifest = load_json_file(manifest_path, {"items": []})
+    original_receipts = load_json_file(receipts_path, {"receipts": []})
+    rejection_path = config.analytics_dir / "editing_rejection_log.json"
+    original_rejections = load_json_file(rejection_path, {"rejections": []})
     extra_final = package_path / "final_renders" / "unapproved_extra.mp4"
     extra_final.parent.mkdir(parents=True, exist_ok=True)
     extra_final.write_bytes(b"unapproved-extra")
@@ -132,6 +138,98 @@ def main() -> int:
     if extra_verify.get("status") != "fail":
         failures.append("delivery verifier accepted extra unapproved final render")
     extra_final.unlink(missing_ok=True)
+    fake_manifest = json.loads(json.dumps(original_manifest))
+    if fake_manifest.get("items"):
+        fake_manifest["items"][0]["receipt_id"] = "edit_receipt_fake"
+        save_json_file(manifest_path, fake_manifest)
+        fake_verify = verify_edited_delivery_package(config)
+        if fake_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted fake receipt_id in manifest")
+        save_json_file(manifest_path, original_manifest)
+    tampered_rejected_manifest = json.loads(json.dumps(original_manifest))
+    if tampered_rejected_manifest.get("items"):
+        tampered_rejected_manifest["items"][0]["asset_id"] = by_plan["rejected_plan"]["asset_id"]
+        tampered_rejected_manifest["items"][0]["plan_id"] = "rejected_plan"
+        tampered_rejected_manifest["items"][0]["clip_id"] = "rejected_clip"
+        tampered_rejected_manifest["items"][0]["receipt_id"] = next((r.get("receipt_id") for r in original_receipts.get("receipts", []) if r.get("plan_id") == "rejected_plan"), "missing")
+        tampered_rejected_manifest["items"][0]["final_render_path"] = "out/post_editor/renders/rejected.mp4"
+        shutil.copy2(scratch / "out/post_editor/renders/rejected.mp4", package_path / "final_renders" / "rejected.mp4")
+        save_json_file(manifest_path, tampered_rejected_manifest)
+        rejected_verify = verify_edited_delivery_package(config)
+        if rejected_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted currently rejected asset")
+        (package_path / "final_renders" / "rejected.mp4").unlink(missing_ok=True)
+        save_json_file(manifest_path, original_manifest)
+    tampered_revision_manifest = json.loads(json.dumps(original_manifest))
+    if tampered_revision_manifest.get("items"):
+        tampered_revision_manifest["items"][0]["asset_id"] = by_plan["revision_plan"]["asset_id"]
+        tampered_revision_manifest["items"][0]["plan_id"] = "revision_plan"
+        tampered_revision_manifest["items"][0]["clip_id"] = "revision_clip"
+        tampered_revision_manifest["items"][0]["receipt_id"] = next((r.get("receipt_id") for r in original_receipts.get("receipts", []) if r.get("plan_id") == "revision_plan"), "missing")
+        tampered_revision_manifest["items"][0]["final_render_path"] = "out/post_editor/renders/revision.mp4"
+        shutil.copy2(scratch / "out/post_editor/renders/revision.mp4", package_path / "final_renders" / "revision.mp4")
+        save_json_file(manifest_path, tampered_revision_manifest)
+        revision_verify = verify_edited_delivery_package(config)
+        if revision_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted currently needs_revision asset")
+        (package_path / "final_renders" / "revision.mp4").unlink(missing_ok=True)
+        save_json_file(manifest_path, original_manifest)
+    missing_receipts = json.loads(json.dumps(original_receipts))
+    missing_receipts["receipts"] = []
+    save_json_file(receipts_path, missing_receipts)
+    missing_verify = verify_edited_delivery_package(config)
+    if missing_verify.get("status") != "fail":
+        failures.append("delivery verifier accepted receipt absent from real approval receipts")
+    save_json_file(receipts_path, original_receipts)
+    mismatched_asset_receipts = json.loads(json.dumps(original_receipts))
+    if mismatched_asset_receipts.get("receipts"):
+        mismatched_asset_receipts["receipts"][0]["asset_id"] = "edited_wrong_asset"
+        save_json_file(receipts_path, mismatched_asset_receipts)
+        mismatched_asset_verify = verify_edited_delivery_package(config)
+        if mismatched_asset_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted mismatched asset_id receipt")
+        save_json_file(receipts_path, original_receipts)
+    mismatched_platform_receipts = json.loads(json.dumps(original_receipts))
+    if mismatched_platform_receipts.get("receipts"):
+        mismatched_platform_receipts["receipts"][0]["platform"] = "instagram_reels"
+        save_json_file(receipts_path, mismatched_platform_receipts)
+        mismatched_platform_verify = verify_edited_delivery_package(config)
+        if mismatched_platform_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted mismatched platform receipt")
+        save_json_file(receipts_path, original_receipts)
+    missing_clip_receipts = json.loads(json.dumps(original_receipts))
+    if missing_clip_receipts.get("receipts"):
+        missing_clip_receipts["receipts"][0].pop("clip_id", None)
+        save_json_file(receipts_path, missing_clip_receipts)
+        missing_clip_verify = verify_edited_delivery_package(config)
+        if missing_clip_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted missing receipt clip_id")
+        save_json_file(receipts_path, original_receipts)
+    wrong_clip_receipts = json.loads(json.dumps(original_receipts))
+    if wrong_clip_receipts.get("receipts"):
+        wrong_clip_receipts["receipts"][0]["clip_id"] = "wrong_clip"
+        save_json_file(receipts_path, wrong_clip_receipts)
+        wrong_clip_verify = verify_edited_delivery_package(config)
+        if wrong_clip_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted wrong receipt clip_id")
+        save_json_file(receipts_path, original_receipts)
+    wrong_scope_receipts = json.loads(json.dumps(original_receipts))
+    if wrong_scope_receipts.get("receipts"):
+        wrong_scope_receipts["receipts"][0]["approval_scope"] = "final_render"
+        save_json_file(receipts_path, wrong_scope_receipts)
+        wrong_scope_verify = verify_edited_delivery_package(config)
+        if wrong_scope_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted wrong approval scope")
+        save_json_file(receipts_path, original_receipts)
+    expired_receipts = json.loads(json.dumps(original_receipts))
+    if expired_receipts.get("receipts"):
+        expired_receipts["receipts"][0]["expires_at"] = "2000-01-01T00:00:00+00:00"
+        save_json_file(receipts_path, expired_receipts)
+        expired_verify = verify_edited_delivery_package(config)
+        if expired_verify.get("status") != "fail":
+            failures.append("delivery verifier accepted expired receipt")
+        save_json_file(receipts_path, original_receipts)
+    save_json_file(rejection_path, original_rejections)
     secret_file = package_path / "token.txt"
     secret_file.write_text("not-a-real-token", encoding="utf-8")
     secret_verify = verify_edited_delivery_package(config)

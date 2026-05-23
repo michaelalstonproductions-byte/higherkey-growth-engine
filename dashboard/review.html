@@ -4192,6 +4192,18 @@
         const items = state.editingDeliveryRoom?.items || state.clientEditingDeliveryState?.items || [];
         return Array.isArray(items) ? items : [];
       }
+      function isApprovedDeliveryItem(item) {
+        return ["approved_for_delivery", "packaged", "delivered"].includes(item?.delivery_status)
+          && Boolean(item?.receipt_id)
+          && item?.original_media_protected === true
+          && item?.source_overwrite_allowed === false
+          && item?.paths_contained === true;
+      }
+      function approvedDeliveryItems() {
+        const manifestItems = state.editingDeliveryManifest?.items;
+        const source = Array.isArray(manifestItems) ? manifestItems : editingDeliveryItems();
+        return source.filter(isApprovedDeliveryItem);
+      }
       function selectedDeliveryItem(entry) {
         const asset = selectedEditingAsset(entry);
         const clipId = entry?.clip_id || entry?.id || "";
@@ -4216,8 +4228,8 @@
         return metrics + (list || `<div class="empty-state"><h2>No delivery queue yet</h2><p>Build the delivery room after edited assets are approved.</p><button class="btn red" data-desktop-action="build-editing-delivery-room">Build Delivery Room</button></div>`);
       }
       function editingDeliveryGalleryHtml() {
-        const items = editingDeliveryItems().filter((item) => ["ready_for_review", "approved_for_delivery", "packaged", "delivered"].includes(item.delivery_status));
-        return items.slice(0, 6).map((item) => `<div class="summary-row"><span>${html(item.title || item.clip_id || "Edited asset")}</span><strong>${html(item.before_after_status || "pending")}</strong></div><p class="muted">Preview: ${html(item.preview_path || "pending")} · Final: ${html(item.final_render_path || "pending")}</p>`).join("") || `<div class="muted">Build the delivery room to create client review gallery metadata.</div>`;
+        const items = approvedDeliveryItems();
+        return items.slice(0, 6).map((item) => `<div class="summary-row"><span>${html(item.title || item.clip_id || "Edited asset")}</span><strong>${html(item.before_after_status || "approved")}</strong></div><p class="muted">Preview: ${html(item.preview_path || "pending")} · Final: ${html(item.final_render_path || "pending")}</p>`).join("") || `<div class="muted">No approved edited assets are ready for delivery yet.</div>`;
       }
       function deliveryPackageStatusHtml() {
         const verify = state.editedDeliveryPackageVerification || {};

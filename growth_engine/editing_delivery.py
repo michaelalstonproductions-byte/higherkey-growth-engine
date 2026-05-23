@@ -117,6 +117,73 @@ def _receipt_for(asset: dict[str, Any], receipts: list[dict[str, Any]], scope: s
     return None
 
 
+def _valid_delivery_receipt(item: dict[str, Any], receipts_by_id: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    receipt_id = item.get("receipt_id")
+    if not receipt_id:
+        return None
+    receipt = receipts_by_id.get(str(receipt_id))
+    if not receipt:
+        return None
+    if receipt.get("asset_id") != item.get("asset_id"):
+        return None
+    if receipt.get("plan_id") != item.get("plan_id"):
+        return None
+    if item.get("clip_id"):
+        if not receipt.get("clip_id"):
+            return None
+        if str(receipt.get("clip_id")) != str(item.get("clip_id")):
+            return None
+    if str(receipt.get("platform")) != str(item.get("platform")):
+        return None
+    if receipt.get("approval_scope") != "edited_social_export":
+        return None
+    if receipt.get("original_media_protected") is not True:
+        return None
+    if receipt.get("source_overwrite_allowed") is True:
+        return None
+    if receipt.get("status") not in {None, "approved", "pass"}:
+        return None
+    if _receipt_expired(receipt):
+        return None
+    return receipt
+
+
+def _current_item_statuses(config: AppConfig) -> dict[str, str]:
+    statuses: dict[str, str] = {}
+    for filename in ("editing_approval_queue.json", "client_editing_approval_state.json", "editing_delivery_room.json", "editing_delivery_manifest.json"):
+        payload = _load(_analytics(config, filename), {"items": []})
+        items = payload.get("items", []) if isinstance(payload.get("items"), list) else []
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            status = item.get("status") or item.get("delivery_status")
+            if not status:
+                continue
+            for key in (item.get("asset_id"), item.get("plan_id"), item.get("clip_id")):
+                if key:
+                    statuses[str(key)] = str(status)
+            composite = "|".join(str(item.get(field) or "") for field in ("asset_id", "plan_id", "clip_id", "platform"))
+            if composite.strip("|"):
+                statuses[composite] = str(status)
+    return statuses
+
+
+def _latest_rejection_status(item: dict[str, Any], rejections: list[dict[str, Any]], current_statuses: dict[str, str]) -> str | None:
+    item_keys = {str(value) for value in (item.get("asset_id"), item.get("plan_id"), item.get("clip_id")) if value}
+    for rejection in reversed(rejections):
+        if rejection.get("status") not in {"rejected", "needs_revision"}:
+            continue
+        rejection_keys = {str(value) for value in (rejection.get("asset_id"), rejection.get("plan_id"), rejection.get("clip_id")) if value}
+        if item_keys & rejection_keys:
+            return str(rejection.get("status"))
+    composite = "|".join(str(item.get(field) or "") for field in ("asset_id", "plan_id", "clip_id", "platform"))
+    for key in (*item_keys, composite):
+        status = current_statuses.get(key)
+        if status in {"rejected", "needs_revision"}:
+            return status
+    return None
+
+
 def _rejection_status(asset: dict[str, Any], rejections: list[dict[str, Any]]) -> str:
     for rejection in reversed(rejections):
         if rejection.get("asset_id") == asset.get("asset_id") and rejection.get("status") in {"rejected", "needs_revision"}:
@@ -166,6 +233,7 @@ def build_editing_delivery_room(config: AppConfig) -> dict[str, Any]:
             "asset_id": asset.get("asset_id"),
             "approval_id": approval_item.get("approval_id"),
             "receipt_id": receipt.get("receipt_id") if receipt else None,
+            "plan_id": asset.get("plan_id"),
             "clip_id": asset.get("clip_id"),
             "platform": asset.get("platform"),
             "title": asset.get("clip_id") or asset.get("asset_id"),
@@ -387,15 +455,27 @@ def verify_edited_delivery_package(config: AppConfig) -> dict[str, Any]:
             manifest_path = package_path / "delivery_manifest.json"
             manifest = _load(manifest_path, {"items": []}) if manifest_path.exists() else {"items": []}
             manifest_items = manifest.get("items", []) if isinstance(manifest.get("items"), list) else []
+            receipt_payload = _load(_analytics(config, "editing_approval_receipts.json"), {"receipts": []})
+            receipt_list = receipt_payload.get("receipts", []) if isinstance(receipt_payload.get("receipts"), list) else []
+            receipts_by_id = {str(receipt.get("receipt_id")): receipt for receipt in receipt_list if isinstance(receipt, dict) and receipt.get("receipt_id")}
+            rejection_payload = _load(_analytics(config, "editing_rejection_log.json"), {"rejections": []})
+            rejections = rejection_payload.get("rejections", []) if isinstance(rejection_payload.get("rejections"), list) else []
+            current_statuses = _current_item_statuses(config)
             approved_names: set[str] = set()
-            approved_rel_paths: set[str] = set()
+            approved_items_by_name: dict[str, dict[str, Any]] = {}
             for item in manifest_items:
                 if not isinstance(item, dict):
                     continue
                 final_render = _resolve(config, item.get("final_render_path"))
+                receipt = _valid_delivery_receipt(item, receipts_by_id)
+                rejection_status = _latest_rejection_status(item, rejections, current_statuses)
+                current_delivery_status = current_statuses.get(str(item.get("asset_id") or "")) or current_statuses.get(str(item.get("plan_id") or ""))
                 valid_item = (
                     item.get("delivery_status") in {"approved_for_delivery", "packaged", "delivered"}
                     and item.get("receipt_id")
+                    and receipt is not None
+                    and rejection_status is None
+                    and (current_delivery_status in {None, "approved_for_delivery", "packaged", "delivered", "export_ready", "approved"})
                     and item.get("original_media_protected") is True
                     and item.get("source_overwrite_allowed") is False
                     and item.get("paths_contained") is True
@@ -403,10 +483,19 @@ def verify_edited_delivery_package(config: AppConfig) -> dict[str, Any]:
                     and _inside(final_render, config.root / EDITOR_ROOT / "renders")
                 )
                 if not valid_item:
-                    failures.append({"asset_id": item.get("asset_id"), "reason": "invalid_or_unapproved_delivery_manifest_item"})
+                    reason = "invalid_or_unapproved_delivery_manifest_item"
+                    if rejection_status == "rejected":
+                        reason = "rejected_asset_in_package"
+                    elif rejection_status == "needs_revision":
+                        reason = "needs_revision_asset_in_package"
+                    elif current_delivery_status not in {None, "approved_for_delivery", "packaged", "delivered", "export_ready", "approved"}:
+                        reason = "package_manifest_not_current"
+                    elif item.get("clip_id") and receipt is None:
+                        reason = "receipt_clip_id_mismatch"
+                    failures.append({"asset_id": item.get("asset_id"), "reason": reason})
                     continue
                 approved_names.add(final_render.name)
-                approved_rel_paths.add(str(item.get("final_render_path") or ""))
+                approved_items_by_name[final_render.name] = item
             final_root = package_path / "final_renders"
             if final_root.exists():
                 for path in final_root.rglob("*"):
@@ -417,6 +506,8 @@ def verify_edited_delivery_package(config: AppConfig) -> dict[str, Any]:
                         continue
                     if path.name not in approved_names:
                         failures.append({"path": relative_path(path, config.root), "reason": "unapproved_or_unmanifested_final_render"})
+                    elif not _valid_delivery_receipt(approved_items_by_name[path.name], receipts_by_id):
+                        failures.append({"path": relative_path(path, config.root), "reason": "invalid_or_missing_delivery_receipt"})
             elif approved_names:
                 failures.append({"path": relative_path(final_root, config.root), "reason": "approved_final_render_folder_missing"})
         status = "pass" if not failures else "fail"
