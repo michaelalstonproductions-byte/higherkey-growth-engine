@@ -51,6 +51,7 @@ REQUIRED_MODULES = [
     "growth_engine/editing_approval.py",
     "growth_engine/editing_delivery.py",
     "growth_engine/client_delivery.py",
+    "growth_engine/client_feedback.py",
     "growth_engine/social_platforms/instagram.py",
     "growth_engine/social_platforms/tiktok.py",
 ]
@@ -98,6 +99,8 @@ REQUIRED_SCRIPTS = [
     "scripts/record_editing_delivery_note.py",
     "scripts/test_editing_delivery_safety.py",
     "scripts/build_client_delivery_manifest.py",
+    "scripts/collect_trial_feedback.py",
+    "scripts/build_trial_issue_queue.py",
 ]
 REQUIRED_CONFIGS = [
     "config/autopilot_policy.json",

@@ -80,6 +80,10 @@ def issue_report(
         "client_tasks.json": analytics / "client_tasks.json",
         "client_integrity.json": analytics / "client_integrity.json",
         "client_storage.json": analytics / "client_storage.json",
+        "client_feedback_summary.json": analytics / "client_feedback_summary.json",
+        "client_issue_queue.json": analytics / "client_issue_queue.json",
+        "client_trial_status.json": analytics / "client_trial_status.json",
+        "client_delivery_manifest.json": analytics / "client_delivery_manifest.json",
     }
     if include_runtime:
         source_files.update({
@@ -144,6 +148,7 @@ def issue_report(
         "",
         "Client note:",
         "Describe what happened, what you expected, and which step you were on.",
+        "Feedback and issue queue summaries are redacted before inclusion.",
         "",
     ])
 

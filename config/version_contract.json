@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "7.0.0",
-  "release_version": "V7.0",
+  "app_version": "7.1.0",
+  "release_version": "V7.1",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -203,6 +203,12 @@
       "to": "V7.0",
       "safe": true,
       "notes": "Add Client Delivery Launch polish, Launch Room readiness, client delivery manifests, rehearsal summaries, handoff/trial package refresh, and support-safe delivery docs while preserving existing local workflows and safety gates."
+    },
+    {
+      "from": "V7.0",
+      "to": "V7.1",
+      "safe": true,
+      "notes": "Add local Client Trial Operations, feedback inbox, issue queue, trial status summaries, and support-safe feedback packaging while preserving client delivery, manual upload, and all approval gates."
     }
   ],
   "required_runtime_files": [
@@ -316,7 +322,9 @@
     "scripts/verify_edited_delivery_package.py",
     "scripts/record_editing_delivery_note.py",
     "scripts/test_editing_delivery_safety.py",
-    "scripts/build_client_delivery_manifest.py"
+    "scripts/build_client_delivery_manifest.py",
+    "scripts/collect_trial_feedback.py",
+    "scripts/build_trial_issue_queue.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"

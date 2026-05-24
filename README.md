@@ -2,6 +2,29 @@
 
 Local-first Python prototype for turning videos dropped into `content_inbox/` into reviewable vertical clip candidates.
 
+## V7.1 Client Trial Operations
+
+V7.1 adds a local Trial Ops layer for real client sessions. Operators can create a feedback template, import client feedback from local JSON or Markdown, build a severity-grouped issue queue, create a trial fix plan, and include redacted support context without uploading anything to cloud services.
+
+New local outputs:
+
+- `analytics/client_feedback_inbox.json`
+- `analytics/client_feedback_summary.json`
+- `analytics/client_trial_status.json`
+- `analytics/client_issue_queue.json`
+- `out/client_delivery/TRIAL_ISSUE_QUEUE.md`
+- `out/client_delivery/TRIAL_FIX_PLAN.md`
+
+Run:
+
+```bash
+python3 scripts/collect_trial_feedback.py --template
+python3 scripts/build_trial_issue_queue.py
+python3 scripts/create_issue_report.py --client-safe
+```
+
+Feedback and support packages are local by default. They exclude private media, `content_inbox/`, raw `clips/`, runtime databases, token files, local connector config, local live publish policy, secrets, and credentials by default. Trial Ops does not upload feedback, post to social platforms, or mark issues fixed automatically.
+
 ## V7.0 Client Delivery Launch
 
 V7.0 adds Launch Room polish for client handoff. HigherKey now builds a client delivery manifest, launch readiness checklist, client rehearsal summary, and client-facing delivery docs so the app is easier to test, support, and hand to a client without changing the core engine.

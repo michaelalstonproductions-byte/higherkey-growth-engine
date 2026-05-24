@@ -4,7 +4,7 @@ HigherKey Operator OS is a local-first desktop app for preparing short-form soci
 
 No social posting happens unless official connectors are configured, readiness checks pass, and approval gates are met. Manual upload remains available.
 
-## V7.0 What To Send
+## V7.1 What To Send
 
 - The current HigherKey DMG or a pointer to the current DMG.
 - `CLIENT_QUICK_START.md`
@@ -16,8 +16,9 @@ No social posting happens unless official connectors are configured, readiness c
 - `out/client_delivery/CLIENT_DELIVERY_CHECKLIST.md`
 - A generated handoff or trial package when intentionally built.
 - Approved edited delivery packages when available.
+- Trial issue queue and fix plan when intentionally generated after a client session.
 
-## V7.0 What Not To Send
+## V7.1 What Not To Send
 
 Do not send original private source media, `content_inbox/`, raw `clips/`, runtime databases, logs, token files, local connector config, local live publish policy, secrets, or credentials. Edited delivery packages exclude originals by default.
 
@@ -59,6 +60,7 @@ Use `Reset Demo Workspace` to clear generated demo/test outputs before a client 
 - **No clips showing:** Confirm footage was imported, then click `Process Media`.
 - **Export folder missing:** Generate social packs, then click `Open Social Exports`.
 - **Need support:** Click `Create Support Package`. The package excludes original footage by default.
+- **Need to send feedback:** Open `Trial Ops`, create the feedback template, import client notes locally, then build the issue queue.
 - **Need technical details:** Open `Diagnostics`.
 
 ## Beta Feedback
@@ -66,9 +68,10 @@ Use `Reset Demo Workspace` to clear generated demo/test outputs before a client 
 Use `BETA_READINESS_CHECKLIST.md` during the walkthrough. Feedback can be captured locally with:
 
 ```bash
-python3 scripts/collect_client_feedback.py
+python3 scripts/collect_trial_feedback.py --template
+python3 scripts/build_trial_issue_queue.py
 ```
 
 ## Local-Only Safety
 
-All processing happens locally. HigherKey does not post to social platforms and does not call cloud APIs.
+All processing happens locally. HigherKey does not post to social platforms and does not call cloud APIs. Trial feedback is stored locally by default. Support packages are redacted and exclude private media, tokens, local connector config, runtime databases, and raw logs by default.

@@ -2,7 +2,7 @@
 
 Use this checklist before handing a trial build to a client.
 
-## V7.0 Client Delivery
+## V7.1 Client Delivery
 
 - [ ] Run Launch Room > Run Launch Audit.
 - [ ] Run Launch Room > Run Client Rehearsal.
@@ -12,6 +12,7 @@ Use this checklist before handing a trial build to a client.
 - [ ] Verify edited delivery package when edited assets are included.
 - [ ] Confirm manual upload fallback is visible.
 - [ ] Confirm optional social connection language does not imply automatic posting.
+- [ ] Confirm Trial Ops feedback template, issue queue, and redacted support package flow are available.
 - [ ] Confirm original source media is not included by default.
 - [ ] Confirm token, secret, connector local config, live publish local policy, runtime DB, logs, and raw clips are not included.
 
@@ -47,6 +48,8 @@ Use this checklist before handing a trial build to a client.
 - [ ] Confirm `latest_dmg_pointer.json` points to the current DMG.
 - [ ] Confirm `analytics/release_candidate_audit.json` exists.
 - [ ] Confirm `analytics/client_rehearsal_report.json` exists.
+- [ ] Confirm `analytics/client_feedback_inbox.json`, `analytics/client_feedback_summary.json`, `analytics/client_trial_status.json`, and `analytics/client_issue_queue.json` exist after Trial Ops checks.
+- [ ] Confirm `out/client_delivery/TRIAL_ISSUE_QUEUE.md` and `out/client_delivery/TRIAL_FIX_PLAN.md` exist.
 - [ ] Confirm no cloud APIs, social APIs, or direct posting APIs are configured.
 
 ## Handoff
@@ -55,4 +58,4 @@ Use this checklist before handing a trial build to a client.
 - [ ] Send `out/trial_release/`.
 - [ ] Include `CLIENT_QUICK_START.md`.
 - [ ] Include `TRIAL_LIMITATIONS.md`.
-- [ ] Ask the client to capture feedback locally with the in-app feedback action.
+- [ ] Ask the client to capture feedback locally with the Trial Ops feedback template.

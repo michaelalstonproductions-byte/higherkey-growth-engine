@@ -33,6 +33,7 @@ Client workflow:
 5. Build Marketing / Creative / Command Center plans when useful
 6. Use Autopilot dry-run for safe local preparation tasks
 7. Upload manually
+8. Use Trial Ops to collect local feedback, build the issue queue, and create a redacted support package
 
 Release-candidate checks:
 
@@ -44,6 +45,8 @@ Release-candidate checks:
 Support workflow:
 
 - Create a client-safe support package with `python3 scripts/create_issue_report.py --client-safe`.
+- Create a local feedback template with `python3 scripts/collect_trial_feedback.py --template`.
+- Build the issue queue with `python3 scripts/build_trial_issue_queue.py`.
 - Support packages redact local paths by default.
 - Original footage, generated clips, social export media, runtime databases, full logs, and tokens are excluded by default.
 

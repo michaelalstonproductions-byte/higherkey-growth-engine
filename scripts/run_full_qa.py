@@ -70,6 +70,8 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "editing_manifest.py",
         resources / "app-assets" / "growth_engine" / "editing_approval.py",
         resources / "app-assets" / "growth_engine" / "editing_delivery.py",
+        resources / "app-assets" / "growth_engine" / "client_delivery.py",
+        resources / "app-assets" / "growth_engine" / "client_feedback.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_marketing_plan.py",
@@ -115,6 +117,8 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "record_editing_delivery_note.py",
         resources / "app-assets" / "scripts" / "test_editing_delivery_safety.py",
         resources / "app-assets" / "scripts" / "build_client_delivery_manifest.py",
+        resources / "app-assets" / "scripts" / "collect_trial_feedback.py",
+        resources / "app-assets" / "scripts" / "build_trial_issue_queue.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -487,6 +491,39 @@ def trial_package_check(root: Path) -> dict[str, object]:
         "missing_quick_start": missing_quick_start,
         "missing_limitations": missing_limitations,
         "script_flags_ok": script_flags_ok,
+    }
+
+
+def client_trial_ops_check(root: Path) -> dict[str, object]:
+    required = [
+        root / "analytics" / "client_feedback_inbox.json",
+        root / "analytics" / "client_feedback_summary.json",
+        root / "analytics" / "client_trial_status.json",
+        root / "analytics" / "client_issue_queue.json",
+        root / "out" / "client_delivery" / "TRIAL_ISSUE_QUEUE.md",
+        root / "out" / "client_delivery" / "TRIAL_FIX_PLAN.md",
+    ]
+    missing = [relative_path(path, root) for path in required if not path.exists()]
+    forbidden_hits = []
+    scan_roots = [root / "out" / "client_delivery", root / "out" / "client_issue_report"]
+    for folder in scan_roots:
+        if not folder.exists():
+            continue
+        for path in folder.rglob("*"):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(root)
+            lower = str(rel).lower()
+            if any(part in rel.parts for part in ("content_inbox", "clips", "logs")):
+                forbidden_hits.append(str(rel))
+            if any(term in lower for term in ("token", "secret", "credential", "social_connectors.json", ".social_token_vault.local")):
+                forbidden_hits.append(str(rel))
+    status = "pass" if not missing and not forbidden_hits else "fail"
+    return {
+        "name": "client_trial_ops_validation",
+        "status": status,
+        "missing": missing,
+        "forbidden_hits": sorted(set(forbidden_hits)),
     }
 
 
@@ -1324,6 +1361,10 @@ def main() -> int:
     append_stage(results, qa_stage("editing_delivery_note_dry_run", ["python3", "scripts/record_editing_delivery_note.py", "--dry-run", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("editing_delivery_safety_fixture", ["python3", "scripts/test_editing_delivery_safety.py"], root, timeout=60), config)
     append_stage(results, qa_stage("client_delivery_manifest_build", ["python3", "scripts/build_client_delivery_manifest.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("collect_trial_feedback_template", ["python3", "scripts/collect_trial_feedback.py", "--template", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("build_trial_issue_queue", ["python3", "scripts/build_trial_issue_queue.py", "--json"], root, timeout=60), config)
+    print("[qa] client_trial_ops_validation", flush=True)
+    append_stage(results, client_trial_ops_check(root), config)
     print("[qa] editing_studio_validation", flush=True)
     append_stage(results, editing_studio_check(root), config)
     append_stage(results, qa_stage("production_command_dry_run", ["python3", "scripts/build_production_command.py", "--dry-run"], root, timeout=60), config)

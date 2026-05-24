@@ -177,9 +177,10 @@ def main() -> int:
         check("editing_approval_route", bridge_exists(root, "buildEditingApprovalQueue", "editor:buildApprovalQueue"), "Editing approval route exists."),
         check("edited_delivery_route", bridge_exists(root, "buildEditingDeliveryRoom", "editor:buildDeliveryRoom"), "Edited delivery route exists."),
         check("launch_room_route", bridge_exists(root, "buildClientDeliveryManifest", "launch:buildClientDeliveryManifest"), "Launch Room bridge exists."),
+        check("trial_ops_route", bridge_exists(root, "collectTrialFeedback", "feedback:collectTrial") and bridge_exists(root, "buildTrialIssueQueue", "feedback:buildTrialIssueQueue"), "Trial Ops feedback and issue queue bridges exist."),
         check("support_package_script", (root / "scripts" / "create_issue_report.py").exists(), "Client-safe support package script exists."),
         check("support_package_route", bridge_exists(root, "createIssueReport", "support:createIssueReport"), "Support package bridge exists."),
-        check("feedback_script", (root / "scripts" / "collect_client_feedback.py").exists(), "Local feedback capture script exists."),
+        check("feedback_script", (root / "scripts" / "collect_trial_feedback.py").exists(), "Local trial feedback capture script exists."),
         check("manual_upload_fallback", "manual upload" in text(root / "README.md").lower(), "Manual upload fallback is documented."),
         check("no_live_social_rehearsal", True, "Client rehearsal performs no live social API calls."),
         check("no_destructive_edit_rehearsal", True, "Client rehearsal performs no destructive edit actions."),
@@ -192,6 +193,7 @@ def main() -> int:
         "Review clips, approve the strongest moments, and export Social Packs.",
         "Open Social Packs and upload manually. HigherKey does not post directly.",
         "Run Command, Autopilot, Marketing, Growth, and Creative Director views to rehearse the client workflow.",
+        "Use Trial Ops to collect local feedback and build the issue queue after client sessions.",
         "Create a support package if anything looks wrong.",
     ]
     report: dict[str, Any] = {

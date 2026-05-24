@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally by default. Client Delivery Launch packages handoff, support, trial, and edited delivery assets while excluding originals and local secrets by default.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. Client Trial Operations collects feedback, support context, and issue queues while excluding originals and local secrets by default.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "Client Delivery Launch",
-  "version": "V7.0"
+  "release_name": "Client Trial Operations",
+  "version": "V7.1"
 }

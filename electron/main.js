@@ -878,6 +878,47 @@ async function openFeedbackFolder() {
   return { ok: true, path: feedbackDir, activeProjectRoot };
 }
 
+async function collectTrialFeedback(options = {}) {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const args = ["scripts/collect_trial_feedback.py", "--json"];
+  if (options.template !== false) args.push("--template");
+  if (options.inputPath) args.push("--input", String(options.inputPath));
+  if (options.category) args.push("--category", String(options.category));
+  if (options.severity) args.push("--severity", String(options.severity));
+  if (options.title) args.push("--title", String(options.title));
+  if (options.description) args.push("--description", String(options.description));
+  if (options.dryRun) args.push("--dry-run");
+  const result = await runPython(args);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function buildTrialIssueQueue() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/build_trial_issue_queue.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function getClientFeedbackInbox() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    inbox: await readAnalyticsJson("client_feedback_inbox.json", {}),
+    summary: await readAnalyticsJson("client_feedback_summary.json", {}),
+    trialStatus: await readAnalyticsJson("client_trial_status.json", {})
+  };
+}
+
+async function getClientIssueQueue() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    issueQueue: await readAnalyticsJson("client_issue_queue.json", {}),
+    trialStatus: await readAnalyticsJson("client_trial_status.json", {})
+  };
+}
+
 async function createIssueReport() {
   return runPython(["scripts/create_issue_report.py"]);
 }
@@ -2547,6 +2588,10 @@ function registerIpc() {
   ipcMain.handle("workflow:getClient", getClientWorkflow);
   ipcMain.handle("workflow:createDemoProject", createDemoProject);
   ipcMain.handle("feedback:collectClient", (_event, options = {}) => collectClientFeedback(options));
+  ipcMain.handle("feedback:collectTrial", (_event, options = {}) => collectTrialFeedback(options));
+  ipcMain.handle("feedback:buildTrialIssueQueue", buildTrialIssueQueue);
+  ipcMain.handle("feedback:getInbox", getClientFeedbackInbox);
+  ipcMain.handle("feedback:getIssueQueue", getClientIssueQueue);
   ipcMain.handle("feedback:openFolder", openFeedbackFolder);
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);

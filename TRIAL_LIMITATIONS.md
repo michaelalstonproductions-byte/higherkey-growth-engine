@@ -2,13 +2,14 @@
 
 HigherKey Operator OS is local-first trial software for client evaluation.
 
-## V7.0 Launch Notes
+## V7.1 Launch Notes
 
 - HigherKey prepares local assets, manifests, and packages.
 - Manual upload remains the default fallback.
 - Live posting requires official account connection, readiness checks, explicit approval, and controlled live publish gates.
 - Editing is non-destructive. Original footage is not overwritten or deleted.
 - Edited delivery packages include approved edited outputs and exclude original source media by default.
+- Trial Ops can collect local feedback, build an issue queue, and create a fix plan without uploading anything.
 - No cloud editing APIs, scraping, browser automation, password login, or unauthorized social posting are enabled by default.
 
 ## What This Trial Does
@@ -17,6 +18,7 @@ HigherKey Operator OS is local-first trial software for client evaluation.
 - Processes footage locally into clips, captions, thumbnails, recommendations, and manual-upload social export packs.
 - Keeps runtime outputs in the selected local project folder.
 - Creates client-safe support packages without original footage by default.
+- Creates local feedback templates and issue queues for client trial follow-up.
 
 ## What This Trial Does Not Do
 
@@ -49,3 +51,5 @@ Sandboxed verification can report a localhost or macOS AppKit launch warning in 
 ## Support Package Guidance
 
 If something fails, create a support package from inside the app. It includes client-safe state summaries and excludes original footage, private media, full logs, runtime DB files, and local tokens by default.
+
+Feedback imported through Trial Ops is stored locally and redacted for sensitive paths or token-like values.

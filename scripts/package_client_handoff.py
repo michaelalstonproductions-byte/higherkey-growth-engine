@@ -42,6 +42,8 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "RELEASE_NOTES.md": root / "RELEASE_NOTES.md",
         "CLIENT_DELIVERY_README.md": root / "out" / "client_delivery" / "CLIENT_DELIVERY_README.md",
         "CLIENT_DELIVERY_CHECKLIST.md": root / "out" / "client_delivery" / "CLIENT_DELIVERY_CHECKLIST.md",
+        "TRIAL_ISSUE_QUEUE.md": root / "out" / "client_delivery" / "TRIAL_ISSUE_QUEUE.md",
+        "TRIAL_FIX_PLAN.md": root / "out" / "client_delivery" / "TRIAL_FIX_PLAN.md",
     }
     app_info = {
         "product": "HigherKey Operator OS",
@@ -82,7 +84,8 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "Client handoff excludes content_inbox, clips, captions, logs, runtime DB files, local connector config, live publish policy, tokens, secrets, and credentials.",
         "Unsigned local DMGs may require macOS approval before opening.",
         "Feedback can be captured locally with:",
-        "python3 scripts/collect_client_feedback.py",
+        "python3 scripts/collect_trial_feedback.py --template",
+        "python3 scripts/build_trial_issue_queue.py",
         "",
     ])
 

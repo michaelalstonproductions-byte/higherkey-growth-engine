@@ -1946,6 +1946,7 @@
           <button class="tab nav-item" data-icon="◎" data-mode="social">Exports</button>
           <button class="tab nav-item" data-icon="▦" data-mode="delivery">Delivery</button>
           <button class="tab nav-item" data-icon="◆" data-mode="launch">Launch</button>
+          <button class="tab nav-item" data-icon="☑" data-mode="trialops">Trial Ops</button>
           <button class="tab nav-item" data-icon="▤" data-mode="diagnostics">Support</button>
           <button class="tab nav-item" data-icon="⚙" data-mode="settings">Settings</button>
           <details class="advanced-details rail-advanced"><summary>Advanced</summary>
@@ -2097,6 +2098,10 @@
         clientDeliveryChecklist: "../analytics/client_delivery_checklist.json",
         clientHandoffStatus: "../analytics/client_handoff_status.json",
         clientSupportStatus: "../analytics/client_support_status.json",
+        clientFeedbackInbox: "../analytics/client_feedback_inbox.json",
+        clientFeedbackSummary: "../analytics/client_feedback_summary.json",
+        clientTrialStatus: "../analytics/client_trial_status.json",
+        clientIssueQueue: "../analytics/client_issue_queue.json",
         releaseCandidateAudit: "../analytics/release_candidate_audit.json",
         clientRehearsalReport: "../analytics/client_rehearsal_report.json",
         marketingBrief: "../analytics/marketing_brief.json",
@@ -3327,10 +3332,76 @@
               ${launchCard("social_safety", "Social Safety")}
               ${launchCard("editing_safety", "Editing Safety")}
               ${launchCard("delivery_package", "Delivery Package", "missing")}
+              ${launchCard("trial_ops", "Trial Ops", "missing")}
               ${launchCard("manual_upload", "Manual Upload Reminder")}
               ${launchCard("known_warnings", "Known Warnings")}
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Launch Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="build-client-handoff">Build Client Handoff</button><button class="btn" data-desktop-action="build-trial-package">Build Trial Package</button><button class="btn" data-desktop-action="create-issue-report">Build Support Package</button><button class="btn" data-desktop-action="verify-edited-delivery-package">Verify Edited Delivery</button><button class="btn" data-desktop-action="open-client-handoff-folder">Open Handoff Folder</button><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Delivery Folder</button></div></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Checklist</div></div>${launchChecklistHtml()}</section>
+            </div>
+          </div>
+        `;
+      }
+      function feedbackItems() {
+        const items = state.clientFeedbackInbox?.items || [];
+        return Array.isArray(items) ? items : [];
+      }
+      function issueItems() {
+        const items = state.clientIssueQueue?.issues || [];
+        return Array.isArray(items) ? items : [];
+      }
+      function feedbackListHtml(filter) {
+        const items = feedbackItems().filter((item) => !filter || filter(item));
+        return items.slice(0, 8).map((item) => `
+          <div class="clip-card">
+            <strong>${html(item.title || "Client feedback")}</strong>
+            <p class="muted">${html(item.category || "other")} · ${html(item.severity || "medium")} · ${html(item.status || "new")}</p>
+            <p>${html(item.client_message || item.description || "No description provided.")}</p>
+          </div>
+        `).join("") || `<div class="empty-state"><h2>No feedback yet</h2><p>Generate a template or import local feedback after a client session.</p></div>`;
+      }
+      function issueQueueHtml() {
+        return issueItems().slice(0, 8).map((issue) => `
+          <div class="summary-row"><span>${html(issue.title || "Trial issue")}</span><strong>${html(issue.severity || "medium")}</strong></div>
+          <p class="muted">${html(issue.category || "other")} · ${html(issue.next_action || "Review locally")}</p>
+        `).join("") || `<div class="empty-state"><h2>No queued issues</h2><p>Build the issue queue after collecting feedback.</p></div>`;
+      }
+      function renderTrialOpsView() {
+        const summary = state.clientFeedbackSummary || {};
+        const trial = state.clientTrialStatus || {};
+        const support = state.clientSupportStatus || {};
+        return `
+          <div class="view media-view">
+            <section class="panel hero-panel">
+              <div class="hero-copy">
+                <span class="eyebrow">Trial Ops</span>
+                <h1>Client feedback and support inbox.</h1>
+                <p>Feedback is stored locally. Support packages are redacted and exclude private media by default.</p>
+                <div class="toolbar">
+                  <button class="btn red" data-desktop-action="collect-feedback-template">Collect Feedback Template</button>
+                  <button class="btn" data-desktop-action="import-feedback">Import Feedback</button>
+                  <button class="btn" data-desktop-action="build-issue-queue">Build Issue Queue</button>
+                  <button class="btn" data-desktop-action="create-issue-report">Create Support Package</button>
+                </div>
+              </div>
+              <div class="hero-metrics">
+                ${metricPanel("Trial Status", trial.status || summary.status || "pending", "local inbox")}
+                ${metricPanel("Blockers", summary.blocker_count ?? trial.blockers ?? 0, "feedback")}
+                ${metricPanel("Needs Info", summary.needs_client_info_count ?? trial.needs_client_info ?? 0, "items")}
+              </div>
+            </section>
+            <div class="card-grid">
+              ${metricPanel("Feedback Inbox", summary.total ?? feedbackItems().length, "items")}
+              ${metricPanel("High Priority", summary.high_count ?? 0, "items")}
+              ${metricPanel("Fixed", summary.by_status?.fixed ?? 0, "items")}
+              ${metricPanel("Support Package", support.status || "ready", "client-safe")}
+            </div>
+            <div class="analysis-grid">
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Feedback Inbox</div></div>${feedbackListHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Blockers</div></div>${feedbackListHtml((item) => item.severity === "blocker")}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Needs Client Info</div></div>${feedbackListHtml((item) => item.status === "needs_client_info")}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Status</div></div><p class="copy">${html(trial.client_message || "Build the issue queue to summarize the current trial status.")}</p><div class="summary-row"><span>Next</span><strong>${html(trial.next_action || "Build Issue Queue")}</strong></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Next Fix Plan</div></div>${issueQueueHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Client Delivery Folder</button><button class="btn" data-desktop-action="run-client-rehearsal">Run Client Rehearsal</button><button class="btn" data-desktop-action="run-launch-audit">Run Launch Audit</button></div></section>
             </div>
           </div>
         `;
@@ -3931,7 +4002,7 @@
       }
       function renderMainWorkspace() {
         const mode = state.mode || "dashboard";
-        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, editor: renderEditorView, delivery: renderDeliveryView, launch: renderLaunchView, search: renderIntelligenceView, marketing: renderMarketingView, scheduler: renderSchedulerView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
+        const views = { command: renderCommandView, autopilot: renderAutopilotView, dashboard: renderDashboardView, queue: renderQueueView, media: renderMediaView, editor: renderEditorView, delivery: renderDeliveryView, launch: renderLaunchView, trialops: renderTrialOpsView, search: renderIntelligenceView, marketing: renderMarketingView, scheduler: renderSchedulerView, agents: renderAgentsView, analytics: renderAnalyticsView, social: renderSocialExportsView, diagnostics: renderDiagnosticsView, settings: renderSettingsView };
         $("mainContent").innerHTML = (views[mode] || renderDashboardView)();
       }
 
@@ -5984,6 +6055,69 @@
         return setNotice(result?.code === 0 ? "Client handoff package built. Private media and tokens are excluded by default." : "Client handoff package needs attention.");
       }
 
+      async function collectTrialFeedbackTemplate() {
+        if (!window.higherkey?.collectTrialFeedback) {
+          return setNotice("Static mode: run python3 scripts/collect_trial_feedback.py --template --json.");
+        }
+        setNotice("Creating local feedback template...");
+        const result = await window.higherkey.collectTrialFeedback({ template: true });
+        const inbox = await window.higherkey.getClientFeedbackInbox?.().catch(() => null);
+        if (inbox?.inbox) {
+          state.clientFeedbackInbox = inbox.inbox;
+          state.clientFeedbackSummary = inbox.summary;
+          state.clientTrialStatus = inbox.trialStatus;
+        }
+        await refreshLiveData();
+        state.mode = "trialops";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Feedback template created locally. No cloud upload occurs." : "Feedback template needs attention.");
+      }
+
+      async function importTrialFeedback() {
+        if (!window.higherkey?.collectTrialFeedback) {
+          return setNotice("Static mode: run python3 scripts/collect_trial_feedback.py --input out/client_delivery/trial_feedback_template.json --json.");
+        }
+        const title = prompt("Feedback title", "Client trial feedback");
+        if (title === null) return setNotice("Feedback import cancelled.");
+        const description = prompt("Feedback description", "Recorded from HigherKey Trial Ops.");
+        if (description === null) return setNotice("Feedback import cancelled.");
+        const severity = prompt("Severity: blocker, high, medium, low", "medium");
+        if (severity === null) return setNotice("Feedback import cancelled.");
+        const category = prompt("Category", "other");
+        if (category === null) return setNotice("Feedback import cancelled.");
+        const result = await window.higherkey.collectTrialFeedback({ template: false, title, description, severity, category });
+        const inbox = await window.higherkey.getClientFeedbackInbox?.().catch(() => null);
+        if (inbox?.inbox) {
+          state.clientFeedbackInbox = inbox.inbox;
+          state.clientFeedbackSummary = inbox.summary;
+          state.clientTrialStatus = inbox.trialStatus;
+        }
+        await refreshLiveData();
+        state.mode = "trialops";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Feedback imported locally and redacted." : "Feedback import needs attention.");
+      }
+
+      async function buildTrialIssueQueue() {
+        if (!window.higherkey?.buildTrialIssueQueue) {
+          return setNotice("Static mode: run python3 scripts/build_trial_issue_queue.py --json.");
+        }
+        setNotice("Building trial issue queue...");
+        const result = await window.higherkey.buildTrialIssueQueue();
+        const queue = await window.higherkey.getClientIssueQueue?.().catch(() => null);
+        if (queue?.issueQueue) {
+          state.clientIssueQueue = queue.issueQueue;
+          state.clientTrialStatus = queue.trialStatus;
+        }
+        await refreshLiveData();
+        state.mode = "trialops";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Trial issue queue updated locally." : "Trial issue queue needs attention.");
+      }
+
       async function saveOrSchedulePost(button, schedule = false) {
         const payload = activeComposerPayload(button);
         if (!window.higherkey?.scheduleSocialPost) {
@@ -6443,6 +6577,7 @@
             if (action === "go-scheduler") { state.mode = "scheduler"; persistWorkspace(); return render(); }
             if (action === "go-delivery") { state.mode = "delivery"; persistWorkspace(); return render(); }
             if (action === "go-launch") { state.mode = "launch"; persistWorkspace(); return render(); }
+            if (action === "go-trialops") { state.mode = "trialops"; persistWorkspace(); return render(); }
             if (action === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); return render(); }
             if (action === "go-agents") { state.mode = "agents"; persistWorkspace(); return render(); }
             if (action === "go-analytics") { state.mode = "analytics"; persistWorkspace(); return render(); }
@@ -6500,6 +6635,9 @@
             if (action === "run-launch-audit") return runLaunchAudit();
             if (action === "run-client-rehearsal") return runClientRehearsal();
             if (action === "build-client-handoff") return packageClientHandoff();
+            if (action === "collect-feedback-template") return collectTrialFeedbackTemplate();
+            if (action === "import-feedback") return importTrialFeedback();
+            if (action === "build-issue-queue") return buildTrialIssueQueue();
             if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
@@ -6713,6 +6851,10 @@
           state.clientDeliveryChecklist = await optionalJson(PATHS.clientDeliveryChecklist, null);
           state.clientHandoffStatus = await optionalJson(PATHS.clientHandoffStatus, null);
           state.clientSupportStatus = await optionalJson(PATHS.clientSupportStatus, null);
+          state.clientFeedbackInbox = await optionalJson(PATHS.clientFeedbackInbox, null);
+          state.clientFeedbackSummary = await optionalJson(PATHS.clientFeedbackSummary, null);
+          state.clientTrialStatus = await optionalJson(PATHS.clientTrialStatus, null);
+          state.clientIssueQueue = await optionalJson(PATHS.clientIssueQueue, null);
           state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, null);
           state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
@@ -6857,6 +6999,10 @@
           state.clientDeliveryChecklist = await optionalJson(PATHS.clientDeliveryChecklist, state.clientDeliveryChecklist);
           state.clientHandoffStatus = await optionalJson(PATHS.clientHandoffStatus, state.clientHandoffStatus);
           state.clientSupportStatus = await optionalJson(PATHS.clientSupportStatus, state.clientSupportStatus);
+          state.clientFeedbackInbox = await optionalJson(PATHS.clientFeedbackInbox, state.clientFeedbackInbox);
+          state.clientFeedbackSummary = await optionalJson(PATHS.clientFeedbackSummary, state.clientFeedbackSummary);
+          state.clientTrialStatus = await optionalJson(PATHS.clientTrialStatus, state.clientTrialStatus);
+          state.clientIssueQueue = await optionalJson(PATHS.clientIssueQueue, state.clientIssueQueue);
           state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, state.releaseCandidateAudit);
           state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, state.clientRehearsalReport);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);
