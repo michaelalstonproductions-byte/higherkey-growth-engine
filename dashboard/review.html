@@ -2102,6 +2102,11 @@
         clientFeedbackSummary: "../analytics/client_feedback_summary.json",
         clientTrialStatus: "../analytics/client_trial_status.json",
         clientIssueQueue: "../analytics/client_issue_queue.json",
+        feedbackTriageReport: "../analytics/feedback_triage_report.json",
+        clientPatchPlan: "../analytics/client_patch_plan.json",
+        clientResponseNotes: "../analytics/client_response_notes.json",
+        trialFixBacklog: "../analytics/trial_fix_backlog.json",
+        trialRiskSummary: "../analytics/trial_risk_summary.json",
         releaseCandidateAudit: "../analytics/release_candidate_audit.json",
         clientRehearsalReport: "../analytics/client_rehearsal_report.json",
         marketingBrief: "../analytics/marketing_brief.json",
@@ -3349,6 +3354,14 @@
         const items = state.clientIssueQueue?.issues || [];
         return Array.isArray(items) ? items : [];
       }
+      function triageItems() {
+        const items = state.feedbackTriageReport?.items || state.clientPatchPlan?.items || [];
+        return Array.isArray(items) ? items : [];
+      }
+      function responseNoteItems() {
+        const items = state.clientResponseNotes?.notes || [];
+        return Array.isArray(items) ? items : [];
+      }
       function feedbackListHtml(filter) {
         const items = feedbackItems().filter((item) => !filter || filter(item));
         return items.slice(0, 8).map((item) => `
@@ -3365,21 +3378,40 @@
           <p class="muted">${html(issue.category || "other")} · ${html(issue.next_action || "Review locally")}</p>
         `).join("") || `<div class="empty-state"><h2>No queued issues</h2><p>Build the issue queue after collecting feedback.</p></div>`;
       }
+      function patchPlanHtml(filter) {
+        const items = triageItems().filter((item) => !filter || filter(item));
+        return items.slice(0, 8).map((item) => `
+          <div class="clip-card">
+            <strong>${html(item.severity || "medium")} · ${html(item.category || "other")}</strong>
+            <p class="muted">${html(item.affected_page || "Trial Ops")} · ${html(item.status || "triaged")}</p>
+            <p>${html(item.recommended_fix || "Review locally and plan a patch.")}</p>
+          </div>
+        `).join("") || `<div class="empty-state"><h2>No patch plan yet</h2><p>Build a patch plan after collecting trial feedback.</p></div>`;
+      }
+      function responseNotesHtml() {
+        return responseNoteItems().slice(0, 8).map((note) => `
+          <div class="summary-row"><span>${html(note.category || "trial note")}</span><strong>${html(note.status || "draft")}</strong></div>
+          <p class="muted">${html(note.client_response || "Draft client response note.")}</p>
+        `).join("") || `<div class="empty-state"><h2>No response notes</h2><p>Build client response notes for operator review before sending.</p></div>`;
+      }
       function renderTrialOpsView() {
         const summary = state.clientFeedbackSummary || {};
         const trial = state.clientTrialStatus || {};
         const support = state.clientSupportStatus || {};
+        const triage = state.feedbackTriageReport || {};
+        const patch = state.clientPatchPlan || {};
         return `
           <div class="view media-view">
             <section class="panel hero-panel">
               <div class="hero-copy">
                 <span class="eyebrow">Trial Ops</span>
                 <h1>Client feedback and support inbox.</h1>
-                <p>Feedback is stored locally. Support packages are redacted and exclude private media by default.</p>
+                <p>Feedback stays local. Patch notes are generated for your review before sending. Support packages are redacted and exclude private media by default.</p>
                 <div class="toolbar">
                   <button class="btn red" data-desktop-action="collect-feedback-template">Collect Feedback Template</button>
                   <button class="btn" data-desktop-action="import-feedback">Import Feedback</button>
                   <button class="btn" data-desktop-action="build-issue-queue">Build Issue Queue</button>
+                  <button class="btn" data-desktop-action="build-patch-plan">Build Patch Plan</button>
                   <button class="btn" data-desktop-action="create-issue-report">Create Support Package</button>
                 </div>
               </div>
@@ -3392,16 +3424,23 @@
             <div class="card-grid">
               ${metricPanel("Feedback Inbox", summary.total ?? feedbackItems().length, "items")}
               ${metricPanel("High Priority", summary.high_count ?? 0, "items")}
+              ${metricPanel("Planned Fixes", patch.items?.filter?.((item) => item.status === "planned").length ?? 0, "items")}
               ${metricPanel("Fixed", summary.by_status?.fixed ?? 0, "items")}
+              ${metricPanel("Deferred", triage.items?.filter?.((item) => item.status === "deferred").length ?? 0, "items")}
               ${metricPanel("Support Package", support.status || "ready", "client-safe")}
             </div>
             <div class="analysis-grid">
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Feedback Inbox</div></div>${feedbackListHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Issue Queue</div></div>${issueQueueHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Patch Plan</div></div>${patchPlanHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Client Response Notes</div></div>${responseNotesHtml()}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Risk Summary</div></div>${patchPlanHtml((item) => item.status !== "fixed" && item.status !== "closed")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Blockers</div></div>${feedbackListHtml((item) => item.severity === "blocker")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Needs Client Info</div></div>${feedbackListHtml((item) => item.status === "needs_client_info")}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Fixed / Closed</div></div>${patchPlanHtml((item) => item.status === "fixed" || item.status === "closed")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Status</div></div><p class="copy">${html(trial.client_message || "Build the issue queue to summarize the current trial status.")}</p><div class="summary-row"><span>Next</span><strong>${html(trial.next_action || "Build Issue Queue")}</strong></div></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Next Fix Plan</div></div>${issueQueueHtml()}</section>
-              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Client Delivery Folder</button><button class="btn" data-desktop-action="run-client-rehearsal">Run Client Rehearsal</button><button class="btn" data-desktop-action="run-launch-audit">Run Launch Audit</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="mark-issue-in-progress">Mark In Progress</button><button class="btn" data-desktop-action="mark-issue-fixed">Mark Fixed</button><button class="btn" data-desktop-action="mark-issue-needs-info">Mark Needs Client Info</button><button class="btn" data-desktop-action="build-response-notes">Build Client Response Notes</button><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Client Delivery Folder</button><button class="btn" data-desktop-action="run-client-rehearsal">Run Client Rehearsal</button><button class="btn" data-desktop-action="run-launch-audit">Run Launch Audit</button></div></section>
             </div>
           </div>
         `;
@@ -6118,6 +6157,46 @@
         return setNotice(result?.code === 0 ? "Trial issue queue updated locally." : "Trial issue queue needs attention.");
       }
 
+      async function buildTrialPatchPlan() {
+        if (!window.higherkey?.buildTrialPatchPlan) {
+          return setNotice("Static mode: run python3 scripts/build_trial_patch_plan.py --json.");
+        }
+        setNotice("Building trial patch plan...");
+        const result = await window.higherkey.buildTrialPatchPlan();
+        const triage = await window.higherkey.getFeedbackTriageReport?.().catch(() => null);
+        if (triage?.triageReport) {
+          state.feedbackTriageReport = triage.triageReport;
+          state.clientPatchPlan = triage.patchPlan;
+          state.clientResponseNotes = triage.responseNotes;
+          state.trialFixBacklog = triage.fixBacklog;
+        }
+        await refreshLiveData();
+        state.mode = "trialops";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Trial patch plan built locally." : "Trial patch plan needs attention.");
+      }
+
+      async function updateTrialIssueStatus(status) {
+        if (!window.higherkey?.updateTrialIssueStatus) {
+          return setNotice(`Static mode: run python3 scripts/update_trial_issue_status.py --dry-run --status ${status} --note "Operator review".`);
+        }
+        const active = triageItems()[0] || {};
+        const note = prompt("Local operator note", "Updated from Trial Ops.");
+        if (note === null) return setNotice("Status update cancelled.");
+        const result = await window.higherkey.updateTrialIssueStatus({ triageId: active.triage_id || "", status, note });
+        const triage = await window.higherkey.getTrialFixBacklog?.().catch(() => null);
+        if (triage?.fixBacklog) {
+          state.trialFixBacklog = triage.fixBacklog;
+          state.clientResponseNotes = triage.responseNotes;
+        }
+        await refreshLiveData();
+        state.mode = "trialops";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? `Trial issue marked ${status}.` : "Trial issue status update needs attention.");
+      }
+
       async function saveOrSchedulePost(button, schedule = false) {
         const payload = activeComposerPayload(button);
         if (!window.higherkey?.scheduleSocialPost) {
@@ -6638,6 +6717,10 @@
             if (action === "collect-feedback-template") return collectTrialFeedbackTemplate();
             if (action === "import-feedback") return importTrialFeedback();
             if (action === "build-issue-queue") return buildTrialIssueQueue();
+            if (action === "build-patch-plan" || action === "build-response-notes") return buildTrialPatchPlan();
+            if (action === "mark-issue-in-progress") return updateTrialIssueStatus("in_progress");
+            if (action === "mark-issue-fixed") return updateTrialIssueStatus("fixed");
+            if (action === "mark-issue-needs-info") return updateTrialIssueStatus("needs_client_info");
             if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
@@ -6855,6 +6938,11 @@
           state.clientFeedbackSummary = await optionalJson(PATHS.clientFeedbackSummary, null);
           state.clientTrialStatus = await optionalJson(PATHS.clientTrialStatus, null);
           state.clientIssueQueue = await optionalJson(PATHS.clientIssueQueue, null);
+          state.feedbackTriageReport = await optionalJson(PATHS.feedbackTriageReport, null);
+          state.clientPatchPlan = await optionalJson(PATHS.clientPatchPlan, null);
+          state.clientResponseNotes = await optionalJson(PATHS.clientResponseNotes, null);
+          state.trialFixBacklog = await optionalJson(PATHS.trialFixBacklog, null);
+          state.trialRiskSummary = await optionalJson(PATHS.trialRiskSummary, null);
           state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, null);
           state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
@@ -7003,6 +7091,11 @@
           state.clientFeedbackSummary = await optionalJson(PATHS.clientFeedbackSummary, state.clientFeedbackSummary);
           state.clientTrialStatus = await optionalJson(PATHS.clientTrialStatus, state.clientTrialStatus);
           state.clientIssueQueue = await optionalJson(PATHS.clientIssueQueue, state.clientIssueQueue);
+          state.feedbackTriageReport = await optionalJson(PATHS.feedbackTriageReport, state.feedbackTriageReport);
+          state.clientPatchPlan = await optionalJson(PATHS.clientPatchPlan, state.clientPatchPlan);
+          state.clientResponseNotes = await optionalJson(PATHS.clientResponseNotes, state.clientResponseNotes);
+          state.trialFixBacklog = await optionalJson(PATHS.trialFixBacklog, state.trialFixBacklog);
+          state.trialRiskSummary = await optionalJson(PATHS.trialRiskSummary, state.trialRiskSummary);
           state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, state.releaseCandidateAudit);
           state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, state.clientRehearsalReport);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);

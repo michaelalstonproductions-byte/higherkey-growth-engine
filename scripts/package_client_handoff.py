@@ -44,6 +44,9 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "CLIENT_DELIVERY_CHECKLIST.md": root / "out" / "client_delivery" / "CLIENT_DELIVERY_CHECKLIST.md",
         "TRIAL_ISSUE_QUEUE.md": root / "out" / "client_delivery" / "TRIAL_ISSUE_QUEUE.md",
         "TRIAL_FIX_PLAN.md": root / "out" / "client_delivery" / "TRIAL_FIX_PLAN.md",
+        "TRIAL_PATCH_PLAN.md": root / "out" / "client_delivery" / "TRIAL_PATCH_PLAN.md",
+        "CLIENT_RESPONSE_NOTES.md": root / "out" / "client_delivery" / "CLIENT_RESPONSE_NOTES.md",
+        "TRIAL_RISK_SUMMARY.md": root / "out" / "client_delivery" / "TRIAL_RISK_SUMMARY.md",
     }
     app_info = {
         "product": "HigherKey Operator OS",
@@ -86,6 +89,7 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "Feedback can be captured locally with:",
         "python3 scripts/collect_trial_feedback.py --template",
         "python3 scripts/build_trial_issue_queue.py",
+        "python3 scripts/build_trial_patch_plan.py",
         "",
     ])
 

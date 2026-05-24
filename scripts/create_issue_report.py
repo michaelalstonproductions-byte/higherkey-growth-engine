@@ -83,6 +83,11 @@ def issue_report(
         "client_feedback_summary.json": analytics / "client_feedback_summary.json",
         "client_issue_queue.json": analytics / "client_issue_queue.json",
         "client_trial_status.json": analytics / "client_trial_status.json",
+        "feedback_triage_report.json": analytics / "feedback_triage_report.json",
+        "client_patch_plan.json": analytics / "client_patch_plan.json",
+        "client_response_notes.json": analytics / "client_response_notes.json",
+        "trial_fix_backlog.json": analytics / "trial_fix_backlog.json",
+        "trial_risk_summary.json": analytics / "trial_risk_summary.json",
         "client_delivery_manifest.json": analytics / "client_delivery_manifest.json",
     }
     if include_runtime:

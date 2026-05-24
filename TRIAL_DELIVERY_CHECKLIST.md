@@ -2,7 +2,7 @@
 
 Use this checklist before handing a trial build to a client.
 
-## V7.1 Client Delivery
+## V7.2 Client Delivery
 
 - [ ] Run Launch Room > Run Launch Audit.
 - [ ] Run Launch Room > Run Client Rehearsal.
@@ -50,6 +50,10 @@ Use this checklist before handing a trial build to a client.
 - [ ] Confirm `analytics/client_rehearsal_report.json` exists.
 - [ ] Confirm `analytics/client_feedback_inbox.json`, `analytics/client_feedback_summary.json`, `analytics/client_trial_status.json`, and `analytics/client_issue_queue.json` exist after Trial Ops checks.
 - [ ] Confirm `out/client_delivery/TRIAL_ISSUE_QUEUE.md` and `out/client_delivery/TRIAL_FIX_PLAN.md` exist.
+- [ ] Build the trial patch plan with `python3 scripts/build_trial_patch_plan.py`.
+- [ ] Confirm `analytics/feedback_triage_report.json`, `analytics/client_patch_plan.json`, `analytics/client_response_notes.json`, `analytics/trial_fix_backlog.json`, and `analytics/trial_risk_summary.json` exist.
+- [ ] Confirm `out/client_delivery/TRIAL_PATCH_PLAN.md`, `out/client_delivery/CLIENT_RESPONSE_NOTES.md`, and `out/client_delivery/TRIAL_RISK_SUMMARY.md` exist.
+- [ ] Confirm client response notes are reviewed before sending and no cloud ticket sync is enabled.
 - [ ] Confirm no cloud APIs, social APIs, or direct posting APIs are configured.
 
 ## Handoff

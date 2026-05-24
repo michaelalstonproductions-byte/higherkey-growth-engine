@@ -73,3 +73,6 @@ What to test during the trial:
 - Open Command and verify the daily action plan is readable.
 - Open Autopilot and verify safe local tasks are visible without any social posting controls.
 - Create a support package if anything looks wrong.
+- Open Trial Ops, build the issue queue, then run `python3 scripts/build_trial_patch_plan.py` to draft a local patch plan and client response notes.
+- Mark local fix status with `python3 scripts/update_trial_issue_status.py --status triaged --note "Reviewed locally"` when needed.
+- Review response notes before sending. HigherKey does not upload feedback, create external tickets, or mark issues fixed automatically.

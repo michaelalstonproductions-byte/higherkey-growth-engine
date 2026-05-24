@@ -18,6 +18,7 @@
     "scripts/build_client_delivery_manifest.py",
     "scripts/collect_trial_feedback.py",
     "scripts/build_trial_issue_queue.py",
+    "scripts/build_trial_patch_plan.py",
     "scripts/run_release_candidate_audit.py",
     "scripts/run_client_rehearsal.py",
     "scripts/build_runtime_snapshot.py",

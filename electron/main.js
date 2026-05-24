@@ -900,6 +900,26 @@ async function buildTrialIssueQueue() {
   return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
 }
 
+async function buildTrialPatchPlan() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/build_trial_patch_plan.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function updateTrialIssueStatus(options = {}) {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const args = ["scripts/update_trial_issue_status.py", "--json"];
+  if (options.issueId) args.push("--issue-id", String(options.issueId));
+  if (options.triageId) args.push("--triage-id", String(options.triageId));
+  if (options.status) args.push("--status", String(options.status));
+  if (options.note) args.push("--note", String(options.note));
+  if (options.dryRun) args.push("--dry-run");
+  const result = await runPython(args);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
 async function getClientFeedbackInbox() {
   return {
     ok: true,
@@ -916,6 +936,27 @@ async function getClientIssueQueue() {
     activeProjectRoot,
     issueQueue: await readAnalyticsJson("client_issue_queue.json", {}),
     trialStatus: await readAnalyticsJson("client_trial_status.json", {})
+  };
+}
+
+async function getFeedbackTriageReport() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    triageReport: await readAnalyticsJson("feedback_triage_report.json", {}),
+    patchPlan: await readAnalyticsJson("client_patch_plan.json", {}),
+    responseNotes: await readAnalyticsJson("client_response_notes.json", {}),
+    riskSummary: await readAnalyticsJson("trial_risk_summary.json", {}),
+    fixBacklog: await readAnalyticsJson("trial_fix_backlog.json", {})
+  };
+}
+
+async function getTrialFixBacklog() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    fixBacklog: await readAnalyticsJson("trial_fix_backlog.json", {}),
+    responseNotes: await readAnalyticsJson("client_response_notes.json", {})
   };
 }
 
@@ -2590,8 +2631,12 @@ function registerIpc() {
   ipcMain.handle("feedback:collectClient", (_event, options = {}) => collectClientFeedback(options));
   ipcMain.handle("feedback:collectTrial", (_event, options = {}) => collectTrialFeedback(options));
   ipcMain.handle("feedback:buildTrialIssueQueue", buildTrialIssueQueue);
+  ipcMain.handle("feedback:buildTrialPatchPlan", buildTrialPatchPlan);
+  ipcMain.handle("feedback:updateTrialIssueStatus", (_event, options = {}) => updateTrialIssueStatus(options));
   ipcMain.handle("feedback:getInbox", getClientFeedbackInbox);
   ipcMain.handle("feedback:getIssueQueue", getClientIssueQueue);
+  ipcMain.handle("feedback:getTriageReport", getFeedbackTriageReport);
+  ipcMain.handle("feedback:getFixBacklog", getTrialFixBacklog);
   ipcMain.handle("feedback:openFolder", openFeedbackFolder);
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);

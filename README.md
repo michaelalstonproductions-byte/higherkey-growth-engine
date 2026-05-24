@@ -1555,12 +1555,36 @@ Build the current unsigned DMG:
 npm run dist:unsigned
 ```
 
-Expected V6.0 package:
+Expected V7.2 package:
 
-- `dist/HigherKey Operator OS-6.0.0-arm64.dmg`
+- `dist/HigherKey Operator OS-7.2.0-arm64.dmg`
 - `analytics/release_candidate_audit.json`
 - `analytics/client_rehearsal_report.json`
 - `out/marketing/client_rehearsal_summary.md`
+
+### V7.2 Client Feedback Triage
+
+V7.2 turns local trial feedback into an operator-reviewed patch plan. It groups repeated issues, ranks blockers and high-priority items, links issues to pages/actions, drafts client response notes, and writes a local fix backlog.
+
+Run:
+
+```bash
+python3 scripts/build_trial_patch_plan.py
+python3 scripts/update_trial_issue_status.py --status triaged --note "Reviewed locally"
+```
+
+Outputs:
+
+- `analytics/feedback_triage_report.json`
+- `analytics/client_patch_plan.json`
+- `analytics/client_response_notes.json`
+- `analytics/trial_fix_backlog.json`
+- `analytics/trial_risk_summary.json`
+- `out/client_delivery/TRIAL_PATCH_PLAN.md`
+- `out/client_delivery/CLIENT_RESPONSE_NOTES.md`
+- `out/client_delivery/TRIAL_RISK_SUMMARY.md`
+
+Feedback and patch planning stay local. Response notes are drafts for operator review before sending. No external tickets, external support sync, private media upload, or automatic issue-closing is performed.
 
 Known non-blocking warning: sandboxed localhost or macOS Application Support checks can warn when running inside restricted automation. Verify the packaged app with `npm run app:open-latest` in the normal GUI environment. The DMG is intentionally unsigned for local/client trial testing; macOS Gatekeeper may require Finder's contextual Open flow or local security approval.
 

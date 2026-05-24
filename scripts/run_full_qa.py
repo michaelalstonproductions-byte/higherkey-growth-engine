@@ -72,6 +72,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "editing_delivery.py",
         resources / "app-assets" / "growth_engine" / "client_delivery.py",
         resources / "app-assets" / "growth_engine" / "client_feedback.py",
+        resources / "app-assets" / "growth_engine" / "feedback_triage.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_marketing_plan.py",
@@ -119,6 +120,8 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "build_client_delivery_manifest.py",
         resources / "app-assets" / "scripts" / "collect_trial_feedback.py",
         resources / "app-assets" / "scripts" / "build_trial_issue_queue.py",
+        resources / "app-assets" / "scripts" / "build_trial_patch_plan.py",
+        resources / "app-assets" / "scripts" / "update_trial_issue_status.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -500,8 +503,16 @@ def client_trial_ops_check(root: Path) -> dict[str, object]:
         root / "analytics" / "client_feedback_summary.json",
         root / "analytics" / "client_trial_status.json",
         root / "analytics" / "client_issue_queue.json",
+        root / "analytics" / "feedback_triage_report.json",
+        root / "analytics" / "client_patch_plan.json",
+        root / "analytics" / "client_response_notes.json",
+        root / "analytics" / "trial_fix_backlog.json",
+        root / "analytics" / "trial_risk_summary.json",
         root / "out" / "client_delivery" / "TRIAL_ISSUE_QUEUE.md",
         root / "out" / "client_delivery" / "TRIAL_FIX_PLAN.md",
+        root / "out" / "client_delivery" / "TRIAL_PATCH_PLAN.md",
+        root / "out" / "client_delivery" / "CLIENT_RESPONSE_NOTES.md",
+        root / "out" / "client_delivery" / "TRIAL_RISK_SUMMARY.md",
     ]
     missing = [relative_path(path, root) for path in required if not path.exists()]
     forbidden_hits = []
@@ -1363,6 +1374,9 @@ def main() -> int:
     append_stage(results, qa_stage("client_delivery_manifest_build", ["python3", "scripts/build_client_delivery_manifest.py", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("collect_trial_feedback_template", ["python3", "scripts/collect_trial_feedback.py", "--template", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("build_trial_issue_queue", ["python3", "scripts/build_trial_issue_queue.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("build_trial_patch_plan_dry_run", ["python3", "scripts/build_trial_patch_plan.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("build_trial_patch_plan", ["python3", "scripts/build_trial_patch_plan.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("update_trial_issue_status_dry_run", ["python3", "scripts/update_trial_issue_status.py", "--dry-run", "--status", "triaged", "--note", "QA fixture", "--json"], root, timeout=60), config)
     print("[qa] client_trial_ops_validation", flush=True)
     append_stage(results, client_trial_ops_check(root), config)
     print("[qa] editing_studio_validation", flush=True)

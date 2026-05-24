@@ -2,7 +2,7 @@
 
 HigherKey Operator OS is local-first trial software for client evaluation.
 
-## V7.1 Launch Notes
+## V7.2 Launch Notes
 
 - HigherKey prepares local assets, manifests, and packages.
 - Manual upload remains the default fallback.
@@ -52,4 +52,4 @@ Sandboxed verification can report a localhost or macOS AppKit launch warning in 
 
 If something fails, create a support package from inside the app. It includes client-safe state summaries and excludes original footage, private media, full logs, runtime DB files, and local tokens by default.
 
-Feedback imported through Trial Ops is stored locally and redacted for sensitive paths or token-like values.
+Feedback imported through Trial Ops is stored locally and redacted for sensitive paths or token-like values. Patch plans, fix backlog status, risk summaries, and client response notes are local drafts. HigherKey does not upload feedback, create external tickets, or mark issues fixed automatically.
