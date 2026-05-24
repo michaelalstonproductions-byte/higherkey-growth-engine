@@ -106,6 +106,7 @@ contextBridge.exposeInMainWorld("higherkey", {
   getClientIssueQueue: () => ipcRenderer.invoke("feedback:getIssueQueue"),
   getFeedbackTriageReport: () => ipcRenderer.invoke("feedback:getTriageReport"),
   getTrialFixBacklog: () => ipcRenderer.invoke("feedback:getFixBacklog"),
+  getClientResponseNotes: () => ipcRenderer.invoke("feedback:getClientResponseNotes"),
   openFeedbackFolder: () => ipcRenderer.invoke("feedback:openFolder"),
   createIssueReport: () => ipcRenderer.invoke("support:createIssueReport"),
   openSupportFolder: () => ipcRenderer.invoke("support:openIssueReportFolder"),

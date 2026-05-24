@@ -960,6 +960,14 @@ async function getTrialFixBacklog() {
   };
 }
 
+async function getClientResponseNotes() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    responseNotes: await readAnalyticsJson("client_response_notes.json", {})
+  };
+}
+
 async function createIssueReport() {
   return runPython(["scripts/create_issue_report.py"]);
 }
@@ -2637,6 +2645,7 @@ function registerIpc() {
   ipcMain.handle("feedback:getIssueQueue", getClientIssueQueue);
   ipcMain.handle("feedback:getTriageReport", getFeedbackTriageReport);
   ipcMain.handle("feedback:getFixBacklog", getTrialFixBacklog);
+  ipcMain.handle("feedback:getClientResponseNotes", getClientResponseNotes);
   ipcMain.handle("feedback:openFolder", openFeedbackFolder);
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);
