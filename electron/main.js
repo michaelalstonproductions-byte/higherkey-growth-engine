@@ -70,7 +70,11 @@ function validateProjectRootSelection(selected) {
 }
 
 function validateImportSelection(filePath) {
-  const resolved = path.resolve(filePath);
+  const inputPath = typeof filePath === "string" ? filePath : (filePath?.path || "");
+  if (!inputPath) {
+    return securityFail("The dropped file path could not be read.", { name: filePath?.name || "" });
+  }
+  const resolved = path.resolve(inputPath);
   const extension = path.extname(resolved).toLowerCase();
   const allowed = new Set(securityPolicy().allowed_import_extensions || [".mp4", ".mov", ".m4v"]);
   if (!allowed.has(extension)) {
@@ -107,6 +111,20 @@ function filterImportSelections(filePaths) {
     else errors.push(result);
   }
   return { valid, errors };
+}
+
+function redactRendererText(value) {
+  let text = String(value || "");
+  const replacements = [
+    [activeProjectRoot, "[project]"],
+    [APP_ROOT, "[app]"],
+    [os.homedir(), "[home]"]
+  ];
+  for (const [needle, replacement] of replacements) {
+    if (needle) text = text.split(needle).join(replacement);
+  }
+  text = text.replace(/(token|secret|password|credential|authorization)(["'=:\s]+)[^,\s"']+/gi, "$1$2[redacted]");
+  return text.slice(0, 2000);
 }
 
 function releaseInfo() {
@@ -2583,6 +2601,31 @@ async function ingestDroppedFiles(filePaths) {
   };
 }
 
+async function recordRendererError(_event, payload = {}) {
+  const profile = await currentProfile();
+  const reportPath = path.join(profile.projectRoot, "analytics", "renderer_error_report.json");
+  const existing = await readAnalyticsJson("renderer_error_report.json", { version: 1, errors: [] });
+  const errors = Array.isArray(existing.errors) ? existing.errors.slice(-24) : [];
+  errors.push({
+    message: redactRendererText(payload.message),
+    source: redactRendererText(payload.source),
+    stack: redactRendererText(payload.stack),
+    context: redactRendererText(payload.context),
+    updated_at: new Date().toISOString()
+  });
+  const report = {
+    version: 1,
+    local_only: true,
+    redacted: true,
+    status: "captured",
+    updated_at: new Date().toISOString(),
+    errors
+  };
+  await fsp.mkdir(path.dirname(reportPath), { recursive: true });
+  await fsp.writeFile(reportPath, JSON.stringify(report, null, 2) + "\n", "utf8");
+  return { ok: true, status: "captured", path: "analytics/renderer_error_report.json" };
+}
+
 async function appInfo() {
   const settings = await readSettings();
   const profile = projectProfile(settings);
@@ -2813,6 +2856,7 @@ function registerIpc() {
   ipcMain.handle("folder:openClientHandoff", openClientHandoffFolder);
   ipcMain.handle("folder:openDmg", openDmgFolder);
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
+  ipcMain.handle("renderer:recordError", recordRendererError);
   ipcMain.handle("notify:test", () => {
     notify("HigherKey notification test", "Local notifications are wired.");
     return { sent: Notification.isSupported() };

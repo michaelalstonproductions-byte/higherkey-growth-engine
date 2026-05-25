@@ -194,6 +194,7 @@ contextBridge.exposeInMainWorld("higherkey", {
     type: file.type || ""
   })),
   ingestDroppedFiles: (paths) => ipcRenderer.invoke("files:ingestDropped", paths),
+  recordRendererError: (payload) => ipcRenderer.invoke("renderer:recordError", payload),
   testNotification: () => ipcRenderer.invoke("notify:test"),
   onSettingsChanged: (callback) => ipcRenderer.on("higherkey:settings", (_event, settings) => callback(settings)),
   onProjectChanged: (callback) => ipcRenderer.on("higherkey:project", (_event, info) => callback(info))

@@ -2364,11 +2364,61 @@
           button.onclick = async () => {
             if (button.dataset.noticeAction === "open-inbox") await openInbox();
             if (button.dataset.noticeAction === "go-diagnostics") { state.mode = "diagnostics"; persistWorkspace(); render(); }
+            if (button.dataset.noticeAction === "import-footage") await importFootage();
             if (button.dataset.noticeAction === "repair-project") await repairProjectMedia();
             if (button.dataset.noticeAction === "run-full-media-prep") await runFullMediaPrep();
           };
         });
       }
+      function rendererErrorFallback(error, context = "renderer") {
+        const message = error?.message || error?.reason?.message || error?.reason || String(error || "Unknown renderer error");
+        try {
+          window.higherkey?.recordRendererError?.({
+            message,
+            stack: error?.stack || error?.reason?.stack || "",
+            source: error?.filename || "",
+            context
+          }).catch(() => null);
+        } catch {}
+        try {
+          const overlay = document.createElement("div");
+          overlay.className = "startup-overlay visible";
+          overlay.innerHTML = `
+            <div class="startup-card">
+              <h2>Something went wrong, but HigherKey is still running.</h2>
+              <p>Import failed safely. Try Import Footage again or create a support package.</p>
+              <div class="toolbar">
+                <button class="btn red" data-recover-action="command">Return to Command</button>
+                <button class="btn" data-recover-action="import">Try Import Again</button>
+                <button class="btn" data-recover-action="support">Open Support Package</button>
+              </div>
+            </div>`;
+          overlay.querySelector('[data-recover-action="command"]')?.addEventListener("click", () => {
+            state.mode = "command";
+            overlay.remove();
+            render();
+          });
+          overlay.querySelector('[data-recover-action="import"]')?.addEventListener("click", () => {
+            overlay.remove();
+            importFootage();
+          });
+          overlay.querySelector('[data-recover-action="support"]')?.addEventListener("click", () => {
+            overlay.remove();
+            createIssueReport();
+          });
+          document.body.appendChild(overlay);
+        } catch {
+          alert("Something went wrong, but HigherKey is still running. Try Import Footage again or create a support package.");
+        }
+      }
+      window.onerror = (message, source, lineno, colno, error) => {
+        rendererErrorFallback(error || { message, filename: source }, `window.onerror:${lineno}:${colno}`);
+        return true;
+      };
+      window.addEventListener("unhandledrejection", (event) => {
+        rendererErrorFallback(event.reason || "Unhandled renderer promise rejection", "unhandledrejection");
+        event.preventDefault();
+      });
       function showClientModal(title, body, actions = []) {
         const overlay = $("clientModalOverlay");
         const modal = $("clientModal");
@@ -5770,7 +5820,11 @@
           return setNotice("Drop needs attention: the desktop app could not read those files.", [{ label: "Open Support", action: "go-diagnostics" }]);
         }
         setNotice(`Dropped file received: ${received.map((item) => item.name || item.path).join(", ")}`);
-        const result = await window.higherkey.ingestDroppedFiles(received);
+        const importPaths = received.map((item) => item.path).filter(Boolean);
+        if (!importPaths.length) {
+          return setNotice("Drop needs attention: the desktop app could not read file paths. Try Import Footage.", [{ label: "Choose Files", action: "import-footage" }, { label: "Open Support", action: "go-diagnostics" }]);
+        }
+        const result = await window.higherkey.ingestDroppedFiles(importPaths);
         const copied = result.copied || [];
         const skipped = result.skipped || [];
         const errors = result.errors || [];
@@ -7408,23 +7462,26 @@
       document.addEventListener("keydown", handleShortcut);
 
       window.addEventListener("dragover", (event) => {
-        if (window.higherkey) {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "copy";
-          document.body.classList.add("drag-active");
-        }
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = window.higherkey ? "copy" : "none";
+        document.body.classList.add("drag-active");
       });
       window.addEventListener("dragleave", (event) => {
         if (!event.relatedTarget) document.body.classList.remove("drag-active");
       });
       window.addEventListener("drop", async (event) => {
-        if (!window.higherkey) return;
         event.preventDefault();
+        event.stopPropagation();
         document.body.classList.remove("drag-active");
+        if (!window.higherkey) {
+          return setNotice("Static browser mode: launch the desktop app to import dropped footage.");
+        }
         try {
+          setNotice("Importing footage...");
           await ingestDroppedFiles(event.dataTransfer.files);
         } catch (error) {
-          setNotice(`Import failed: ${error.message || error}`, [{ label: "Choose Files", action: "import-footage" }, { label: "Open Support", action: "go-diagnostics" }]);
+          setNotice("Import failed safely. Try Import Footage or choose a supported video file.", [{ label: "Choose Files", action: "import-footage" }, { label: "Open Support", action: "go-diagnostics" }]);
+          rendererErrorFallback(error, "drop-import");
         }
       });
 
