@@ -920,6 +920,34 @@ async function updateTrialIssueStatus(options = {}) {
   return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
 }
 
+async function buildPatchExecutionBoard() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/build_patch_execution_board.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function updatePatchExecutionStatus(options = {}) {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const args = ["scripts/update_patch_execution_status.py", "--json"];
+  if (options.patchId) args.push("--patch-id", String(options.patchId));
+  if (options.triageId) args.push("--triage-id", String(options.triageId));
+  if (options.issueId) args.push("--issue-id", String(options.issueId));
+  if (options.status) args.push("--status", String(options.status));
+  if (options.note) args.push("--note", String(options.note));
+  if (options.dryRun) args.push("--dry-run");
+  const result = await runPython(args);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function buildClientReleaseNotes() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/build_client_release_notes.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
 async function getClientFeedbackInbox() {
   return {
     ok: true,
@@ -965,6 +993,32 @@ async function getClientResponseNotes() {
     ok: true,
     activeProjectRoot,
     responseNotes: await readAnalyticsJson("client_response_notes.json", {})
+  };
+}
+
+async function getPatchExecutionBoard() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    board: await readAnalyticsJson("patch_execution_board.json", {}),
+    clientStatus: await readAnalyticsJson("client_patch_status.json", {})
+  };
+}
+
+async function getPatchVerificationPlan() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    verificationPlan: await readAnalyticsJson("patch_verification_plan.json", {})
+  };
+}
+
+async function getClientReleaseNotes() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    patchReleaseNotes: await readAnalyticsJson("patch_release_notes.json", {}),
+    clientReleaseNotes: await readAnalyticsJson("client_release_notes.json", {})
   };
 }
 
@@ -2641,11 +2695,17 @@ function registerIpc() {
   ipcMain.handle("feedback:buildTrialIssueQueue", buildTrialIssueQueue);
   ipcMain.handle("feedback:buildTrialPatchPlan", buildTrialPatchPlan);
   ipcMain.handle("feedback:updateTrialIssueStatus", (_event, options = {}) => updateTrialIssueStatus(options));
+  ipcMain.handle("feedback:buildPatchExecutionBoard", buildPatchExecutionBoard);
+  ipcMain.handle("feedback:updatePatchExecutionStatus", (_event, options = {}) => updatePatchExecutionStatus(options));
+  ipcMain.handle("feedback:buildClientReleaseNotes", buildClientReleaseNotes);
   ipcMain.handle("feedback:getInbox", getClientFeedbackInbox);
   ipcMain.handle("feedback:getIssueQueue", getClientIssueQueue);
   ipcMain.handle("feedback:getTriageReport", getFeedbackTriageReport);
   ipcMain.handle("feedback:getFixBacklog", getTrialFixBacklog);
   ipcMain.handle("feedback:getClientResponseNotes", getClientResponseNotes);
+  ipcMain.handle("feedback:getPatchExecutionBoard", getPatchExecutionBoard);
+  ipcMain.handle("feedback:getPatchVerificationPlan", getPatchVerificationPlan);
+  ipcMain.handle("feedback:getClientReleaseNotes", getClientReleaseNotes);
   ipcMain.handle("feedback:openFolder", openFeedbackFolder);
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);

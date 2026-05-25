@@ -1555,9 +1555,9 @@ Build the current unsigned DMG:
 npm run dist:unsigned
 ```
 
-Expected V7.2 package:
+Expected V7.3 package:
 
-- `dist/HigherKey Operator OS-7.2.0-arm64.dmg`
+- `dist/HigherKey Operator OS-7.3.0-arm64.dmg`
 - `analytics/release_candidate_audit.json`
 - `analytics/client_rehearsal_report.json`
 - `out/marketing/client_rehearsal_summary.md`
@@ -1585,6 +1585,33 @@ Outputs:
 - `out/client_delivery/TRIAL_RISK_SUMMARY.md`
 
 Feedback and patch planning stay local. Response notes are drafts for operator review before sending. No external tickets, external support sync, private media upload, or automatic issue-closing is performed.
+
+### V7.3 Client Trial Patch Execution
+
+V7.3 turns trial patch plans into local execution tasks, verification checklists, client-safe release notes, and draft update messages. Operators explicitly update patch status; HigherKey does not auto-close issues, send messages, upload feedback, create cloud tickets, or include private media.
+
+Run:
+
+```bash
+python3 scripts/build_patch_execution_board.py
+python3 scripts/update_patch_execution_status.py --status needs_verification --note "Verified locally"
+python3 scripts/build_client_release_notes.py
+```
+
+Outputs:
+
+- `analytics/patch_execution_board.json`
+- `analytics/patch_verification_plan.json`
+- `analytics/client_patch_status.json`
+- `analytics/patch_release_notes.json`
+- `analytics/client_release_notes.json`
+- `out/client_delivery/PATCH_EXECUTION_BOARD.md`
+- `out/client_delivery/PATCH_VERIFICATION_CHECKLIST.md`
+- `out/client_delivery/CLIENT_RELEASE_NOTES.md`
+- `out/client_delivery/CLIENT_UPDATE_MESSAGE.md`
+- `out/client_delivery/INTERNAL_PATCH_NOTES.md`
+
+Client release notes are generated locally for operator review before sending. Planned, in-progress, and deferred items remain internal until verified or marked ready for release.
 
 Known non-blocking warning: sandboxed localhost or macOS Application Support checks can warn when running inside restricted automation. Verify the packaged app with `npm run app:open-latest` in the normal GUI environment. The DMG is intentionally unsigned for local/client trial testing; macOS Gatekeeper may require Finder's contextual Open flow or local security approval.
 

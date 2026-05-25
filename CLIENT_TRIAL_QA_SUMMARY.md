@@ -1,8 +1,8 @@
 # HigherKey Operator OS Client Trial QA Summary
 
-Version: V7.0 / 7.0.0
+Version: V7.3 / 7.3.0
 
-## V7.0 Launch Checks
+## V7.3 Launch Checks
 
 - Run `python3 scripts/build_client_delivery_manifest.py`.
 - Run `python3 scripts/run_release_candidate_audit.py`.
@@ -15,7 +15,7 @@ Known local sandbox diagnostics warnings can remain warnings when QA exits 0 and
 
 DMG:
 
-- `dist/HigherKey Operator OS-7.0.0-arm64.dmg`
+- `dist/HigherKey Operator OS-7.3.0-arm64.dmg`
 
 Trial package:
 
@@ -74,5 +74,8 @@ What to test during the trial:
 - Open Autopilot and verify safe local tasks are visible without any social posting controls.
 - Create a support package if anything looks wrong.
 - Open Trial Ops, build the issue queue, then run `python3 scripts/build_trial_patch_plan.py` to draft a local patch plan and client response notes.
+- Build the patch execution board with `python3 scripts/build_patch_execution_board.py`.
+- Mark patch status locally with `python3 scripts/update_patch_execution_status.py --status needs_verification --note "Verified locally"` when needed.
+- Build draft release notes with `python3 scripts/build_client_release_notes.py`.
 - Mark local fix status with `python3 scripts/update_trial_issue_status.py --status triaged --note "Reviewed locally"` when needed.
-- Review response notes before sending. HigherKey does not upload feedback, create external tickets, or mark issues fixed automatically.
+- Review response notes, client release notes, and client update messages before sending. HigherKey does not upload feedback, create external tickets, send client messages, or mark issues fixed automatically.

@@ -2,7 +2,7 @@
 
 HigherKey Operator OS is a local-first desktop app for turning your footage into reviewable clips and manual-upload social packs.
 
-## V7.2 Launch Flow
+## V7.3 Launch Flow
 
 1. Import footage.
 2. Process media locally.
@@ -14,22 +14,22 @@ HigherKey Operator OS is a local-first desktop app for turning your footage into
 8. Use Edited Delivery Room to package approved edited assets.
 9. Use Scheduler for local drafts and dry runs.
 10. Use Launch Room to run launch audit, rehearsal, handoff, trial, support, and delivery checks.
-11. Use Trial Ops after a client session to collect feedback, build the issue queue, create a patch plan, draft client response notes, and create a redacted support package.
+11. Use Trial Ops after a client session to collect feedback, build the issue queue, create a patch plan, track patch execution, draft release notes, and create a redacted support package.
 
 Manual upload remains available. Optional official social connections are gated by readiness, approval, and live publish safety checks. HigherKey does not modify originals and does not use cloud editing APIs by default.
 
-## V7.2 Client Trial Workflow
+## V7.3 Client Trial Workflow
 
 1. Open HigherKey Operator OS from the newest DMG.
 2. Click **Import Footage** and choose MP4, MOV, or M4V files.
 3. Click **Import & Process** and let HigherKey prepare clips, captions, thumbnails, color/audio notes, and recommendations.
 4. Review the clips, approve the best ones, and export social packs.
 5. Open the export folder and upload the prepared files manually.
-6. Open Trial Ops to collect feedback locally, build the trial issue queue, and generate a patch plan for operator review.
+6. Open Trial Ops to collect feedback locally, build the trial issue queue, generate a patch plan, track patch execution, and draft client release notes for operator review.
 
 ## Trial Ops
 
-Use **Trial Ops** to create a local feedback template, import client notes, build the issue queue, draft the patch plan, prepare response notes, and create a redacted support package. Feedback stays local by default. Response notes are drafts for review before sending. Support packages exclude private media, tokens, local connector config, runtime databases, and raw logs by default.
+Use **Trial Ops** to create a local feedback template, import client notes, build the issue queue, draft the patch plan, track patch execution, prepare response notes, draft release notes, and create a redacted support package. Feedback stays local by default. Response and release notes are drafts for review before sending. Support packages exclude private media, tokens, local connector config, runtime databases, and raw logs by default.
 
 ## Production Command Flow
 
@@ -39,7 +39,7 @@ After clips are ready, use:
 - **Marketing** to build campaign, growth, and creative direction.
 - **Autopilot** to build safe local plans and dry-run allowed preparation tasks.
 - **Support** to create a client-safe support package if anything needs attention.
-- **Trial Ops** to turn client feedback into a local issue queue, patch plan, response notes, and fix backlog.
+- **Trial Ops** to turn client feedback into a local issue queue, patch plan, patch execution board, response notes, release notes, and fix backlog.
 
 ## Supported Video Files
 

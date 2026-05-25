@@ -2,7 +2,7 @@
 
 Use this checklist before handing a trial build to a client.
 
-## V7.2 Client Delivery
+## V7.3 Client Delivery
 
 - [ ] Run Launch Room > Run Launch Audit.
 - [ ] Run Launch Room > Run Client Rehearsal.
@@ -13,6 +13,7 @@ Use this checklist before handing a trial build to a client.
 - [ ] Confirm manual upload fallback is visible.
 - [ ] Confirm optional social connection language does not imply automatic posting.
 - [ ] Confirm Trial Ops feedback template, issue queue, and redacted support package flow are available.
+- [ ] Confirm Trial Ops patch execution board, verification checklist, and client release note drafts are available.
 - [ ] Confirm original source media is not included by default.
 - [ ] Confirm token, secret, connector local config, live publish local policy, runtime DB, logs, and raw clips are not included.
 
@@ -53,7 +54,12 @@ Use this checklist before handing a trial build to a client.
 - [ ] Build the trial patch plan with `python3 scripts/build_trial_patch_plan.py`.
 - [ ] Confirm `analytics/feedback_triage_report.json`, `analytics/client_patch_plan.json`, `analytics/client_response_notes.json`, `analytics/trial_fix_backlog.json`, and `analytics/trial_risk_summary.json` exist.
 - [ ] Confirm `out/client_delivery/TRIAL_PATCH_PLAN.md`, `out/client_delivery/CLIENT_RESPONSE_NOTES.md`, and `out/client_delivery/TRIAL_RISK_SUMMARY.md` exist.
-- [ ] Confirm client response notes are reviewed before sending and no cloud ticket sync is enabled.
+- [ ] Build the patch execution board with `python3 scripts/build_patch_execution_board.py`.
+- [ ] Confirm `analytics/patch_execution_board.json`, `analytics/patch_verification_plan.json`, and `analytics/client_patch_status.json` exist.
+- [ ] Confirm `out/client_delivery/PATCH_EXECUTION_BOARD.md` and `out/client_delivery/PATCH_VERIFICATION_CHECKLIST.md` exist.
+- [ ] Build client release notes with `python3 scripts/build_client_release_notes.py`.
+- [ ] Confirm `analytics/patch_release_notes.json`, `analytics/client_release_notes.json`, `out/client_delivery/CLIENT_RELEASE_NOTES.md`, `out/client_delivery/CLIENT_UPDATE_MESSAGE.md`, and `out/client_delivery/INTERNAL_PATCH_NOTES.md` exist.
+- [ ] Confirm client response notes and release notes are reviewed before sending and no cloud ticket sync or automatic client messaging is enabled.
 - [ ] Confirm no cloud APIs, social APIs, or direct posting APIs are configured.
 
 ## Handoff

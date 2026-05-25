@@ -53,6 +53,7 @@ REQUIRED_MODULES = [
     "growth_engine/client_delivery.py",
     "growth_engine/client_feedback.py",
     "growth_engine/feedback_triage.py",
+    "growth_engine/patch_execution.py",
     "growth_engine/social_platforms/instagram.py",
     "growth_engine/social_platforms/tiktok.py",
 ]
@@ -104,6 +105,9 @@ REQUIRED_SCRIPTS = [
     "scripts/build_trial_issue_queue.py",
     "scripts/build_trial_patch_plan.py",
     "scripts/update_trial_issue_status.py",
+    "scripts/build_patch_execution_board.py",
+    "scripts/update_patch_execution_status.py",
+    "scripts/build_client_release_notes.py",
 ]
 REQUIRED_CONFIGS = [
     "config/autopilot_policy.json",

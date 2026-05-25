@@ -4,7 +4,7 @@ HigherKey Operator OS is a local-first desktop app for preparing short-form soci
 
 No social posting happens unless official connectors are configured, readiness checks pass, and approval gates are met. Manual upload remains available.
 
-## V7.2 What To Send
+## V7.3 What To Send
 
 - The current HigherKey DMG or a pointer to the current DMG.
 - `CLIENT_QUICK_START.md`
@@ -16,9 +16,9 @@ No social posting happens unless official connectors are configured, readiness c
 - `out/client_delivery/CLIENT_DELIVERY_CHECKLIST.md`
 - A generated handoff or trial package when intentionally built.
 - Approved edited delivery packages when available.
-- Trial issue queue and fix plan when intentionally generated after a client session.
+- Trial issue queue, patch execution board, verification checklist, and client release note drafts when intentionally generated after a client session.
 
-## V7.2 What Not To Send
+## V7.3 What Not To Send
 
 Do not send original private source media, `content_inbox/`, raw `clips/`, runtime databases, logs, token files, local connector config, local live publish policy, secrets, or credentials. Edited delivery packages exclude originals by default.
 
@@ -71,10 +71,12 @@ Use `BETA_READINESS_CHECKLIST.md` during the walkthrough. Feedback can be captur
 python3 scripts/collect_trial_feedback.py --template
 python3 scripts/build_trial_issue_queue.py
 python3 scripts/build_trial_patch_plan.py
+python3 scripts/build_patch_execution_board.py
+python3 scripts/build_client_release_notes.py
 ```
 
-After triage, use `python3 scripts/update_trial_issue_status.py --status in_progress --note "Reviewed locally"` to track local fix status. Review `out/client_delivery/CLIENT_RESPONSE_NOTES.md` before sending any client-facing note.
+After triage, use `python3 scripts/update_trial_issue_status.py --status in_progress --note "Reviewed locally"` to track local issue status. Use `python3 scripts/update_patch_execution_status.py --status needs_verification --note "Verified locally"` to track patch execution. Review `out/client_delivery/CLIENT_RESPONSE_NOTES.md`, `out/client_delivery/CLIENT_RELEASE_NOTES.md`, and `out/client_delivery/CLIENT_UPDATE_MESSAGE.md` before sending any client-facing note.
 
 ## Local-Only Safety
 
-All processing happens locally. HigherKey does not post to social platforms and does not call cloud APIs. Trial feedback and patch plans are stored locally by default. No external ticket system is created by default. Support packages are redacted and exclude private media, tokens, local connector config, runtime databases, and raw logs by default.
+All processing happens locally. HigherKey does not post to social platforms and does not call cloud APIs. Trial feedback, patch plans, patch execution boards, and release note drafts are stored locally by default. No external ticket system or automatic client messaging is created by default. Support packages are redacted and exclude private media, tokens, local connector config, runtime databases, and raw logs by default.

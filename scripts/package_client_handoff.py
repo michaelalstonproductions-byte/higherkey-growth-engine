@@ -47,6 +47,10 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "TRIAL_PATCH_PLAN.md": root / "out" / "client_delivery" / "TRIAL_PATCH_PLAN.md",
         "CLIENT_RESPONSE_NOTES.md": root / "out" / "client_delivery" / "CLIENT_RESPONSE_NOTES.md",
         "TRIAL_RISK_SUMMARY.md": root / "out" / "client_delivery" / "TRIAL_RISK_SUMMARY.md",
+        "PATCH_EXECUTION_BOARD.md": root / "out" / "client_delivery" / "PATCH_EXECUTION_BOARD.md",
+        "PATCH_VERIFICATION_CHECKLIST.md": root / "out" / "client_delivery" / "PATCH_VERIFICATION_CHECKLIST.md",
+        "CLIENT_RELEASE_NOTES.md": root / "out" / "client_delivery" / "CLIENT_RELEASE_NOTES.md",
+        "CLIENT_UPDATE_MESSAGE.md": root / "out" / "client_delivery" / "CLIENT_UPDATE_MESSAGE.md",
     }
     app_info = {
         "product": "HigherKey Operator OS",
@@ -90,6 +94,8 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "python3 scripts/collect_trial_feedback.py --template",
         "python3 scripts/build_trial_issue_queue.py",
         "python3 scripts/build_trial_patch_plan.py",
+        "python3 scripts/build_patch_execution_board.py",
+        "python3 scripts/build_client_release_notes.py",
         "",
     ])
 

@@ -2,14 +2,14 @@
 
 HigherKey Operator OS is local-first trial software for client evaluation.
 
-## V7.2 Launch Notes
+## V7.3 Launch Notes
 
 - HigherKey prepares local assets, manifests, and packages.
 - Manual upload remains the default fallback.
 - Live posting requires official account connection, readiness checks, explicit approval, and controlled live publish gates.
 - Editing is non-destructive. Original footage is not overwritten or deleted.
 - Edited delivery packages include approved edited outputs and exclude original source media by default.
-- Trial Ops can collect local feedback, build an issue queue, and create a fix plan without uploading anything.
+- Trial Ops can collect local feedback, build an issue queue, create a fix plan, track patch execution, and draft release notes without uploading anything.
 - No cloud editing APIs, scraping, browser automation, password login, or unauthorized social posting are enabled by default.
 
 ## What This Trial Does
@@ -18,7 +18,7 @@ HigherKey Operator OS is local-first trial software for client evaluation.
 - Processes footage locally into clips, captions, thumbnails, recommendations, and manual-upload social export packs.
 - Keeps runtime outputs in the selected local project folder.
 - Creates client-safe support packages without original footage by default.
-- Creates local feedback templates and issue queues for client trial follow-up.
+- Creates local feedback templates, issue queues, patch execution boards, verification checklists, and release note drafts for client trial follow-up.
 
 ## What This Trial Does Not Do
 
@@ -52,4 +52,4 @@ Sandboxed verification can report a localhost or macOS AppKit launch warning in 
 
 If something fails, create a support package from inside the app. It includes client-safe state summaries and excludes original footage, private media, full logs, runtime DB files, and local tokens by default.
 
-Feedback imported through Trial Ops is stored locally and redacted for sensitive paths or token-like values. Patch plans, fix backlog status, risk summaries, and client response notes are local drafts. HigherKey does not upload feedback, create external tickets, or mark issues fixed automatically.
+Feedback imported through Trial Ops is stored locally and redacted for sensitive paths or token-like values. Patch plans, patch execution boards, verification checklists, fix backlog status, risk summaries, client response notes, and release notes are local drafts. HigherKey does not upload feedback, create external tickets, send client messages, mark patches verified, or mark issues fixed automatically.
