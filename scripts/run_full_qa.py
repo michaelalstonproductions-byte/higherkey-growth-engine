@@ -74,6 +74,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "client_feedback.py",
         resources / "app-assets" / "growth_engine" / "feedback_triage.py",
         resources / "app-assets" / "growth_engine" / "patch_execution.py",
+        resources / "app-assets" / "growth_engine" / "trial_analytics.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_marketing_plan.py",
@@ -126,6 +127,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "build_patch_execution_board.py",
         resources / "app-assets" / "scripts" / "update_patch_execution_status.py",
         resources / "app-assets" / "scripts" / "build_client_release_notes.py",
+        resources / "app-assets" / "scripts" / "build_trial_success_report.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -517,6 +519,11 @@ def client_trial_ops_check(root: Path) -> dict[str, object]:
         root / "analytics" / "client_patch_status.json",
         root / "analytics" / "patch_release_notes.json",
         root / "analytics" / "client_release_notes.json",
+        root / "analytics" / "trial_success_report.json",
+        root / "analytics" / "client_trial_success_report.json",
+        root / "analytics" / "internal_trial_analysis.json",
+        root / "analytics" / "next_trial_plan.json",
+        root / "analytics" / "client_trial_scorecard.json",
         root / "out" / "client_delivery" / "TRIAL_ISSUE_QUEUE.md",
         root / "out" / "client_delivery" / "TRIAL_FIX_PLAN.md",
         root / "out" / "client_delivery" / "TRIAL_PATCH_PLAN.md",
@@ -527,6 +534,10 @@ def client_trial_ops_check(root: Path) -> dict[str, object]:
         root / "out" / "client_delivery" / "CLIENT_RELEASE_NOTES.md",
         root / "out" / "client_delivery" / "CLIENT_UPDATE_MESSAGE.md",
         root / "out" / "client_delivery" / "INTERNAL_PATCH_NOTES.md",
+        root / "out" / "client_delivery" / "TRIAL_SUCCESS_REPORT.md",
+        root / "out" / "client_delivery" / "CLIENT_TRIAL_SUMMARY.md",
+        root / "out" / "client_delivery" / "NEXT_TRIAL_PLAN.md",
+        root / "out" / "client_delivery" / "INTERNAL_TRIAL_ANALYSIS.md",
     ]
     missing = [relative_path(path, root) for path in required if not path.exists()]
     forbidden_hits = []
@@ -1396,6 +1407,8 @@ def main() -> int:
     append_stage(results, qa_stage("update_patch_execution_status_dry_run", ["python3", "scripts/update_patch_execution_status.py", "--dry-run", "--status", "needs_verification", "--note", "QA fixture", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("build_client_release_notes_dry_run", ["python3", "scripts/build_client_release_notes.py", "--dry-run", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("build_client_release_notes", ["python3", "scripts/build_client_release_notes.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("build_trial_success_report_dry_run", ["python3", "scripts/build_trial_success_report.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("build_trial_success_report", ["python3", "scripts/build_trial_success_report.py", "--json"], root, timeout=60), config)
     print("[qa] client_trial_ops_validation", flush=True)
     append_stage(results, client_trial_ops_check(root), config)
     print("[qa] editing_studio_validation", flush=True)

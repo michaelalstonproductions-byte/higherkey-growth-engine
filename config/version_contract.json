@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "7.3.0",
-  "release_version": "V7.3",
+  "app_version": "7.4.0",
+  "release_version": "V7.4",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -221,6 +221,12 @@
       "to": "V7.3",
       "safe": true,
       "notes": "Add Client Trial Patch Execution, verification checklists, client release note drafts, and local patch status tracking while preserving client feedback privacy and support package safety."
+    },
+    {
+      "from": "V7.3",
+      "to": "V7.4",
+      "safe": true,
+      "notes": "Add Client Trial Analytics, success reports, scorecards, internal analysis, and next trial plans while preserving local-only reporting and support package safety."
     }
   ],
   "required_runtime_files": [
@@ -341,7 +347,8 @@
     "scripts/update_trial_issue_status.py",
     "scripts/build_patch_execution_board.py",
     "scripts/update_patch_execution_status.py",
-    "scripts/build_client_release_notes.py"
+    "scripts/build_client_release_notes.py",
+    "scripts/build_trial_success_report.py"
   ],
   "deprecated_files": [
     "analytics/runtime_worker_status.json"

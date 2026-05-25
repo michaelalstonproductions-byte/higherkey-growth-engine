@@ -2,7 +2,7 @@
 
 Use this checklist before handing a trial build to a client.
 
-## V7.3 Client Delivery
+## V7.4 Client Delivery
 
 - [ ] Run Launch Room > Run Launch Audit.
 - [ ] Run Launch Room > Run Client Rehearsal.
@@ -14,6 +14,7 @@ Use this checklist before handing a trial build to a client.
 - [ ] Confirm optional social connection language does not imply automatic posting.
 - [ ] Confirm Trial Ops feedback template, issue queue, and redacted support package flow are available.
 - [ ] Confirm Trial Ops patch execution board, verification checklist, and client release note drafts are available.
+- [ ] Confirm Trial Ops trial success report, scorecard, internal analysis, and next trial plan are available.
 - [ ] Confirm original source media is not included by default.
 - [ ] Confirm token, secret, connector local config, live publish local policy, runtime DB, logs, and raw clips are not included.
 
@@ -59,7 +60,10 @@ Use this checklist before handing a trial build to a client.
 - [ ] Confirm `out/client_delivery/PATCH_EXECUTION_BOARD.md` and `out/client_delivery/PATCH_VERIFICATION_CHECKLIST.md` exist.
 - [ ] Build client release notes with `python3 scripts/build_client_release_notes.py`.
 - [ ] Confirm `analytics/patch_release_notes.json`, `analytics/client_release_notes.json`, `out/client_delivery/CLIENT_RELEASE_NOTES.md`, `out/client_delivery/CLIENT_UPDATE_MESSAGE.md`, and `out/client_delivery/INTERNAL_PATCH_NOTES.md` exist.
-- [ ] Confirm client response notes and release notes are reviewed before sending and no cloud ticket sync or automatic client messaging is enabled.
+- [ ] Build the trial success report with `python3 scripts/build_trial_success_report.py`.
+- [ ] Confirm `analytics/trial_success_report.json`, `analytics/client_trial_success_report.json`, `analytics/internal_trial_analysis.json`, `analytics/next_trial_plan.json`, and `analytics/client_trial_scorecard.json` exist.
+- [ ] Confirm `out/client_delivery/TRIAL_SUCCESS_REPORT.md`, `out/client_delivery/CLIENT_TRIAL_SUMMARY.md`, `out/client_delivery/NEXT_TRIAL_PLAN.md`, and `out/client_delivery/INTERNAL_TRIAL_ANALYSIS.md` exist.
+- [ ] Confirm client response notes, release notes, success reports, and next trial plans are reviewed before sending and no cloud ticket sync or automatic client messaging is enabled.
 - [ ] Confirm no cloud APIs, social APIs, or direct posting APIs are configured.
 
 ## Handoff

@@ -2112,6 +2112,11 @@
         clientPatchStatus: "../analytics/client_patch_status.json",
         patchReleaseNotes: "../analytics/patch_release_notes.json",
         clientReleaseNotes: "../analytics/client_release_notes.json",
+        trialSuccessReport: "../analytics/trial_success_report.json",
+        clientTrialSuccessReport: "../analytics/client_trial_success_report.json",
+        internalTrialAnalysis: "../analytics/internal_trial_analysis.json",
+        nextTrialPlan: "../analytics/next_trial_plan.json",
+        clientTrialScorecard: "../analytics/client_trial_scorecard.json",
         releaseCandidateAudit: "../analytics/release_candidate_audit.json",
         clientRehearsalReport: "../analytics/client_rehearsal_report.json",
         marketingBrief: "../analytics/marketing_brief.json",
@@ -3430,6 +3435,16 @@
           <p class="muted">${html(item.client_note || "Draft client release note.")}</p>
         `).join("") || `<div class="empty-state"><h2>No release notes ready</h2><p>Only verified or ready-for-release patch items appear in client release notes.</p></div>`;
       }
+      function trialScorecard() {
+        return state.clientTrialScorecard || state.trialSuccessReport?.scorecard || state.clientTrialSuccessReport?.scorecard || {};
+      }
+      function trialSuccessList(key, empty) {
+        const items = state.trialSuccessReport?.[key] || state.clientTrialSuccessReport?.[key] || [];
+        return (Array.isArray(items) ? items : []).slice(0, 8).map((item) => {
+          if (typeof item === "string") return `<div class="summary-row"><span>${html(item)}</span><strong>local</strong></div>`;
+          return `<div class="summary-row"><span>${html(item.title || item.client_message || "Trial item")}</span><strong>${html(item.status || item.severity || "open")}</strong></div>`;
+        }).join("") || `<div class="empty-state"><h2>${html(empty)}</h2><p>Build the trial success report after the next rehearsal.</p></div>`;
+      }
       function renderTrialOpsView() {
         const summary = state.clientFeedbackSummary || {};
         const trial = state.clientTrialStatus || {};
@@ -3438,6 +3453,7 @@
         const patch = state.clientPatchPlan || {};
         const patchBoard = state.patchExecutionBoard || {};
         const patchStatus = state.clientPatchStatus || {};
+        const scorecard = trialScorecard();
         return `
           <div class="view media-view">
             <section class="panel hero-panel">
@@ -3452,6 +3468,7 @@
                   <button class="btn" data-desktop-action="build-patch-plan">Build Patch Plan</button>
                   <button class="btn" data-desktop-action="build-patch-execution-board">Build Patch Execution Board</button>
                   <button class="btn" data-desktop-action="build-client-release-notes">Build Client Release Notes</button>
+                  <button class="btn" data-desktop-action="build-trial-success-report">Build Trial Success Report</button>
                   <button class="btn" data-desktop-action="create-issue-report">Create Support Package</button>
                 </div>
               </div>
@@ -3463,6 +3480,9 @@
             </section>
             <div class="card-grid">
               ${metricPanel("Feedback Inbox", summary.total ?? feedbackItems().length, "items")}
+              ${metricPanel("Overall Status", scorecard.overall_status || "pending", "trial")}
+              ${metricPanel("Readiness Score", scorecard.readiness_score ?? "—", "score")}
+              ${metricPanel("Feedback Count", scorecard.feedback_count ?? summary.total ?? feedbackItems().length, "items")}
               ${metricPanel("High Priority", summary.high_count ?? 0, "items")}
               ${metricPanel("Planned Fixes", patch.items?.filter?.((item) => item.status === "planned").length ?? 0, "items")}
               ${metricPanel("Planned", patchBoard.summary?.planned ?? patchExecutionItems().filter((item) => item.status === "planned").length, "patches")}
@@ -3470,6 +3490,7 @@
               ${metricPanel("Needs Verification", patchBoard.summary?.needs_verification ?? patchExecutionItems().filter((item) => item.status === "needs_verification").length, "patches")}
               ${metricPanel("Verified", patchBoard.summary?.verified ?? patchExecutionItems().filter((item) => item.status === "verified").length, "patches")}
               ${metricPanel("Ready for Release", patchBoard.summary?.ready_for_release ?? patchExecutionItems().filter((item) => item.status === "ready_for_release").length, "patches")}
+              ${metricPanel("Open Issues", scorecard.open_issue_count ?? issueItems().length, "items")}
               ${metricPanel("Fixed", summary.by_status?.fixed ?? 0, "items")}
               ${metricPanel("Deferred", triage.items?.filter?.((item) => item.status === "deferred").length ?? 0, "items")}
               ${metricPanel("Support Package", support.status || "ready", "client-safe")}
@@ -3485,12 +3506,19 @@
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Client Release Notes</div></div>${clientReleaseNotesHtml()}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Client Update Message</div></div><p class="copy">${html(state.clientReleaseNotes?.client_message || "Patch notes are generated locally for operator review before sending.")}</p></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Internal Patch Notes</div></div>${patchExecutionHtml((item) => !["verified", "ready_for_release", "closed"].includes(item.status))}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Success</div></div><p class="copy">${html(state.clientTrialSuccessReport?.client_summary || "Build the trial success report to summarize what was tested, what worked, what changed, and what needs attention.")}</p></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Client Trial Scorecard</div></div><div class="summary-row"><span>Manual upload</span><strong>${html(scorecard.manual_upload_status || "pending")}</strong></div><div class="summary-row"><span>Editing delivery</span><strong>${html(scorecard.editing_delivery_status || "pending")}</strong></div><div class="summary-row"><span>Social connectors</span><strong>${html(scorecard.social_connector_status || "manual upload")}</strong></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">What Worked</div></div>${trialSuccessList("what_worked", "No success report yet")}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">What Changed</div></div>${trialSuccessList("what_changed", "No release changes ready")}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Still Needs Attention</div></div>${trialSuccessList("unresolved_issues", "No unresolved items listed")}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Next Trial Plan</div></div><p class="copy">${html(state.nextTrialPlan?.client_next_step || scorecard.client_next_step || "Build the trial success report to prepare next trial steps.")}</p><div class="summary-row"><span>Operator</span><strong>${html(scorecard.operator_next_step || "Review locally")}</strong></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Internal Trial Analysis</div></div><p class="copy">${html(state.internalTrialAnalysis?.operator_analysis || "Internal analysis stays local unless reviewed for sharing.")}</p></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Blockers</div></div>${feedbackListHtml((item) => item.severity === "blocker")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Needs Client Info</div></div>${feedbackListHtml((item) => item.status === "needs_client_info")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Fixed / Closed</div></div>${patchPlanHtml((item) => item.status === "fixed" || item.status === "closed")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Status</div></div><p class="copy">${html(patchStatus.client_message || trial.client_message || "Build the issue queue to summarize the current trial status.")}</p><div class="summary-row"><span>Next</span><strong>${html(trial.next_action || "Build Issue Queue")}</strong></div></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Next Fix Plan</div></div>${issueQueueHtml()}</section>
-              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="mark-issue-in-progress">Mark In Progress</button><button class="btn" data-desktop-action="mark-issue-fixed">Mark Fixed</button><button class="btn" data-desktop-action="mark-issue-needs-info">Mark Needs Client Info</button><button class="btn" data-desktop-action="mark-patch-in-progress">Mark Patch In Progress</button><button class="btn" data-desktop-action="mark-patch-fixed">Mark Patch Fixed</button><button class="btn" data-desktop-action="mark-patch-needs-verification">Mark Needs Verification</button><button class="btn" data-desktop-action="mark-patch-verified">Mark Verified</button><button class="btn" data-desktop-action="build-response-notes">Build Client Response Notes</button><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Client Delivery Folder</button><button class="btn" data-desktop-action="run-client-rehearsal">Run Client Rehearsal</button><button class="btn" data-desktop-action="run-launch-audit">Run Launch Audit</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="mark-issue-in-progress">Mark In Progress</button><button class="btn" data-desktop-action="mark-issue-fixed">Mark Fixed</button><button class="btn" data-desktop-action="mark-issue-needs-info">Mark Needs Client Info</button><button class="btn" data-desktop-action="mark-patch-in-progress">Mark Patch In Progress</button><button class="btn" data-desktop-action="mark-patch-fixed">Mark Patch Fixed</button><button class="btn" data-desktop-action="mark-patch-needs-verification">Mark Needs Verification</button><button class="btn" data-desktop-action="mark-patch-verified">Mark Verified</button><button class="btn" data-desktop-action="build-response-notes">Build Client Response Notes</button><button class="btn" data-desktop-action="build-trial-success-report">Build Trial Success Report</button><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Client Delivery Folder</button><button class="btn" data-desktop-action="run-client-rehearsal">Run Client Rehearsal</button><button class="btn" data-desktop-action="run-launch-audit">Run Launch Audit</button></div></section>
             </div>
           </div>
         `;
@@ -6305,6 +6333,29 @@
         return setNotice(result?.code === 0 ? "Client release notes drafted locally." : "Client release notes need attention.");
       }
 
+      async function buildTrialSuccessReport() {
+        if (!window.higherkey?.buildTrialSuccessReport) {
+          return setNotice("Static mode: run python3 scripts/build_trial_success_report.py --json.");
+        }
+        setNotice("Building trial success report...");
+        const result = await window.higherkey.buildTrialSuccessReport();
+        const success = await window.higherkey.getTrialSuccessReport?.().catch(() => null);
+        const scorecard = await window.higherkey.getClientTrialScorecard?.().catch(() => null);
+        const nextPlan = await window.higherkey.getNextTrialPlan?.().catch(() => null);
+        if (success?.trialSuccessReport) {
+          state.trialSuccessReport = success.trialSuccessReport;
+          state.clientTrialSuccessReport = success.clientTrialSuccessReport;
+          state.internalTrialAnalysis = success.internalTrialAnalysis;
+        }
+        if (scorecard?.scorecard) state.clientTrialScorecard = scorecard.scorecard;
+        if (nextPlan?.nextTrialPlan) state.nextTrialPlan = nextPlan.nextTrialPlan;
+        await refreshLiveData();
+        state.mode = "trialops";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Trial success report built locally." : "Trial success report needs attention.");
+      }
+
       async function saveOrSchedulePost(button, schedule = false) {
         const payload = activeComposerPayload(button);
         if (!window.higherkey?.scheduleSocialPost) {
@@ -6835,6 +6886,7 @@
             if (action === "mark-patch-needs-verification") return updatePatchExecutionStatus("needs_verification");
             if (action === "mark-patch-verified") return updatePatchExecutionStatus("verified");
             if (action === "build-client-release-notes") return buildClientReleaseNotes();
+            if (action === "build-trial-success-report") return buildTrialSuccessReport();
             if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
@@ -7062,6 +7114,11 @@
           state.clientPatchStatus = await optionalJson(PATHS.clientPatchStatus, null);
           state.patchReleaseNotes = await optionalJson(PATHS.patchReleaseNotes, null);
           state.clientReleaseNotes = await optionalJson(PATHS.clientReleaseNotes, null);
+          state.trialSuccessReport = await optionalJson(PATHS.trialSuccessReport, null);
+          state.clientTrialSuccessReport = await optionalJson(PATHS.clientTrialSuccessReport, null);
+          state.internalTrialAnalysis = await optionalJson(PATHS.internalTrialAnalysis, null);
+          state.nextTrialPlan = await optionalJson(PATHS.nextTrialPlan, null);
+          state.clientTrialScorecard = await optionalJson(PATHS.clientTrialScorecard, null);
           state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, null);
           state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
@@ -7220,6 +7277,11 @@
           state.clientPatchStatus = await optionalJson(PATHS.clientPatchStatus, state.clientPatchStatus);
           state.patchReleaseNotes = await optionalJson(PATHS.patchReleaseNotes, state.patchReleaseNotes);
           state.clientReleaseNotes = await optionalJson(PATHS.clientReleaseNotes, state.clientReleaseNotes);
+          state.trialSuccessReport = await optionalJson(PATHS.trialSuccessReport, state.trialSuccessReport);
+          state.clientTrialSuccessReport = await optionalJson(PATHS.clientTrialSuccessReport, state.clientTrialSuccessReport);
+          state.internalTrialAnalysis = await optionalJson(PATHS.internalTrialAnalysis, state.internalTrialAnalysis);
+          state.nextTrialPlan = await optionalJson(PATHS.nextTrialPlan, state.nextTrialPlan);
+          state.clientTrialScorecard = await optionalJson(PATHS.clientTrialScorecard, state.clientTrialScorecard);
           state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, state.releaseCandidateAudit);
           state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, state.clientRehearsalReport);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);

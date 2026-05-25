@@ -1555,9 +1555,9 @@ Build the current unsigned DMG:
 npm run dist:unsigned
 ```
 
-Expected V7.3 package:
+Expected V7.4 package:
 
-- `dist/HigherKey Operator OS-7.3.0-arm64.dmg`
+- `dist/HigherKey Operator OS-7.4.0-arm64.dmg`
 - `analytics/release_candidate_audit.json`
 - `analytics/client_rehearsal_report.json`
 - `out/marketing/client_rehearsal_summary.md`
@@ -1612,6 +1612,30 @@ Outputs:
 - `out/client_delivery/INTERNAL_PATCH_NOTES.md`
 
 Client release notes are generated locally for operator review before sending. Planned, in-progress, and deferred items remain internal until verified or marked ready for release.
+
+### V7.4 Client Trial Analytics
+
+V7.4 summarizes client trial results into local success reports, a client scorecard, internal operator analysis, and a next trial plan. Reports are generated for operator review before sending; HigherKey does not upload reports, send client messages, create cloud tickets, include private media, or expose tokens/secrets.
+
+Run:
+
+```bash
+python3 scripts/build_trial_success_report.py
+```
+
+Outputs:
+
+- `analytics/trial_success_report.json`
+- `analytics/client_trial_success_report.json`
+- `analytics/internal_trial_analysis.json`
+- `analytics/next_trial_plan.json`
+- `analytics/client_trial_scorecard.json`
+- `out/client_delivery/TRIAL_SUCCESS_REPORT.md`
+- `out/client_delivery/CLIENT_TRIAL_SUMMARY.md`
+- `out/client_delivery/NEXT_TRIAL_PLAN.md`
+- `out/client_delivery/INTERNAL_TRIAL_ANALYSIS.md`
+
+Use the client scorecard to review overall trial status, readiness score, feedback counts, fixed/verified work, open issues, manual upload status, editing delivery status, social connector status, and launch readiness. The next trial plan is a draft checklist for the operator to review before sharing.
 
 Known non-blocking warning: sandboxed localhost or macOS Application Support checks can warn when running inside restricted automation. Verify the packaged app with `npm run app:open-latest` in the normal GUI environment. The DMG is intentionally unsigned for local/client trial testing; macOS Gatekeeper may require Finder's contextual Open flow or local security approval.
 

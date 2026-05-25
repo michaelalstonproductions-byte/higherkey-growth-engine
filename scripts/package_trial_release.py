@@ -76,6 +76,9 @@ def package_trial(root: Path, output: Path, dry_run: bool = False, include_dmg: 
         "PATCH_VERIFICATION_CHECKLIST.md": root / "out" / "client_delivery" / "PATCH_VERIFICATION_CHECKLIST.md",
         "CLIENT_RELEASE_NOTES.md": root / "out" / "client_delivery" / "CLIENT_RELEASE_NOTES.md",
         "CLIENT_UPDATE_MESSAGE.md": root / "out" / "client_delivery" / "CLIENT_UPDATE_MESSAGE.md",
+        "TRIAL_SUCCESS_REPORT.md": root / "out" / "client_delivery" / "TRIAL_SUCCESS_REPORT.md",
+        "CLIENT_TRIAL_SUMMARY.md": root / "out" / "client_delivery" / "CLIENT_TRIAL_SUMMARY.md",
+        "NEXT_TRIAL_PLAN.md": root / "out" / "client_delivery" / "NEXT_TRIAL_PLAN.md",
     }
     missing_docs = [name for name, source in docs.items() if not source.exists()]
     app_info = {
@@ -131,6 +134,7 @@ def package_trial(root: Path, output: Path, dry_run: bool = False, include_dmg: 
             "python3 scripts/build_trial_patch_plan.py",
             "python3 scripts/build_patch_execution_board.py",
             "python3 scripts/build_client_release_notes.py",
+            "python3 scripts/build_trial_success_report.py",
             "",
         ]
     )

@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally by default. Client Trial Patch Execution turns feedback plans into local patch tasks, verification checklists, and draft release notes while excluding originals and local secrets by default.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. Client Trial Analytics summarizes trial results, success reports, scorecards, and next trial plans while excluding originals and local secrets by default.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "Client Trial Patch Execution",
-  "version": "V7.3"
+  "release_name": "Client Trial Analytics",
+  "version": "V7.4"
 }

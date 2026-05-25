@@ -92,6 +92,11 @@ def issue_report(
         "patch_verification_plan.json": analytics / "patch_verification_plan.json",
         "client_patch_status.json": analytics / "client_patch_status.json",
         "client_release_notes.json": analytics / "client_release_notes.json",
+        "trial_success_report.json": analytics / "trial_success_report.json",
+        "client_trial_success_report.json": analytics / "client_trial_success_report.json",
+        "internal_trial_analysis.json": analytics / "internal_trial_analysis.json",
+        "next_trial_plan.json": analytics / "next_trial_plan.json",
+        "client_trial_scorecard.json": analytics / "client_trial_scorecard.json",
         "client_delivery_manifest.json": analytics / "client_delivery_manifest.json",
     }
     if include_runtime:

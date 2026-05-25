@@ -948,6 +948,13 @@ async function buildClientReleaseNotes() {
   return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
 }
 
+async function buildTrialSuccessReport() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/build_trial_success_report.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
 async function getClientFeedbackInbox() {
   return {
     ok: true,
@@ -1019,6 +1026,32 @@ async function getClientReleaseNotes() {
     activeProjectRoot,
     patchReleaseNotes: await readAnalyticsJson("patch_release_notes.json", {}),
     clientReleaseNotes: await readAnalyticsJson("client_release_notes.json", {})
+  };
+}
+
+async function getTrialSuccessReport() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    trialSuccessReport: await readAnalyticsJson("trial_success_report.json", {}),
+    clientTrialSuccessReport: await readAnalyticsJson("client_trial_success_report.json", {}),
+    internalTrialAnalysis: await readAnalyticsJson("internal_trial_analysis.json", {})
+  };
+}
+
+async function getClientTrialScorecard() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    scorecard: await readAnalyticsJson("client_trial_scorecard.json", {})
+  };
+}
+
+async function getNextTrialPlan() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    nextTrialPlan: await readAnalyticsJson("next_trial_plan.json", {})
   };
 }
 
@@ -2698,6 +2731,7 @@ function registerIpc() {
   ipcMain.handle("feedback:buildPatchExecutionBoard", buildPatchExecutionBoard);
   ipcMain.handle("feedback:updatePatchExecutionStatus", (_event, options = {}) => updatePatchExecutionStatus(options));
   ipcMain.handle("feedback:buildClientReleaseNotes", buildClientReleaseNotes);
+  ipcMain.handle("feedback:buildTrialSuccessReport", buildTrialSuccessReport);
   ipcMain.handle("feedback:getInbox", getClientFeedbackInbox);
   ipcMain.handle("feedback:getIssueQueue", getClientIssueQueue);
   ipcMain.handle("feedback:getTriageReport", getFeedbackTriageReport);
@@ -2706,6 +2740,9 @@ function registerIpc() {
   ipcMain.handle("feedback:getPatchExecutionBoard", getPatchExecutionBoard);
   ipcMain.handle("feedback:getPatchVerificationPlan", getPatchVerificationPlan);
   ipcMain.handle("feedback:getClientReleaseNotes", getClientReleaseNotes);
+  ipcMain.handle("feedback:getTrialSuccessReport", getTrialSuccessReport);
+  ipcMain.handle("feedback:getClientTrialScorecard", getClientTrialScorecard);
+  ipcMain.handle("feedback:getNextTrialPlan", getNextTrialPlan);
   ipcMain.handle("feedback:openFolder", openFeedbackFolder);
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);
