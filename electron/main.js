@@ -35,6 +35,7 @@ let lastActivityCount = 0;
 let activeProjectRoot = DEFAULT_PROJECT_ROOT;
 let releaseInfoCache = null;
 let securityPolicyCache = null;
+let dashboardUrl = "";
 
 function securityPolicy() {
   if (securityPolicyCache) return securityPolicyCache;
@@ -125,6 +126,38 @@ function redactRendererText(value) {
   }
   text = text.replace(/(token|secret|password|credential|authorization)(["'=:\s]+)[^,\s"']+/gi, "$1$2[redacted]");
   return text.slice(0, 2000);
+}
+
+async function appendImportDropStabilityEvent(eventName, details = {}) {
+  try {
+    const analyticsDir = path.join(activeProjectRoot || DEFAULT_PROJECT_ROOT, "analytics");
+    const reportPath = path.join(analyticsDir, "import_drop_stability_report.json");
+    let existing = {};
+    try {
+      existing = JSON.parse(await fsp.readFile(reportPath, "utf8"));
+    } catch {}
+    const events = Array.isArray(existing.events) ? existing.events.slice(-49) : [];
+    const redactedDetails = {};
+    for (const [key, value] of Object.entries(details || {})) {
+      redactedDetails[key] = redactRendererText(value);
+    }
+    events.push({
+      event: eventName,
+      details: redactedDetails,
+      updated_at: new Date().toISOString()
+    });
+    const report = {
+      ...(existing || {}),
+      version: 1,
+      local_only: true,
+      redacted: true,
+      status: existing.status || "pass",
+      updated_at: new Date().toISOString(),
+      events
+    };
+    await fsp.mkdir(analyticsDir, { recursive: true });
+    await fsp.writeFile(reportPath, JSON.stringify(report, null, 2) + "\n", "utf8");
+  } catch {}
 }
 
 function releaseInfo() {
@@ -236,6 +269,10 @@ function projectProfile(settings) {
     exportDirectory: path.join(settings.activeProject || profile.projectPath || activeProjectRoot || DEFAULT_PROJECT_ROOT, "out", "approved_posts"),
     analyticsDirectory: path.join(settings.activeProject || profile.projectPath || activeProjectRoot || DEFAULT_PROJECT_ROOT, "analytics")
   };
+}
+
+async function currentProfile() {
+  return projectProfile(await readSettings());
 }
 
 async function readSettings() {
@@ -470,6 +507,7 @@ async function createWindow(url) {
       sandbox: false
     }
   });
+  installNavigationGuards(mainWindow, url);
   await mainWindow.loadURL(url);
   splashWindow?.close();
   splashWindow = null;
@@ -477,6 +515,50 @@ async function createWindow(url) {
     notify("HigherKey verification", "Electron notification path is wired.");
     setTimeout(() => app.quit(), 1200);
   }
+}
+
+function isAllowedDashboardNavigation(targetUrl) {
+  try {
+    if (!dashboardUrl) return false;
+    const target = new URL(targetUrl);
+    const allowed = new URL(dashboardUrl);
+    if (target.origin !== allowed.origin) return false;
+    return target.pathname === allowed.pathname || target.pathname === "/" || target.href === allowed.href;
+  } catch {
+    return false;
+  }
+}
+
+function installNavigationGuards(window, appUrl) {
+  dashboardUrl = appUrl;
+  const guardNavigation = (event, targetUrl, reason) => {
+    if (isAllowedDashboardNavigation(targetUrl)) return;
+    event.preventDefault();
+    appendImportDropStabilityEvent("blocked_window_navigation", { reason, targetUrl });
+    if (!window.isDestroyed() && dashboardUrl) {
+      window.loadURL(dashboardUrl).catch((error) => appendImportDropStabilityEvent("dashboard_reload_failed", { reason, error: error?.message || error }));
+    }
+  };
+  window.webContents.on("will-navigate", (event, targetUrl) => guardNavigation(event, targetUrl, "will-navigate"));
+  window.webContents.on("will-redirect", (event, targetUrl) => guardNavigation(event, targetUrl, "will-redirect"));
+  window.webContents.on("did-navigate", (_event, targetUrl) => {
+    if (isAllowedDashboardNavigation(targetUrl)) return;
+    appendImportDropStabilityEvent("unexpected_window_navigation", { targetUrl });
+    if (!window.isDestroyed() && dashboardUrl) {
+      window.loadURL(dashboardUrl).catch((error) => appendImportDropStabilityEvent("dashboard_reload_failed", { reason: "did-navigate", error: error?.message || error }));
+    }
+  });
+  window.webContents.on("did-fail-load", (_event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+    if (!isMainFrame || isAllowedDashboardNavigation(validatedURL)) return;
+    appendImportDropStabilityEvent("failed_external_load_blocked", { errorCode, errorDescription, validatedURL });
+    if (!window.isDestroyed() && dashboardUrl) {
+      window.loadURL(dashboardUrl).catch((error) => appendImportDropStabilityEvent("dashboard_reload_failed", { reason: "did-fail-load", error: error?.message || error }));
+    }
+  });
+  window.webContents.setWindowOpenHandler((details) => {
+    appendImportDropStabilityEvent("blocked_window_open", { targetUrl: details.url });
+    return { action: "deny" };
+  });
 }
 
 async function showAboutPanel() {
@@ -2563,13 +2645,17 @@ async function ingestDroppedFiles(filePaths) {
     return {
       copied: [],
       imported: 0,
+      imported_count: 0,
+      skipped_count: 0,
+      unsupported_count: 0,
       importedFiles: [],
       skipped: [],
       errors: [{ reason: projectCheck.message || "That folder cannot be used as a project." }],
       inbox,
       accepted_extensions: [".mp4", ".mov", ".m4v"],
       status: "fail",
-      message: projectCheck.message || "That folder cannot be used as a project."
+      message: projectCheck.message || "That folder cannot be used as a project.",
+      client_message: "Import failed safely. Try Import Footage or choose a supported media file."
     };
   }
   const filtered = filterImportSelections(filePaths || []);
@@ -2577,27 +2663,38 @@ async function ingestDroppedFiles(filePaths) {
     return {
       copied: [],
       imported: 0,
+      imported_count: 0,
+      skipped_count: 0,
+      unsupported_count: filtered.errors.filter((item) => item.extension).length,
       importedFiles: [],
       skipped: [],
       errors: filtered.errors,
       inbox,
       accepted_extensions: [".mp4", ".mov", ".m4v"],
       status: "fail",
-      message: "No supported footage files were dropped."
+      message: "No supported footage files were dropped.",
+      client_message: "Import failed safely. Try Import Footage or choose a supported media file."
     };
   }
   const result = await ingestDroppedFilesToInbox(filtered.valid, inbox);
   const errors = [...filtered.errors, ...result.errors];
   const imported = result.copied.length;
+  const skipped = result.skipped || [];
   return {
     ...result,
     imported,
+    imported_count: imported,
+    skipped_count: skipped.length,
+    unsupported_count: [...filtered.errors, ...skipped].filter((item) => item.extension || String(item.reason || "").includes("Unsupported")).length,
     importedFiles: result.copied,
     errors,
     status: imported ? (errors.length ? "warn" : "pass") : "fail",
     message: imported
       ? `${imported} video${imported === 1 ? "" : "s"} imported.`
-      : "No supported footage files were imported."
+      : "No supported footage files were imported.",
+    client_message: imported
+      ? `${imported} video${imported === 1 ? "" : "s"} imported.`
+      : "Import failed safely. Try Import Footage or choose a supported media file."
   };
 }
 

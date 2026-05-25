@@ -2029,6 +2029,86 @@
     </div>
 
     <script>
+      let hkDropImportInFlight = false;
+      let hkLastDropHandledAt = 0;
+      let hkPendingDroppedFiles = null;
+
+      function hkSafeText(value) {
+        return String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+      }
+
+      function hkShowSafeNotice(message) {
+        try {
+          if (typeof setNotice === "function") {
+            setNotice(message, [{ label: "Choose Files", action: "import-footage" }, { label: "Open Support", action: "go-diagnostics" }]);
+            return;
+          }
+        } catch {}
+        const notice = document.getElementById("notice");
+        if (notice) {
+          notice.innerHTML = hkSafeText(message);
+          notice.classList.add("visible");
+        }
+      }
+
+      function hkPreventDropNavigation(event) {
+        try {
+          event.preventDefault();
+          event.stopPropagation();
+          if (event.dataTransfer) event.dataTransfer.dropEffect = window.higherkey ? "copy" : "none";
+          document.body?.classList.add("drag-active");
+        } catch {}
+      }
+
+      function hkFilesFromDropEvent(event) {
+        try {
+          const files = Array.from(event?.dataTransfer?.files || []);
+          if (files.length) return files;
+          return Array.from(event?.dataTransfer?.items || []).map((item) => item.getAsFile?.()).filter(Boolean);
+        } catch {
+          return [];
+        }
+      }
+
+      async function hkHandleCapturedDrop(event) {
+        hkPreventDropNavigation(event);
+        document.body?.classList.remove("drag-active");
+        const now = Date.now();
+        if (now - hkLastDropHandledAt < 450) return;
+        hkLastDropHandledAt = now;
+        const files = hkFilesFromDropEvent(event);
+        if (!files.length) {
+          hkShowSafeNotice("Import failed safely. Try Import Footage or choose a supported media file.");
+          return;
+        }
+        if (!window.higherkey) {
+          hkShowSafeNotice("Static browser mode: launch the desktop app to import dropped footage.");
+          return;
+        }
+        try {
+          if (typeof window.hkIngestDropSafely === "function") {
+            await window.hkIngestDropSafely(files);
+          } else {
+            hkPendingDroppedFiles = files;
+            hkShowSafeNotice("Importing footage...");
+          }
+        } catch (error) {
+          hkShowSafeNotice("Import failed safely. Try Import Footage or choose a supported media file.");
+          try { rendererErrorFallback(error, "capture-drop-import"); } catch {}
+        }
+      }
+
+      window.addEventListener("dragover", hkPreventDropNavigation, true);
+      window.addEventListener("drop", hkHandleCapturedDrop, true);
+      document.addEventListener("dragover", hkPreventDropNavigation, true);
+      document.addEventListener("drop", hkHandleCapturedDrop, true);
+      document.addEventListener("DOMContentLoaded", () => {
+        document.body?.addEventListener("dragover", hkPreventDropNavigation, true);
+        document.body?.addEventListener("drop", hkHandleCapturedDrop, true);
+        document.querySelector(".hk-shell")?.addEventListener("dragover", hkPreventDropNavigation, true);
+        document.querySelector(".hk-shell")?.addEventListener("drop", hkHandleCapturedDrop, true);
+      });
+
       const PATHS = {
         queue: "../queue/review_queue.json",
         learning: "../analytics/learning_summary.json",
@@ -2370,6 +2450,38 @@
           };
         });
       }
+      function showShellRecovery(message = "Import failed safely. Try Import Footage or choose a supported media file.") {
+        try {
+          const main = $("mainContent");
+          if (main) {
+            main.innerHTML = `
+              <section class="view command-view">
+                <div class="command-hero">
+                  <div>
+                    <span class="eyebrow">Recovery</span>
+                    <h1>Something went wrong, but HigherKey is still running.</h1>
+                    <p>${html(message)}</p>
+                  </div>
+                  <div class="hero-actions">
+                    <button class="btn red" data-recover-action="command">Return to Command</button>
+                    <button class="btn" data-recover-action="import">Try Import Again</button>
+                    <button class="btn" data-recover-action="support">Create Support Package</button>
+                    <button class="btn" data-recover-action="reload">Reload App</button>
+                  </div>
+                </div>
+              </section>`;
+            main.querySelector('[data-recover-action="command"]')?.addEventListener("click", () => { state.mode = "command"; persistWorkspace(); render(); });
+            main.querySelector('[data-recover-action="import"]')?.addEventListener("click", () => importFootage());
+            main.querySelector('[data-recover-action="support"]')?.addEventListener("click", () => createIssueReport());
+            main.querySelector('[data-recover-action="reload"]')?.addEventListener("click", () => window.location.reload());
+          }
+          const inspector = $("inspector");
+          if (inspector) {
+            inspector.innerHTML = `<section class="inspector-section"><h3>Recovery</h3><div class="copy">${html(message)}</div></section>`;
+          }
+          setNotice(message, [{ label: "Choose Files", action: "import-footage" }, { label: "Open Support", action: "go-diagnostics" }]);
+        } catch {}
+      }
       function rendererErrorFallback(error, context = "renderer") {
         const message = error?.message || error?.reason?.message || error?.reason || String(error || "Unknown renderer error");
         try {
@@ -2380,6 +2492,7 @@
             context
           }).catch(() => null);
         } catch {}
+        showShellRecovery("Import failed safely. Try Import Footage or choose a supported media file.");
         try {
           const overlay = document.createElement("div");
           overlay.className = "startup-overlay visible";
@@ -5580,17 +5693,29 @@
       }
 
       function render() {
-        document.querySelectorAll(".tab").forEach((node) => node.classList.toggle("active", node.dataset.mode === state.mode));
-        document.querySelectorAll(".rail-advanced").forEach((node) => { node.open = ["search", "agents", "analytics"].includes(state.mode); });
-        renderStatus();
-        renderMainWorkspace();
-        renderRightInspector(state.mode);
-        renderBottomTelemetry(state.mode);
-        renderModeDetails();
-        wireDesktopActions();
-        wireMarketingViewActions();
-        wireAutopilotViewActions();
-        wireDynamicControls();
+        try {
+          document.querySelectorAll(".tab").forEach((node) => node.classList.toggle("active", node.dataset.mode === state.mode));
+          document.querySelectorAll(".rail-advanced").forEach((node) => { node.open = ["search", "agents", "analytics"].includes(state.mode); });
+          renderStatus();
+          renderMainWorkspace();
+          renderRightInspector(state.mode);
+          renderBottomTelemetry(state.mode);
+          renderModeDetails();
+          wireDesktopActions();
+          wireMarketingViewActions();
+          wireAutopilotViewActions();
+          wireDynamicControls();
+        } catch (error) {
+          try {
+            window.higherkey?.recordRendererError?.({
+              message: error?.message || String(error),
+              stack: error?.stack || "",
+              source: "render",
+              context: "render"
+            }).catch(() => null);
+          } catch {}
+          showShellRecovery("HigherKey recovered from a screen rendering error. Return to Command or try import again.");
+        }
       }
 
       function setActive(id) {
@@ -5768,75 +5893,95 @@
         if (!window.higherkey?.importFootage) {
           return setNotice(staticModeMessage());
         }
-        setNotice("Importing footage...");
-        const result = await window.higherkey.importFootage();
-        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
-        if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
-        await refreshLiveData();
-        setNotice(summarizeImport(result));
-        showImportResultModal(result);
-        return result;
+        try {
+          setNotice("Importing footage...");
+          const result = await window.higherkey.importFootage();
+          state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+          if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
+          await refreshLiveData();
+          setNotice(summarizeImport(result));
+          showImportResultModal(result);
+          return result;
+        } catch (error) {
+          rendererErrorFallback(error, "import-footage");
+          return { status: "fail", imported: 0, imported_count: 0, errors: [{ reason: error?.message || String(error) }], client_message: "Import failed safely. Try Import Footage or choose a supported media file." };
+        }
       }
 
       async function importAndProcessFootage() {
         if (!window.higherkey?.importAndProcessFootage) {
           return setNotice(staticModeMessage());
         }
-        setNotice("Preparing project...");
-        showProcessingModal("Preparing project", []);
-        setNotice("Importing footage...");
-        showProcessingModal("Importing footage", ["Preparing project"]);
-        const result = await window.higherkey.importAndProcessFootage();
-        const imported = result.imported || {};
-        if (imported.canceled) {
-          setNotice("Import cancelled.");
+        try {
+          setNotice("Preparing project...");
+          showProcessingModal("Preparing project", []);
+          setNotice("Importing footage...");
+          showProcessingModal("Importing footage", ["Preparing project"]);
+          const result = await window.higherkey.importAndProcessFootage();
+          const imported = result.imported || {};
+          if (imported.canceled) {
+            setNotice("Import cancelled.");
+            return result;
+          }
+          if ((imported.imported || 0) === 0) {
+            setNotice(summarizeImport(imported));
+            showImportResultModal(imported);
+            return result;
+          }
+          setNotice("Creating clips, building previews, analyzing color/audio, and preparing recommendations...");
+          showProcessingModal("Ready for review", ["Preparing project", "Importing footage", "Creating clips", "Building previews", "Analyzing hooks", "Checking color/audio", "Preparing recommendations", "Ready for review"]);
+          state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
+          if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
+          await refreshLiveData();
+          if (result.code === 0) {
+            showPipelineResultNotice(`${imported.imported} video${imported.imported === 1 ? "" : "s"} imported and processed. Ready for review.`);
+          } else {
+            showPipelineResultNotice("Import completed, but processing needs attention.");
+          }
           return result;
+        } catch (error) {
+          rendererErrorFallback(error, "import-and-process");
+          return { status: "fail", imported: { imported: 0, imported_count: 0, errors: [{ reason: error?.message || String(error) }] }, client_message: "Import failed safely. Try Import Footage or choose a supported media file." };
         }
-        if ((imported.imported || 0) === 0) {
-          setNotice(summarizeImport(imported));
-          showImportResultModal(imported);
-          return result;
-        }
-        setNotice("Creating clips, building previews, analyzing color/audio, and preparing recommendations...");
-        showProcessingModal("Ready for review", ["Preparing project", "Importing footage", "Creating clips", "Building previews", "Analyzing hooks", "Checking color/audio", "Preparing recommendations", "Ready for review"]);
-        state.appInfo = await window.higherkey.getAppInfo().catch(() => state.appInfo);
-        if (window.higherkey.buildClientWorkflow) await window.higherkey.buildClientWorkflow().catch(() => null);
-        await refreshLiveData();
-        if (result.code === 0) {
-          showPipelineResultNotice(`${imported.imported} video${imported.imported === 1 ? "" : "s"} imported and processed. Ready for review.`);
-        } else {
-          showPipelineResultNotice("Import completed, but processing needs attention.");
-        }
-        return result;
       }
 
       async function ingestDroppedFiles(files) {
         if (!window.higherkey) {
           return setNotice("Static browser mode: launch the desktop app to drag and drop footage.");
         }
-        const descriptors = window.higherkey.getDroppedFilePaths ? await window.higherkey.getDroppedFilePaths(files) : Array.from(files || []).map((file) => ({ name: file.name || "", path: file.path || "" }));
-        const received = descriptors.filter((item) => item.path || item.name);
-        if (!received.length) {
-          return setNotice("Drop needs attention: the desktop app could not read those files.", [{ label: "Open Support", action: "go-diagnostics" }]);
-        }
-        setNotice(`Dropped file received: ${received.map((item) => item.name || item.path).join(", ")}`);
-        const importPaths = received.map((item) => item.path).filter(Boolean);
-        if (!importPaths.length) {
-          return setNotice("Drop needs attention: the desktop app could not read file paths. Try Import Footage.", [{ label: "Choose Files", action: "import-footage" }, { label: "Open Support", action: "go-diagnostics" }]);
-        }
-        const result = await window.higherkey.ingestDroppedFiles(importPaths);
-        const copied = result.copied || [];
-        const skipped = result.skipped || [];
-        const errors = result.errors || [];
-        if (copied.length) {
-          const normalized = { ...result, imported: result.imported || copied.length, importedFiles: result.importedFiles || copied, selected: received.length, skipped, errors };
-          setNotice(`${copied.length} video${copied.length === 1 ? "" : "s"} imported. Ready to process.`);
-          showImportResultModal(normalized);
+        try {
+          const fileArray = Array.from(files || []).filter(Boolean);
+          const descriptors = window.higherkey.getDroppedFilePaths ? await window.higherkey.getDroppedFilePaths(fileArray) : fileArray.map((file) => ({ name: file.name || "", path: file.path || "" }));
+          const received = (Array.isArray(descriptors) ? descriptors : []).filter((item) => item && (item.path || item.name));
+          if (!received.length) {
+            setNotice("Drop needs attention: the desktop app could not read those files.", [{ label: "Choose Files", action: "import-footage" }, { label: "Open Support", action: "go-diagnostics" }]);
+            return { status: "fail", imported_count: 0, skipped_count: 0, unsupported_count: 0, errors: [{ reason: "Dropped file paths were not available from Electron." }], client_message: "Import failed safely. Try Import Footage or choose a supported media file." };
+          }
+          setNotice(`Dropped file received: ${received.map((item) => item.name || item.path || "file").join(", ")}`);
+          const importInputs = received.map((item) => item.path ? item.path : item).filter(Boolean);
+          const result = await window.higherkey.ingestDroppedFiles(importInputs);
+          const copied = result?.copied || result?.importedFiles || [];
+          const skipped = result?.skipped || [];
+          const errors = result?.errors || [];
+          if (copied.length) {
+            const normalized = { ...result, imported: result.imported || result.imported_count || copied.length, importedFiles: result.importedFiles || copied, selected: received.length, skipped, errors };
+            setNotice(`${copied.length} video${copied.length === 1 ? "" : "s"} imported. Ready to process.`);
+            showImportResultModal(normalized);
+            return result;
+          }
+          const reason = [...errors, ...skipped].map((item) => `${item.name || item.path || "file"}: ${item.reason || item.message || "not imported"}`).join("; ") || result?.client_message || "No accepted media files were copied.";
+          setNotice(`Drop needs attention: ${reason}`, [{ label: "Choose Files", action: "import-footage" }, { label: "Open Support", action: "go-diagnostics" }]);
           return result;
+        } catch (error) {
+          rendererErrorFallback(error, "ingest-dropped-files");
+          return { status: "fail", imported_count: 0, skipped_count: 0, unsupported_count: 0, errors: [{ reason: error?.message || String(error) }], client_message: "Import failed safely. Try Import Footage or choose a supported media file." };
         }
-        const reason = [...errors, ...skipped].map((item) => `${item.name || item.path || "file"}: ${item.reason}`).join("; ") || "No accepted media files were copied.";
-        setNotice(`Drop needs attention: ${reason}`, [{ label: "Open Support", action: "go-diagnostics" }]);
-        return result;
+      }
+      window.hkIngestDropSafely = ingestDroppedFiles;
+      if (hkPendingDroppedFiles) {
+        const pending = hkPendingDroppedFiles;
+        hkPendingDroppedFiles = null;
+        window.hkIngestDropSafely(pending).catch((error) => rendererErrorFallback(error, "pending-drop-import"));
       }
 
       async function runFirstPipeline() {
