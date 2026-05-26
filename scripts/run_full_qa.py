@@ -76,6 +76,7 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "growth_engine" / "patch_execution.py",
         resources / "app-assets" / "growth_engine" / "trial_analytics.py",
         resources / "app-assets" / "growth_engine" / "client_success.py",
+        resources / "app-assets" / "growth_engine" / "client_success_delivery.py",
         resources / "app-assets" / "scripts" / "run_full_qa.py",
         resources / "app-assets" / "scripts" / "build_media_cache.py",
         resources / "app-assets" / "scripts" / "build_marketing_plan.py",
@@ -130,6 +131,9 @@ def packaged_path_check(root: Path) -> dict[str, object]:
         resources / "app-assets" / "scripts" / "build_client_release_notes.py",
         resources / "app-assets" / "scripts" / "build_trial_success_report.py",
         resources / "app-assets" / "scripts" / "build_client_success_dashboard.py",
+        resources / "app-assets" / "scripts" / "package_client_success_delivery.py",
+        resources / "app-assets" / "scripts" / "verify_client_success_package.py",
+        resources / "app-assets" / "scripts" / "build_client_success_presentation.py",
         resources / "app-assets" / "config" / "autopilot_policy.json",
         resources / "app-assets" / "config" / "marketing_profile.example.json",
         resources / "app-assets" / "config" / "social_connectors.example.json",
@@ -531,6 +535,11 @@ def client_trial_ops_check(root: Path) -> dict[str, object]:
         root / "analytics" / "operator_closeout_checklist.json",
         root / "analytics" / "next_engagement_recommendation.json",
         root / "analytics" / "client_success_summary.json",
+        root / "analytics" / "client_success_delivery_package.json",
+        root / "analytics" / "client_success_delivery_checklist.json",
+        root / "analytics" / "client_success_presentation_manifest.json",
+        root / "analytics" / "client_success_share_summary.json",
+        root / "analytics" / "client_success_package_verification.json",
         root / "out" / "client_delivery" / "TRIAL_ISSUE_QUEUE.md",
         root / "out" / "client_delivery" / "TRIAL_FIX_PLAN.md",
         root / "out" / "client_delivery" / "TRIAL_PATCH_PLAN.md",
@@ -550,10 +559,16 @@ def client_trial_ops_check(root: Path) -> dict[str, object]:
         root / "out" / "client_delivery" / "OPERATOR_CLOSEOUT_CHECKLIST.md",
         root / "out" / "client_delivery" / "NEXT_ENGAGEMENT_RECOMMENDATION.md",
         root / "out" / "client_delivery" / "CLIENT_SUCCESS_SUMMARY.md",
+        root / "out" / "client_success_package" / "dry_run_preview" / "README_CLIENT_SUCCESS_PACKAGE.md",
+        root / "out" / "client_success_package" / "dry_run_preview" / "CLIENT_SUCCESS_DELIVERY_CHECKLIST.md",
+        root / "out" / "client_success_package" / "dry_run_preview" / "CLIENT_SUCCESS_DELIVERY_MANIFEST.json",
+        root / "out" / "client_success_package" / "CLIENT_PRESENTATION_OVERVIEW.md",
+        root / "out" / "client_success_package" / "WHAT_CHANGED.md",
+        root / "out" / "client_success_package" / "WHAT_TO_TRY_NEXT.md",
     ]
     missing = [relative_path(path, root) for path in required if not path.exists()]
     forbidden_hits = []
-    scan_roots = [root / "out" / "client_delivery", root / "out" / "client_issue_report"]
+    scan_roots = [root / "out" / "client_delivery", root / "out" / "client_issue_report", root / "out" / "client_success_package"]
     for folder in scan_roots:
         if not folder.exists():
             continue
@@ -1431,6 +1446,10 @@ def main() -> int:
     append_stage(results, qa_stage("build_trial_success_report", ["python3", "scripts/build_trial_success_report.py", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("build_client_success_dashboard_dry_run", ["python3", "scripts/build_client_success_dashboard.py", "--dry-run", "--json"], root, timeout=60), config)
     append_stage(results, qa_stage("build_client_success_dashboard", ["python3", "scripts/build_client_success_dashboard.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("package_client_success_delivery_dry_run", ["python3", "scripts/package_client_success_delivery.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("verify_client_success_package", ["python3", "scripts/verify_client_success_package.py", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("build_client_success_presentation_dry_run", ["python3", "scripts/build_client_success_presentation.py", "--dry-run", "--json"], root, timeout=60), config)
+    append_stage(results, qa_stage("build_client_success_presentation", ["python3", "scripts/build_client_success_presentation.py", "--json"], root, timeout=60), config)
     print("[qa] client_trial_ops_validation", flush=True)
     append_stage(results, client_trial_ops_check(root), config)
     print("[qa] editing_studio_validation", flush=True)

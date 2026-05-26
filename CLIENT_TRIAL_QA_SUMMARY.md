@@ -1,8 +1,8 @@
 # HigherKey Operator OS Client Trial QA Summary
 
-Version: V7.5 / 7.5.0
+Version: V7.6 / 7.6.0
 
-## V7.5 Launch Checks
+## V7.6 Launch Checks
 
 - Run `python3 scripts/build_client_delivery_manifest.py`.
 - Run `python3 scripts/run_release_candidate_audit.py`.
@@ -15,7 +15,7 @@ Known local sandbox diagnostics warnings can remain warnings when QA exits 0 and
 
 DMG:
 
-- `dist/HigherKey Operator OS-7.5.0-arm64.dmg`
+- `dist/HigherKey Operator OS-7.6.0-arm64.dmg`
 
 Trial package:
 
@@ -79,5 +79,9 @@ What to test during the trial:
 - Build draft release notes with `python3 scripts/build_client_release_notes.py`.
 - Build the trial success report and scorecard with `python3 scripts/build_trial_success_report.py`.
 - Build the client success dashboard and closeout report with `python3 scripts/build_client_success_dashboard.py`.
+- Build the client success package dry run with `python3 scripts/package_client_success_delivery.py --dry-run`.
+- Verify the package with `python3 scripts/verify_client_success_package.py`.
+- Build the presentation overview with `python3 scripts/build_client_success_presentation.py`.
 - Mark local fix status with `python3 scripts/update_trial_issue_status.py --status triaged --note "Reviewed locally"` when needed.
-- Review response notes, client release notes, client update messages, trial success report, client trial summary, closeout report, and next engagement recommendation before sending. HigherKey does not upload feedback, create external tickets, send client messages, or mark issues fixed automatically.
+- Review response notes, client release notes, client update messages, trial success report, client trial summary, closeout report, client success package, presentation overview, and next engagement recommendation before sending. HigherKey does not upload feedback, create external tickets, send client messages, or mark issues fixed automatically.
+- Confirm original media, raw clips, logs, runtime DB files, local connector config, token vault files, secrets, and credentials are excluded from the package.

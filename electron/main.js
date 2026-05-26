@@ -1062,6 +1062,29 @@ async function buildClientSuccessDashboard() {
   return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
 }
 
+async function packageClientSuccessDelivery(options = {}) {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const args = ["scripts/package_client_success_delivery.py", "--json"];
+  args.push(options.approve ? "--approve" : "--dry-run");
+  const result = await runPython(args);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function verifyClientSuccessPackage() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/verify_client_success_package.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
+async function buildClientSuccessPresentation() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/build_client_success_presentation.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
 async function getClientFeedbackInbox() {
   return {
     ok: true,
@@ -1195,6 +1218,18 @@ async function getNextEngagementRecommendation() {
   };
 }
 
+async function getClientSuccessDeliveryPackage() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    package: await readAnalyticsJson("client_success_delivery_package.json", {}),
+    checklist: await readAnalyticsJson("client_success_delivery_checklist.json", {}),
+    presentation: await readAnalyticsJson("client_success_presentation_manifest.json", {}),
+    shareSummary: await readAnalyticsJson("client_success_share_summary.json", {}),
+    verification: await readAnalyticsJson("client_success_package_verification.json", {})
+  };
+}
+
 async function createIssueReport() {
   return runPython(["scripts/create_issue_report.py"]);
 }
@@ -1204,6 +1239,13 @@ async function openIssueReportFolder() {
   await fsp.mkdir(reportDir, { recursive: true });
   await shell.openPath(reportDir);
   return { path: reportDir, activeProjectRoot };
+}
+
+async function openClientSuccessPackageFolder() {
+  const packageDir = path.join(activeProjectRoot, "out", "client_success_package");
+  await fsp.mkdir(packageDir, { recursive: true });
+  await shell.openPath(packageDir);
+  return { path: packageDir, activeProjectRoot };
 }
 
 async function buildTrialPackage() {
@@ -2913,6 +2955,9 @@ function registerIpc() {
   ipcMain.handle("feedback:buildClientReleaseNotes", buildClientReleaseNotes);
   ipcMain.handle("feedback:buildTrialSuccessReport", buildTrialSuccessReport);
   ipcMain.handle("feedback:buildClientSuccessDashboard", buildClientSuccessDashboard);
+  ipcMain.handle("feedback:packageClientSuccessDelivery", (_event, options = {}) => packageClientSuccessDelivery(options));
+  ipcMain.handle("feedback:verifyClientSuccessPackage", verifyClientSuccessPackage);
+  ipcMain.handle("feedback:buildClientSuccessPresentation", buildClientSuccessPresentation);
   ipcMain.handle("feedback:getInbox", getClientFeedbackInbox);
   ipcMain.handle("feedback:getIssueQueue", getClientIssueQueue);
   ipcMain.handle("feedback:getTriageReport", getFeedbackTriageReport);
@@ -2928,6 +2973,7 @@ function registerIpc() {
   ipcMain.handle("feedback:getTrialCloseoutReport", getTrialCloseoutReport);
   ipcMain.handle("feedback:getOperatorCloseoutChecklist", getOperatorCloseoutChecklist);
   ipcMain.handle("feedback:getNextEngagementRecommendation", getNextEngagementRecommendation);
+  ipcMain.handle("feedback:getClientSuccessDeliveryPackage", getClientSuccessDeliveryPackage);
   ipcMain.handle("feedback:openFolder", openFeedbackFolder);
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);
@@ -2996,6 +3042,7 @@ function registerIpc() {
   ipcMain.handle("folder:openEditedDelivery", openEditedDeliveryFolder);
   ipcMain.handle("folder:openClientDelivery", openClientDeliveryFolder);
   ipcMain.handle("folder:openClientHandoff", openClientHandoffFolder);
+  ipcMain.handle("folder:openClientSuccessPackage", openClientSuccessPackageFolder);
   ipcMain.handle("folder:openDmg", openDmgFolder);
   ipcMain.handle("files:ingestDropped", (_event, filePaths) => ingestDroppedFiles(filePaths));
   ipcMain.handle("renderer:recordError", recordRendererError);

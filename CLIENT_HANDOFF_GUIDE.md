@@ -4,7 +4,7 @@ HigherKey Operator OS is a local-first desktop app for preparing short-form soci
 
 No social posting happens unless official connectors are configured, readiness checks pass, and approval gates are met. Manual upload remains available.
 
-## V7.5 What To Send
+## V7.6 What To Send
 
 - The current HigherKey DMG or a pointer to the current DMG.
 - `CLIENT_QUICK_START.md`
@@ -17,10 +17,15 @@ No social posting happens unless official connectors are configured, readiness c
 - A generated handoff or trial package when intentionally built.
 - Approved edited delivery packages when available.
 - Trial issue queue, patch execution board, verification checklist, client release note drafts, trial success report, client success dashboard, closeout report, operator checklist, and next engagement recommendation when intentionally generated after a client session.
+- Verified client success package contents from `out/client_success_package/` when intentionally built and reviewed.
 
-## V7.5 What Not To Send
+## V7.6 What Not To Send
 
 Do not send original private source media, `content_inbox/`, raw `clips/`, runtime databases, logs, token files, local connector config, local live publish policy, secrets, or credentials. Edited delivery packages exclude originals by default.
+
+## Client Success Package
+
+After Trial Ops closeout, build a success package dry run, verify it, and review the presentation overview before sharing. The package contains client-ready closeout reports, next engagement guidance, client success summary, build info, handoff guide, quick start, trial limitations, delivery checklist, and support note. It excludes original media, raw clips, logs, runtime databases, local connector config, tokens, secrets, and credentials by default. HigherKey does not upload the package or message the client automatically.
 
 ## Install And Open
 

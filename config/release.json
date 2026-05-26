@@ -1,8 +1,8 @@
 {
   "app_id": "com.higherkey.operatoros",
   "build_status": "release-candidate",
-  "local_first_statement": "HigherKey Operator OS runs locally by default. Client Success Dashboard and Trial Closeout summarize delivery, risks, closeout steps, and next engagement recommendations while excluding originals and local secrets by default.",
+  "local_first_statement": "HigherKey Operator OS runs locally by default. Client Success Delivery Package prepares client-ready closeout reports, presentation notes, and share folders while excluding originals and local secrets by default.",
   "product_name": "HigherKey Operator OS",
-  "release_name": "Client Success Dashboard",
-  "version": "V7.5"
+  "release_name": "Client Success Delivery Package",
+  "version": "V7.6"
 }

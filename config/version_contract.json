@@ -1,8 +1,8 @@
 {
   "version": 1,
   "local_only": true,
-  "app_version": "7.5.0",
-  "release_version": "V7.5",
+  "app_version": "7.6.0",
+  "release_version": "V7.6",
   "schema_version": 4,
   "minimum_compatible_project_version": "V3.0",
   "supported_upgrade_paths": [
@@ -233,6 +233,12 @@
       "to": "V7.5",
       "safe": true,
       "notes": "Add Client Success Dashboard, trial closeout reports, operator closeout checklists, and next engagement recommendations while preserving local-only reporting and support package safety."
+    },
+    {
+      "from": "V7.5",
+      "to": "V7.6",
+      "safe": true,
+      "notes": "Add Client Success Delivery Package, presentation overview, package verification, and share-folder guidance while preserving local-only reporting, import/drop recovery, and support package safety."
     }
   ],
   "required_runtime_files": [

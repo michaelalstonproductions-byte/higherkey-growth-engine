@@ -58,6 +58,11 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "TRIAL_CLOSEOUT_REPORT.md": root / "out" / "client_delivery" / "TRIAL_CLOSEOUT_REPORT.md",
         "OPERATOR_CLOSEOUT_CHECKLIST.md": root / "out" / "client_delivery" / "OPERATOR_CLOSEOUT_CHECKLIST.md",
         "NEXT_ENGAGEMENT_RECOMMENDATION.md": root / "out" / "client_delivery" / "NEXT_ENGAGEMENT_RECOMMENDATION.md",
+        "CLIENT_SUCCESS_PACKAGE_README.md": root / "out" / "client_success_package" / "dry_run_preview" / "README_CLIENT_SUCCESS_PACKAGE.md",
+        "CLIENT_SUCCESS_DELIVERY_CHECKLIST.md": root / "out" / "client_success_package" / "dry_run_preview" / "CLIENT_SUCCESS_DELIVERY_CHECKLIST.md",
+        "CLIENT_PRESENTATION_OVERVIEW.md": root / "out" / "client_success_package" / "CLIENT_PRESENTATION_OVERVIEW.md",
+        "WHAT_CHANGED.md": root / "out" / "client_success_package" / "WHAT_CHANGED.md",
+        "WHAT_TO_TRY_NEXT.md": root / "out" / "client_success_package" / "WHAT_TO_TRY_NEXT.md",
     }
     app_info = {
         "product": "HigherKey Operator OS",
@@ -105,6 +110,9 @@ def package_handoff(root: Path, output: Path, dry_run: bool = False) -> dict[str
         "python3 scripts/build_client_release_notes.py",
         "python3 scripts/build_trial_success_report.py",
         "python3 scripts/build_client_success_dashboard.py",
+        "python3 scripts/package_client_success_delivery.py --dry-run",
+        "python3 scripts/verify_client_success_package.py",
+        "python3 scripts/build_client_success_presentation.py",
         "",
     ])
 

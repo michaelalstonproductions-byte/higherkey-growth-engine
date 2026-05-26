@@ -1555,9 +1555,9 @@ Build the current unsigned DMG:
 npm run dist:unsigned
 ```
 
-Expected V7.5 package:
+Expected V7.6 package:
 
-- `dist/HigherKey Operator OS-7.5.0-arm64.dmg`
+- `dist/HigherKey Operator OS-7.6.0-arm64.dmg`
 - `analytics/release_candidate_audit.json`
 - `analytics/client_rehearsal_report.json`
 - `out/marketing/client_rehearsal_summary.md`
@@ -1659,6 +1659,33 @@ Outputs:
 - `out/client_delivery/NEXT_ENGAGEMENT_RECOMMENDATION.md`
 
 Review closeout and next engagement drafts locally before sending anything to a client. Manual upload remains available, live posting remains gated, and support packages remain redacted by default.
+
+### V7.6 Client Success Delivery Package
+
+V7.6 packages the client success and closeout materials into a local share folder with a presentation overview and package verification. It is dry-run by default, excludes private media and credentials, and never uploads or sends client messages automatically.
+
+Run:
+
+```bash
+python3 scripts/package_client_success_delivery.py --dry-run --json
+python3 scripts/verify_client_success_package.py --json
+python3 scripts/build_client_success_presentation.py --json
+```
+
+Outputs:
+
+- `analytics/client_success_delivery_package.json`
+- `analytics/client_success_delivery_checklist.json`
+- `analytics/client_success_presentation_manifest.json`
+- `analytics/client_success_share_summary.json`
+- `analytics/client_success_package_verification.json`
+- `out/client_success_package/README_CLIENT_SUCCESS_PACKAGE.md`
+- `out/client_success_package/CLIENT_SUCCESS_DELIVERY_CHECKLIST.md`
+- `out/client_success_package/CLIENT_PRESENTATION_OVERVIEW.md`
+- `out/client_success_package/WHAT_CHANGED.md`
+- `out/client_success_package/WHAT_TO_TRY_NEXT.md`
+
+The package includes only client-safe reports, build metadata, handoff docs, quick start, trial limitations, and delivery checklist files. It excludes original media, `content_inbox`, raw clips, captions, queue, logs, runtime databases, local connector config, token vault files, secrets, and credentials.
 
 Known non-blocking warning: sandboxed localhost or macOS Application Support checks can warn when running inside restricted automation. Verify the packaged app with `npm run app:open-latest` in the normal GUI environment. The DMG is intentionally unsigned for local/client trial testing; macOS Gatekeeper may require Finder's contextual Open flow or local security approval.
 

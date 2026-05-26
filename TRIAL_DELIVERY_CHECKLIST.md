@@ -2,7 +2,7 @@
 
 Use this checklist before handing a trial build to a client.
 
-## V7.5 Client Delivery
+## V7.6 Client Delivery
 
 - [ ] Run Launch Room > Run Launch Audit.
 - [ ] Run Launch Room > Run Client Rehearsal.
@@ -67,6 +67,12 @@ Use this checklist before handing a trial build to a client.
 - [ ] Build the client success dashboard with `python3 scripts/build_client_success_dashboard.py`.
 - [ ] Confirm `analytics/client_success_dashboard.json`, `analytics/client_trial_closeout_report.json`, `analytics/operator_closeout_checklist.json`, and `analytics/next_engagement_recommendation.json` exist.
 - [ ] Confirm `out/client_delivery/CLIENT_SUCCESS_DASHBOARD.md`, `out/client_delivery/TRIAL_CLOSEOUT_REPORT.md`, `out/client_delivery/OPERATOR_CLOSEOUT_CHECKLIST.md`, and `out/client_delivery/NEXT_ENGAGEMENT_RECOMMENDATION.md` exist.
+- [ ] Build the client success package dry run with `python3 scripts/package_client_success_delivery.py --dry-run`.
+- [ ] Verify the client success package with `python3 scripts/verify_client_success_package.py`.
+- [ ] Build the presentation overview with `python3 scripts/build_client_success_presentation.py`.
+- [ ] Confirm `analytics/client_success_delivery_package.json`, `analytics/client_success_delivery_checklist.json`, `analytics/client_success_presentation_manifest.json`, and `analytics/client_success_package_verification.json` exist.
+- [ ] Confirm `out/client_success_package/README_CLIENT_SUCCESS_PACKAGE.md`, `out/client_success_package/CLIENT_SUCCESS_DELIVERY_CHECKLIST.md`, and `out/client_success_package/CLIENT_PRESENTATION_OVERVIEW.md` exist.
+- [ ] Confirm original media, raw clips, logs, runtime DB files, local connector config, token vault files, secrets, and credentials are excluded.
 - [ ] Confirm client response notes, release notes, success reports, closeout reports, and next engagement recommendations are reviewed before sending and no cloud ticket sync or automatic client messaging is enabled.
 - [ ] Confirm no cloud APIs, social APIs, or direct posting APIs are configured.
 
