@@ -2,7 +2,7 @@
 
 Use this checklist before handing a trial build to a client.
 
-## V7.4 Client Delivery
+## V7.5 Client Delivery
 
 - [ ] Run Launch Room > Run Launch Audit.
 - [ ] Run Launch Room > Run Client Rehearsal.
@@ -15,6 +15,7 @@ Use this checklist before handing a trial build to a client.
 - [ ] Confirm Trial Ops feedback template, issue queue, and redacted support package flow are available.
 - [ ] Confirm Trial Ops patch execution board, verification checklist, and client release note drafts are available.
 - [ ] Confirm Trial Ops trial success report, scorecard, internal analysis, and next trial plan are available.
+- [ ] Confirm Trial Ops client success dashboard, trial closeout report, operator checklist, and next engagement recommendation are available.
 - [ ] Confirm original source media is not included by default.
 - [ ] Confirm token, secret, connector local config, live publish local policy, runtime DB, logs, and raw clips are not included.
 
@@ -63,7 +64,10 @@ Use this checklist before handing a trial build to a client.
 - [ ] Build the trial success report with `python3 scripts/build_trial_success_report.py`.
 - [ ] Confirm `analytics/trial_success_report.json`, `analytics/client_trial_success_report.json`, `analytics/internal_trial_analysis.json`, `analytics/next_trial_plan.json`, and `analytics/client_trial_scorecard.json` exist.
 - [ ] Confirm `out/client_delivery/TRIAL_SUCCESS_REPORT.md`, `out/client_delivery/CLIENT_TRIAL_SUMMARY.md`, `out/client_delivery/NEXT_TRIAL_PLAN.md`, and `out/client_delivery/INTERNAL_TRIAL_ANALYSIS.md` exist.
-- [ ] Confirm client response notes, release notes, success reports, and next trial plans are reviewed before sending and no cloud ticket sync or automatic client messaging is enabled.
+- [ ] Build the client success dashboard with `python3 scripts/build_client_success_dashboard.py`.
+- [ ] Confirm `analytics/client_success_dashboard.json`, `analytics/client_trial_closeout_report.json`, `analytics/operator_closeout_checklist.json`, and `analytics/next_engagement_recommendation.json` exist.
+- [ ] Confirm `out/client_delivery/CLIENT_SUCCESS_DASHBOARD.md`, `out/client_delivery/TRIAL_CLOSEOUT_REPORT.md`, `out/client_delivery/OPERATOR_CLOSEOUT_CHECKLIST.md`, and `out/client_delivery/NEXT_ENGAGEMENT_RECOMMENDATION.md` exist.
+- [ ] Confirm client response notes, release notes, success reports, closeout reports, and next engagement recommendations are reviewed before sending and no cloud ticket sync or automatic client messaging is enabled.
 - [ ] Confirm no cloud APIs, social APIs, or direct posting APIs are configured.
 
 ## Handoff

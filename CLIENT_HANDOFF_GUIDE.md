@@ -4,7 +4,7 @@ HigherKey Operator OS is a local-first desktop app for preparing short-form soci
 
 No social posting happens unless official connectors are configured, readiness checks pass, and approval gates are met. Manual upload remains available.
 
-## V7.4 What To Send
+## V7.5 What To Send
 
 - The current HigherKey DMG or a pointer to the current DMG.
 - `CLIENT_QUICK_START.md`
@@ -16,9 +16,9 @@ No social posting happens unless official connectors are configured, readiness c
 - `out/client_delivery/CLIENT_DELIVERY_CHECKLIST.md`
 - A generated handoff or trial package when intentionally built.
 - Approved edited delivery packages when available.
-- Trial issue queue, patch execution board, verification checklist, client release note drafts, trial success report, client scorecard, and next trial plan when intentionally generated after a client session.
+- Trial issue queue, patch execution board, verification checklist, client release note drafts, trial success report, client success dashboard, closeout report, operator checklist, and next engagement recommendation when intentionally generated after a client session.
 
-## V7.4 What Not To Send
+## V7.5 What Not To Send
 
 Do not send original private source media, `content_inbox/`, raw `clips/`, runtime databases, logs, token files, local connector config, local live publish policy, secrets, or credentials. Edited delivery packages exclude originals by default.
 
@@ -74,10 +74,11 @@ python3 scripts/build_trial_patch_plan.py
 python3 scripts/build_patch_execution_board.py
 python3 scripts/build_client_release_notes.py
 python3 scripts/build_trial_success_report.py
+python3 scripts/build_client_success_dashboard.py
 ```
 
-After triage, use `python3 scripts/update_trial_issue_status.py --status in_progress --note "Reviewed locally"` to track local issue status. Use `python3 scripts/update_patch_execution_status.py --status needs_verification --note "Verified locally"` to track patch execution. Review `out/client_delivery/CLIENT_RESPONSE_NOTES.md`, `out/client_delivery/CLIENT_RELEASE_NOTES.md`, `out/client_delivery/CLIENT_UPDATE_MESSAGE.md`, `out/client_delivery/TRIAL_SUCCESS_REPORT.md`, `out/client_delivery/CLIENT_TRIAL_SUMMARY.md`, and `out/client_delivery/NEXT_TRIAL_PLAN.md` before sending any client-facing note.
+After triage, use `python3 scripts/update_trial_issue_status.py --status in_progress --note "Reviewed locally"` to track local issue status. Use `python3 scripts/update_patch_execution_status.py --status needs_verification --note "Verified locally"` to track patch execution. Review `out/client_delivery/CLIENT_RESPONSE_NOTES.md`, `out/client_delivery/CLIENT_RELEASE_NOTES.md`, `out/client_delivery/CLIENT_UPDATE_MESSAGE.md`, `out/client_delivery/TRIAL_SUCCESS_REPORT.md`, `out/client_delivery/CLIENT_TRIAL_SUMMARY.md`, `out/client_delivery/NEXT_TRIAL_PLAN.md`, `out/client_delivery/CLIENT_SUCCESS_DASHBOARD.md`, `out/client_delivery/TRIAL_CLOSEOUT_REPORT.md`, and `out/client_delivery/NEXT_ENGAGEMENT_RECOMMENDATION.md` before sending any client-facing note.
 
 ## Local-Only Safety
 
-All processing happens locally. HigherKey does not post to social platforms and does not call cloud APIs. Trial feedback, patch plans, patch execution boards, release note drafts, success reports, and next trial plans are stored locally by default. No external ticket system or automatic client messaging is created by default. Support packages are redacted and exclude private media, tokens, local connector config, runtime databases, and raw logs by default.
+All processing happens locally. HigherKey does not post to social platforms and does not call cloud APIs. Trial feedback, patch plans, patch execution boards, release note drafts, success reports, closeout reports, and next engagement recommendations are stored locally by default. No external ticket system or automatic client messaging is created by default. Support packages are redacted and exclude private media, tokens, local connector config, runtime databases, and raw logs by default.

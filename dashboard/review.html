@@ -2197,6 +2197,11 @@
         internalTrialAnalysis: "../analytics/internal_trial_analysis.json",
         nextTrialPlan: "../analytics/next_trial_plan.json",
         clientTrialScorecard: "../analytics/client_trial_scorecard.json",
+        clientSuccessDashboard: "../analytics/client_success_dashboard.json",
+        clientTrialCloseoutReport: "../analytics/client_trial_closeout_report.json",
+        operatorCloseoutChecklist: "../analytics/operator_closeout_checklist.json",
+        nextEngagementRecommendation: "../analytics/next_engagement_recommendation.json",
+        clientSuccessSummary: "../analytics/client_success_summary.json",
         releaseCandidateAudit: "../analytics/release_candidate_audit.json",
         clientRehearsalReport: "../analytics/client_rehearsal_report.json",
         marketingBrief: "../analytics/marketing_brief.json",
@@ -3608,6 +3613,10 @@
           return `<div class="summary-row"><span>${html(item.title || item.client_message || "Trial item")}</span><strong>${html(item.status || item.severity || "open")}</strong></div>`;
         }).join("") || `<div class="empty-state"><h2>${html(empty)}</h2><p>Build the trial success report after the next rehearsal.</p></div>`;
       }
+      function clientSuccessList(key, empty) {
+        const items = state.clientSuccessDashboard?.[key] || state.clientTrialCloseoutReport?.[key] || [];
+        return (Array.isArray(items) ? items : []).slice(0, 8).map((item) => `<div class="summary-row"><span>${html(item)}</span><strong>review</strong></div>`).join("") || `<div class="empty-state"><h2>${html(empty)}</h2><p>Build the client success dashboard after trial success reporting.</p></div>`;
+      }
       function renderTrialOpsView() {
         const summary = state.clientFeedbackSummary || {};
         const trial = state.clientTrialStatus || {};
@@ -3617,6 +3626,14 @@
         const patchBoard = state.patchExecutionBoard || {};
         const patchStatus = state.clientPatchStatus || {};
         const scorecard = trialScorecard();
+        const success = state.clientSuccessDashboard || {};
+        const closeout = state.clientTrialCloseoutReport || {};
+        const recommendation = state.nextEngagementRecommendation || {};
+        const successSummary = state.clientSuccessSummary || {};
+        const successStatus = success.success_summary || closeout.success_summary || {};
+        const successCounts = success.counts || {};
+        const openRiskCount = successCounts.remaining_risks ?? (Array.isArray(success.open_risks) ? success.open_risks.length : 0);
+        const fixedVerified = `${successCounts.fixed ?? scorecard.fixed_count ?? 0} / ${successCounts.verified ?? scorecard.verified_count ?? 0}`;
         return `
           <div class="view media-view">
             <section class="panel hero-panel">
@@ -3632,6 +3649,8 @@
                   <button class="btn" data-desktop-action="build-patch-execution-board">Build Patch Execution Board</button>
                   <button class="btn" data-desktop-action="build-client-release-notes">Build Client Release Notes</button>
                   <button class="btn" data-desktop-action="build-trial-success-report">Build Trial Success Report</button>
+                  <button class="btn" data-desktop-action="build-client-success-dashboard">Build Client Success Dashboard</button>
+                  <button class="btn" data-desktop-action="build-client-success-dashboard">Build Trial Closeout Report</button>
                   <button class="btn" data-desktop-action="create-issue-report">Create Support Package</button>
                 </div>
               </div>
@@ -3642,6 +3661,14 @@
               </div>
             </section>
             <div class="card-grid">
+              ${metricPanel("Overall Trial Result", successStatus.overall_status || successSummary.overall_trial_result || scorecard.overall_status || "pending", "conservative closeout")}
+              ${metricPanel("Launch Readiness", successStatus.launch_readiness || scorecard.launch_readiness_status || state.clientLaunchReadiness?.status || "pending", "handoff gate")}
+              ${metricPanel("Client Feedback", scorecard.feedback_count ?? summary.total ?? feedbackItems().length, "items")}
+              ${metricPanel("Fixed / Verified", fixedVerified, "patches")}
+              ${metricPanel("Open Risks", openRiskCount, "review before sharing")}
+              ${metricPanel("Next Engagement", recommendation.decision || success.decision || "pending", "operator review")}
+              ${metricPanel("Manual Upload Status", successStatus.manual_upload_status || scorecard.manual_upload_status || "available", "fallback remains available")}
+              ${metricPanel("Editing Delivery Status", successStatus.delivery_verification || scorecard.editing_delivery_status || "pending", "edited package gate")}
               ${metricPanel("Feedback Inbox", summary.total ?? feedbackItems().length, "items")}
               ${metricPanel("Overall Status", scorecard.overall_status || "pending", "trial")}
               ${metricPanel("Readiness Score", scorecard.readiness_score ?? "—", "score")}
@@ -3654,6 +3681,8 @@
               ${metricPanel("Verified", patchBoard.summary?.verified ?? patchExecutionItems().filter((item) => item.status === "verified").length, "patches")}
               ${metricPanel("Ready for Release", patchBoard.summary?.ready_for_release ?? patchExecutionItems().filter((item) => item.status === "ready_for_release").length, "patches")}
               ${metricPanel("Open Issues", scorecard.open_issue_count ?? issueItems().length, "items")}
+              ${metricPanel("Closeout", closeout.status || success.status || "pending", "trial")}
+              ${metricPanel("Next Engagement", recommendation.decision || success.decision || "pending", "decision")}
               ${metricPanel("Fixed", summary.by_status?.fixed ?? 0, "items")}
               ${metricPanel("Deferred", triage.items?.filter?.((item) => item.status === "deferred").length ?? 0, "items")}
               ${metricPanel("Support Package", support.status || "ready", "client-safe")}
@@ -3676,12 +3705,17 @@
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Still Needs Attention</div></div>${trialSuccessList("unresolved_issues", "No unresolved items listed")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Next Trial Plan</div></div><p class="copy">${html(state.nextTrialPlan?.client_next_step || scorecard.client_next_step || "Build the trial success report to prepare next trial steps.")}</p><div class="summary-row"><span>Operator</span><strong>${html(scorecard.operator_next_step || "Review locally")}</strong></div></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Internal Trial Analysis</div></div><p class="copy">${html(state.internalTrialAnalysis?.operator_analysis || "Internal analysis stays local unless reviewed for sharing.")}</p></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Client Success</div></div><p class="copy">${html(closeout.client_message || "Build the client success dashboard to summarize delivery, risks, and closeout readiness.")}</p><div class="summary-row"><span>Decision</span><strong>${html(success.decision || recommendation.decision || "pending")}</strong></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Client Success Summary</div></div><p class="copy">${html(successSummary.client_message || success.client_message || "Build the client success dashboard to create a client-safe closeout summary.")}</p><div class="summary-row"><span>Local only</span><strong>${html(successSummary.local_only ?? true)}</strong></div><div class="summary-row"><span>External messaging</span><strong>${html(successSummary.external_messaging || "none")}</strong></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Closeout</div></div>${clientSuccessList("what_was_delivered", "No delivered items listed")}</section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Next Engagement</div></div><p class="copy">${html(recommendation.client_next_step || "Build the client success dashboard to draft next engagement guidance.")}</p><div class="summary-row"><span>Production review</span><strong>${html(recommendation.production_readiness_review ?? false)}</strong></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Operator Checklist</div></div>${(state.operatorCloseoutChecklist?.items || []).map((item) => `<div class="summary-row"><span>${html(item.title || "Closeout item")}</span><strong>${html(item.status || "pending")}</strong></div>`).join("") || `<div class="empty-state"><h2>No closeout checklist yet</h2><p>Build the client success dashboard.</p></div>`}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Blockers</div></div>${feedbackListHtml((item) => item.severity === "blocker")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Needs Client Info</div></div>${feedbackListHtml((item) => item.status === "needs_client_info")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Fixed / Closed</div></div>${patchPlanHtml((item) => item.status === "fixed" || item.status === "closed")}</section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Status</div></div><p class="copy">${html(patchStatus.client_message || trial.client_message || "Build the issue queue to summarize the current trial status.")}</p><div class="summary-row"><span>Next</span><strong>${html(trial.next_action || "Build Issue Queue")}</strong></div></section>
               <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Next Fix Plan</div></div>${issueQueueHtml()}</section>
-              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="mark-issue-in-progress">Mark In Progress</button><button class="btn" data-desktop-action="mark-issue-fixed">Mark Fixed</button><button class="btn" data-desktop-action="mark-issue-needs-info">Mark Needs Client Info</button><button class="btn" data-desktop-action="mark-patch-in-progress">Mark Patch In Progress</button><button class="btn" data-desktop-action="mark-patch-fixed">Mark Patch Fixed</button><button class="btn" data-desktop-action="mark-patch-needs-verification">Mark Needs Verification</button><button class="btn" data-desktop-action="mark-patch-verified">Mark Verified</button><button class="btn" data-desktop-action="build-response-notes">Build Client Response Notes</button><button class="btn" data-desktop-action="build-trial-success-report">Build Trial Success Report</button><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Client Delivery Folder</button><button class="btn" data-desktop-action="run-client-rehearsal">Run Client Rehearsal</button><button class="btn" data-desktop-action="run-launch-audit">Run Launch Audit</button></div></section>
+              <section class="panel view-scroll"><div class="panel-head"><div class="panel-title">Trial Controls</div></div><div class="toolbar"><button class="btn" data-desktop-action="mark-issue-in-progress">Mark In Progress</button><button class="btn" data-desktop-action="mark-issue-fixed">Mark Fixed</button><button class="btn" data-desktop-action="mark-issue-needs-info">Mark Needs Client Info</button><button class="btn" data-desktop-action="mark-patch-in-progress">Mark Patch In Progress</button><button class="btn" data-desktop-action="mark-patch-fixed">Mark Patch Fixed</button><button class="btn" data-desktop-action="mark-patch-needs-verification">Mark Needs Verification</button><button class="btn" data-desktop-action="mark-patch-verified">Mark Verified</button><button class="btn" data-desktop-action="build-response-notes">Build Client Response Notes</button><button class="btn" data-desktop-action="build-trial-success-report">Build Trial Success Report</button><button class="btn" data-desktop-action="build-client-success-dashboard">Build Client Success Dashboard</button><button class="btn" data-desktop-action="build-client-success-dashboard">Build Trial Closeout Report</button><button class="btn" data-desktop-action="open-issue-report">Open Support Folder</button><button class="btn" data-desktop-action="open-client-delivery-folder">Open Client Delivery Folder</button><button class="btn" data-desktop-action="run-client-rehearsal">Run Client Rehearsal</button><button class="btn" data-desktop-action="run-launch-audit">Run Launch Audit</button></div></section>
             </div>
           </div>
         `;
@@ -6555,6 +6589,30 @@
         return setNotice(result?.code === 0 ? "Trial success report built locally." : "Trial success report needs attention.");
       }
 
+      async function buildClientSuccessDashboard() {
+        if (!window.higherkey?.buildClientSuccessDashboard) {
+          return setNotice("Static mode: run python3 scripts/build_client_success_dashboard.py --json.");
+        }
+        setNotice("Building client success dashboard...");
+        const result = await window.higherkey.buildClientSuccessDashboard();
+        const dashboard = await window.higherkey.getClientSuccessDashboard?.().catch(() => null);
+        const closeout = await window.higherkey.getTrialCloseoutReport?.().catch(() => null);
+        const checklist = await window.higherkey.getOperatorCloseoutChecklist?.().catch(() => null);
+        const recommendation = await window.higherkey.getNextEngagementRecommendation?.().catch(() => null);
+        if (dashboard?.dashboard) state.clientSuccessDashboard = dashboard.dashboard;
+        if (closeout?.closeout) {
+          state.clientTrialCloseoutReport = closeout.closeout;
+          state.operatorCloseoutChecklist = closeout.checklist;
+        }
+        if (checklist?.checklist) state.operatorCloseoutChecklist = checklist.checklist;
+        if (recommendation?.recommendation) state.nextEngagementRecommendation = recommendation.recommendation;
+        await refreshLiveData();
+        state.mode = "trialops";
+        persistWorkspace();
+        render();
+        return setNotice(result?.code === 0 ? "Client success dashboard built locally." : "Client success dashboard needs attention.");
+      }
+
       async function saveOrSchedulePost(button, schedule = false) {
         const payload = activeComposerPayload(button);
         if (!window.higherkey?.scheduleSocialPost) {
@@ -7086,6 +7144,7 @@
             if (action === "mark-patch-verified") return updatePatchExecutionStatus("verified");
             if (action === "build-client-release-notes") return buildClientReleaseNotes();
             if (action === "build-trial-success-report") return buildTrialSuccessReport();
+            if (action === "build-client-success-dashboard") return buildClientSuccessDashboard();
             if (action === "schedule-selected-posts") return saveOrSchedulePost(button, true);
             if (action === "save-post-draft") return saveOrSchedulePost(button, false);
             if (action === "schedule-post") return saveOrSchedulePost(button, true);
@@ -7318,6 +7377,11 @@
           state.internalTrialAnalysis = await optionalJson(PATHS.internalTrialAnalysis, null);
           state.nextTrialPlan = await optionalJson(PATHS.nextTrialPlan, null);
           state.clientTrialScorecard = await optionalJson(PATHS.clientTrialScorecard, null);
+          state.clientSuccessDashboard = await optionalJson(PATHS.clientSuccessDashboard, null);
+          state.clientTrialCloseoutReport = await optionalJson(PATHS.clientTrialCloseoutReport, null);
+          state.operatorCloseoutChecklist = await optionalJson(PATHS.operatorCloseoutChecklist, null);
+          state.nextEngagementRecommendation = await optionalJson(PATHS.nextEngagementRecommendation, null);
+          state.clientSuccessSummary = await optionalJson(PATHS.clientSuccessSummary, null);
           state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, null);
           state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, null);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, null);
@@ -7481,6 +7545,11 @@
           state.internalTrialAnalysis = await optionalJson(PATHS.internalTrialAnalysis, state.internalTrialAnalysis);
           state.nextTrialPlan = await optionalJson(PATHS.nextTrialPlan, state.nextTrialPlan);
           state.clientTrialScorecard = await optionalJson(PATHS.clientTrialScorecard, state.clientTrialScorecard);
+          state.clientSuccessDashboard = await optionalJson(PATHS.clientSuccessDashboard, state.clientSuccessDashboard);
+          state.clientTrialCloseoutReport = await optionalJson(PATHS.clientTrialCloseoutReport, state.clientTrialCloseoutReport);
+          state.operatorCloseoutChecklist = await optionalJson(PATHS.operatorCloseoutChecklist, state.operatorCloseoutChecklist);
+          state.nextEngagementRecommendation = await optionalJson(PATHS.nextEngagementRecommendation, state.nextEngagementRecommendation);
+          state.clientSuccessSummary = await optionalJson(PATHS.clientSuccessSummary, state.clientSuccessSummary);
           state.releaseCandidateAudit = await optionalJson(PATHS.releaseCandidateAudit, state.releaseCandidateAudit);
           state.clientRehearsalReport = await optionalJson(PATHS.clientRehearsalReport, state.clientRehearsalReport);
           state.marketingBrief = await optionalJson(PATHS.marketingBrief, state.marketingBrief);

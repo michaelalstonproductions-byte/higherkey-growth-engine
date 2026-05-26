@@ -97,6 +97,10 @@ def issue_report(
         "internal_trial_analysis.json": analytics / "internal_trial_analysis.json",
         "next_trial_plan.json": analytics / "next_trial_plan.json",
         "client_trial_scorecard.json": analytics / "client_trial_scorecard.json",
+        "client_success_dashboard.json": analytics / "client_success_dashboard.json",
+        "client_trial_closeout_report.json": analytics / "client_trial_closeout_report.json",
+        "operator_closeout_checklist.json": analytics / "operator_closeout_checklist.json",
+        "next_engagement_recommendation.json": analytics / "next_engagement_recommendation.json",
         "client_delivery_manifest.json": analytics / "client_delivery_manifest.json",
     }
     if include_runtime:

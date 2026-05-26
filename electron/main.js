@@ -76,11 +76,6 @@ function validateImportSelection(filePath) {
     return securityFail("The dropped file path could not be read.", { name: filePath?.name || "" });
   }
   const resolved = path.resolve(inputPath);
-  const extension = path.extname(resolved).toLowerCase();
-  const allowed = new Set(securityPolicy().allowed_import_extensions || [".mp4", ".mov", ".m4v"]);
-  if (!allowed.has(extension)) {
-    return securityFail("This file type is not supported.", { path: resolved, extension });
-  }
   let stats = null;
   try {
     stats = fs.statSync(resolved);
@@ -88,7 +83,12 @@ function validateImportSelection(filePath) {
     return securityFail("The selected file was not found.", { path: resolved });
   }
   if (!stats.isFile()) {
-    return securityFail("Only video files can be imported.", { path: resolved });
+    return securityFail("Folder drops are not supported yet. Use Import Footage to choose media files.", { path: resolved, folder_drop: true });
+  }
+  const extension = path.extname(resolved).toLowerCase();
+  const allowed = new Set(securityPolicy().allowed_import_extensions || [".mp4", ".mov", ".m4v"]);
+  if (!allowed.has(extension)) {
+    return securityFail("This file type is not supported.", { path: resolved, extension });
   }
   const maxBytes = Number(securityPolicy().max_import_file_size_mb || 20480) * 1024 * 1024;
   if (stats.size > maxBytes) {
@@ -1055,6 +1055,13 @@ async function buildTrialSuccessReport() {
   return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
 }
 
+async function buildClientSuccessDashboard() {
+  const check = validateProjectRootSelection(activeProjectRoot);
+  if (!check.ok) return check;
+  const result = await runPython(["scripts/build_client_success_dashboard.py", "--json"]);
+  return { ...result, parsed: parseJsonOutput(result.stdout), activeProjectRoot };
+}
+
 async function getClientFeedbackInbox() {
   return {
     ok: true,
@@ -1152,6 +1159,39 @@ async function getNextTrialPlan() {
     ok: true,
     activeProjectRoot,
     nextTrialPlan: await readAnalyticsJson("next_trial_plan.json", {})
+  };
+}
+
+async function getClientSuccessDashboard() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    dashboard: await readAnalyticsJson("client_success_dashboard.json", {})
+  };
+}
+
+async function getTrialCloseoutReport() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    closeout: await readAnalyticsJson("client_trial_closeout_report.json", {}),
+    checklist: await readAnalyticsJson("operator_closeout_checklist.json", {})
+  };
+}
+
+async function getOperatorCloseoutChecklist() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    checklist: await readAnalyticsJson("operator_closeout_checklist.json", {})
+  };
+}
+
+async function getNextEngagementRecommendation() {
+  return {
+    ok: true,
+    activeProjectRoot,
+    recommendation: await readAnalyticsJson("next_engagement_recommendation.json", {})
   };
 }
 
@@ -2872,6 +2912,7 @@ function registerIpc() {
   ipcMain.handle("feedback:updatePatchExecutionStatus", (_event, options = {}) => updatePatchExecutionStatus(options));
   ipcMain.handle("feedback:buildClientReleaseNotes", buildClientReleaseNotes);
   ipcMain.handle("feedback:buildTrialSuccessReport", buildTrialSuccessReport);
+  ipcMain.handle("feedback:buildClientSuccessDashboard", buildClientSuccessDashboard);
   ipcMain.handle("feedback:getInbox", getClientFeedbackInbox);
   ipcMain.handle("feedback:getIssueQueue", getClientIssueQueue);
   ipcMain.handle("feedback:getTriageReport", getFeedbackTriageReport);
@@ -2883,6 +2924,10 @@ function registerIpc() {
   ipcMain.handle("feedback:getTrialSuccessReport", getTrialSuccessReport);
   ipcMain.handle("feedback:getClientTrialScorecard", getClientTrialScorecard);
   ipcMain.handle("feedback:getNextTrialPlan", getNextTrialPlan);
+  ipcMain.handle("feedback:getClientSuccessDashboard", getClientSuccessDashboard);
+  ipcMain.handle("feedback:getTrialCloseoutReport", getTrialCloseoutReport);
+  ipcMain.handle("feedback:getOperatorCloseoutChecklist", getOperatorCloseoutChecklist);
+  ipcMain.handle("feedback:getNextEngagementRecommendation", getNextEngagementRecommendation);
   ipcMain.handle("feedback:openFolder", openFeedbackFolder);
   ipcMain.handle("support:createIssueReport", createIssueReport);
   ipcMain.handle("support:openIssueReportFolder", openIssueReportFolder);

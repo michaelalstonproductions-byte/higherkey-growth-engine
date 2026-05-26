@@ -1555,9 +1555,9 @@ Build the current unsigned DMG:
 npm run dist:unsigned
 ```
 
-Expected V7.4 package:
+Expected V7.5 package:
 
-- `dist/HigherKey Operator OS-7.4.0-arm64.dmg`
+- `dist/HigherKey Operator OS-7.5.0-arm64.dmg`
 - `analytics/release_candidate_audit.json`
 - `analytics/client_rehearsal_report.json`
 - `out/marketing/client_rehearsal_summary.md`
@@ -1636,6 +1636,29 @@ Outputs:
 - `out/client_delivery/INTERNAL_TRIAL_ANALYSIS.md`
 
 Use the client scorecard to review overall trial status, readiness score, feedback counts, fixed/verified work, open issues, manual upload status, editing delivery status, social connector status, and launch readiness. The next trial plan is a draft checklist for the operator to review before sharing.
+
+### V7.5 Client Success Dashboard
+
+V7.5 turns trial analytics into a local client success dashboard, trial closeout report, operator checklist, and next engagement recommendation. Closeout artifacts summarize what was delivered, remaining risks, and whether the next step is another trial pass or production-readiness review. HigherKey does not upload reports, send client messages, create cloud tickets, include private media, or expose tokens/secrets.
+
+Run:
+
+```bash
+python3 scripts/build_client_success_dashboard.py
+```
+
+Outputs:
+
+- `analytics/client_success_dashboard.json`
+- `analytics/client_trial_closeout_report.json`
+- `analytics/operator_closeout_checklist.json`
+- `analytics/next_engagement_recommendation.json`
+- `out/client_delivery/CLIENT_SUCCESS_DASHBOARD.md`
+- `out/client_delivery/TRIAL_CLOSEOUT_REPORT.md`
+- `out/client_delivery/OPERATOR_CLOSEOUT_CHECKLIST.md`
+- `out/client_delivery/NEXT_ENGAGEMENT_RECOMMENDATION.md`
+
+Review closeout and next engagement drafts locally before sending anything to a client. Manual upload remains available, live posting remains gated, and support packages remain redacted by default.
 
 Known non-blocking warning: sandboxed localhost or macOS Application Support checks can warn when running inside restricted automation. Verify the packaged app with `npm run app:open-latest` in the normal GUI environment. The DMG is intentionally unsigned for local/client trial testing; macOS Gatekeeper may require Finder's contextual Open flow or local security approval.
 

@@ -34,6 +34,7 @@ def main() -> int:
         check("renderer_fallback_panel", "Something went wrong, but HigherKey is still running." in dashboard and "Return to Command" in dashboard and "Reload App" in dashboard, "Renderer fallback panel exists."),
         check("render_recovery_wrapper", "function render()" in dashboard and "showShellRecovery(\"HigherKey recovered from a screen rendering error." in dashboard, "Render has a recovery wrapper."),
         check("unsupported_drop_safe_message", "choose a supported media file" in dashboard and "No supported footage files were dropped." in main, "Unsupported drops show a safe message."),
+        check("folder_drop_safe_message", "Folder drops are not supported yet. Use Import Footage to choose media files." in main, "Folder drops show a visible safe message."),
         check("preload_import_methods", all(token in preload for token in ("importFootage", "importAndProcessFootage", "ingestDroppedFiles", "getDroppedFilePaths", "recordRendererError")), "Preload exposes import/drop/error methods."),
         check("main_import_handlers", all(token in main for token in ("files:importFootage", "files:importAndProcessFootage", "files:ingestDropped", "renderer:recordError")), "Main process registers matching import/drop/error IPC handlers."),
         check("main_navigation_guards", all(token in main for token in ("will-navigate", "will-redirect", "did-fail-load", "setWindowOpenHandler", "blocked_window_navigation")), "Main process blocks unexpected file/external navigation."),
